@@ -1,0 +1,27 @@
+<%# Shared person card: identical on the authenticated dashboard and the
+    public kiosk wall. Locals: user, household. %>
+<% current_task = user.assigned_tasks.for_household(household).where(status: :in_progress).order(:starts_at).first
+   next_planned = user.assigned_tasks.for_household(household).where(status: :planned).order(:starts_at).first %>
+<div class="person-card"
+     id="<%= dom_id(user, :person_card) %>"
+     data-household-id="<%= household.id %>"
+     data-user-id="<%= user.id %>"
+     style="--user-color: <%= user.color %>; --user-fg: <%= contrast_color(user.color) %>">
+  <div class="person-identity"><%= user.display_name %></div>
+  <div class="person-handle">@<%= user.handle %></div>
+  <div class="person-status">
+    <% if current_task %>
+      <span class="status-chip status-in_progress"><%= current_task.title %></span>
+      <% if current_task.ends_at %>
+        <span class="task-meta"><%= distance_of_time_in_words(Time.current, current_task.ends_at) %> left</span>
+      <% end %>
+    <% elsif next_planned %>
+      <span class="status-chip status-planned"><%= next_planned.title %></span>
+      <% if next_planned.starts_at %>
+        <span class="task-meta"><%= next_planned.starts_at.strftime("%H:%M") %></span>
+      <% end %>
+    <% else %>
+      <span class="status-chip status-completed">Available</span>
+    <% end %>
+  </div>
+</div>

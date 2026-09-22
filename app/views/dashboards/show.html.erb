@@ -1,0 +1,7 @@
+<h1><%= @household.name %> dashboard</h1>
+<%= render "shared/notifications_banner" %>
+<div class="dashboard-grid" data-controller="live" data-live-household-id-value="<%= @household.id %>" data-live-user-id-value="<%= current_user.id %>">
+  <% @members.each do |member| %>
+    <%= render "shared/person_card", user: member, household: @household %>
+  <% end %>
+</div>

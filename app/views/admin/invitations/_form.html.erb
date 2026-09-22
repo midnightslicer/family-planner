@@ -1,0 +1,19 @@
+<%= form_with model: @invitation, url: admin_invitations_path do |f| %>
+  <%= render "shared/form_errors", object: @invitation %>
+  <div class="form-field">
+    <%= f.label :email, "Email" %>
+    <%= f.email_field :email, placeholder: "kid@example.com" %>
+  </div>
+  <div class="form-field">
+    <%= f.label :household_id, "Household" %>
+    <%= f.collection_select :household_id, @households, :id, :name %>
+  </div>
+  <div class="form-field">
+    <%= f.label :note, "Note (optional)" %>
+    <%= f.text_area :note, rows: 2, placeholder: "e.g. Welcome to the family board!" %>
+  </div>
+  <div class="form-actions">
+    <%= f.submit "Send invitation", class: "btn btn-primary" %>
+    <%= link_to "Back", admin_invitations_path, class: "btn btn-quiet" %>
+  </div>
+<% end %>

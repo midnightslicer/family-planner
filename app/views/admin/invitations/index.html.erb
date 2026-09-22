@@ -1,0 +1,32 @@
+<h1>Invitations</h1>
+<%= link_to "New invitation", new_admin_invitation_path, class: "btn btn-primary" %>
+
+<table>
+  <thead>
+    <tr>
+      <th>Email</th>
+      <th>Household</th>
+      <th>Invited by</th>
+      <th>Status</th>
+      <th>Expires</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @invitations.each do |invitation| %>
+      <tr>
+        <td><%= invitation.email %></td>
+        <td><%= invitation.household.name %></td>
+        <td><%= invitation.invited_by&.display_name || "—" %></td>
+        <td><span class="status-chip status-<%= invitation.accepted? ? "completed" : (invitation.expired? ? "undone" : "planned") %>"><%= invitation.status %></span></td>
+        <td><%= invitation.expires_at.strftime("%b %-d, %Y") %></td>
+        <td>
+          <% if invitation.pending? %>
+            <%= button_to "Resend", resend_admin_invitation_path(invitation), method: :post, class: "btn btn-quiet" %>
+          <% end %>
+          <%= button_to "Revoke", admin_invitation_path(invitation), method: :delete, class: "btn btn-danger", form: { data: { turbo_confirm: "Revoke this invitation?" } } %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

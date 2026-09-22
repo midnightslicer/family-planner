@@ -1,0 +1,43 @@
+<h1>Join <%= app_name %></h1>
+
+<% if @invitation %>
+  <p><%= @invitation.invited_by&.display_name || "An admin" %> has invited <strong><%= @invitation.email %></strong>
+    to join the household <strong><%= @invitation.household.name %></strong>.</p>
+  <% if @invitation.note.present? %>
+    <blockquote><%= @invitation.note %></blockquote>
+  <% end %>
+
+  <%= render "shared/form_errors", object: @user if @user %>
+
+  <div class="form-card">
+    <%= form_with model: (@user || User.new), url: join_invitation_path(params[:token]), method: :post do |f| %>
+      <div class="form-field">
+        <%= f.label :display_name, "Display name" %>
+        <%= f.text_field :display_name, placeholder: "e.g. Sam Smith" %>
+      </div>
+      <div class="form-field">
+        <%= f.label :handle, "Handle" %>
+        <%= f.text_field :handle, placeholder: "e.g. sam" %>
+      </div>
+      <div class="form-field">
+        <%= f.label :email, "Email" %>
+        <%= f.email_field :email, value: @invitation.email, readonly: true %>
+      </div>
+      <div class="form-field">
+        <%= f.label :password, "Password" %>
+        <%= f.password_field :password %>
+      </div>
+      <div class="form-field">
+        <%= f.label :password_confirmation, "Password confirmation" %>
+        <%= f.password_field :password_confirmation %>
+      </div>
+      <div class="form-field">
+        <%= f.label :color, "Your color" %>
+        <%= render "shared/color_picker", form: f %>
+      </div>
+      <div class="form-actions">
+        <%= f.submit "Join household", class: "btn btn-primary" %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

@@ -4,10 +4,23 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <style>
       /* Email styles need to be inline */
+      body { font-family: -apple-system, "Segoe UI", sans-serif; color: #111827; margin: 0; padding: 24px; }
+      .mailer-header { font-size: 20px; font-weight: 700; margin-bottom: 16px; }
+      .mailer-footer { margin-top: 32px; font-size: 12px; color: #6b7280; border-top: 1px solid #e5e7eb; padding-top: 12px; }
+      blockquote { border-left: 3px solid #d1d5db; margin: 12px 0; padding-left: 12px; color: #374151; }
     </style>
   </head>
 
   <body>
+    <div class="mailer-header"><%= @app_name || "Family Status" %></div>
     <%= yield %>
+    <div class="mailer-footer">
+      <%= @app_name || "Family Status" %> — sent by
+      <%= begin
+        (ActionMailer::Base.default[:from] rescue nil) || ENV["SMTP_FROM"] || "family-status@localhost"
+      rescue StandardError
+        "family-status@localhost"
+      end %>
+    </div>
   </body>
 </html>

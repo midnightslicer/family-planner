@@ -1,0 +1,32 @@
+<%# Task card used on the tasks page (list) and show view. %>
+<div class="task-card" id="<%= dom_id(task) %>" data-task-id="<%= task.id %>">
+  <div class="task-title"><%= task.title %></div>
+  <% if task.description.present? %>
+    <p class="task-meta"><%= task.description %></p>
+  <% end %>
+  <div class="task-meta">
+    <span class="status-chip status-<%= task.status %>"><%= task.status.humanize %></span>
+    <% if task.assigned_to %>
+      <span>@<%= task.assigned_to.handle %></span>
+    <% end %>
+    <% if task.starts_at %>
+      <span>starts <%= task.starts_at.strftime("%b %-d, %H:%M") %></span>
+    <% end %>
+    <% if task.ends_at %>
+      <span>ends <%= task.ends_at.strftime("%H:%M") %></span>
+    <% end %>
+  </div>
+  <% if task.recurrence_interval.present? %>
+    <div class="task-recurrence">Repeats <%= task.recurrence_interval %></div>
+  <% end %>
+  <div class="task-actions">
+    <% if task.planned? %>
+      <%= button_to "Start", start_task_path(task), method: :post, class: "btn btn-primary" %>
+    <% elsif task.in_progress? %>
+      <%= button_to "Complete", complete_task_path(task), method: :post, class: "btn btn-primary" %>
+      <%= button_to "Cancel", cancel_task_path(task), method: :post, class: "btn btn-danger" %>
+    <% end %>
+    <%= link_to "Edit", edit_task_path(task), class: "btn btn-quiet" %>
+    <%= button_to "Delete", task_path(task), method: :delete, class: "btn btn-quiet", form: { data: { turbo_confirm: "Delete this task?" } } %>
+  </div>
+</div>

@@ -1,0 +1,20 @@
+<h1>Edit household</h1>
+
+<%= render "shared/form_errors", object: @household %>
+
+<div class="form-card">
+  <%= form_with model: @household, url: admin_household_path(@household), method: :patch do |f| %>
+    <div class="form-field">
+      <%= f.label :name, "Name" %>
+      <%= f.text_field :name %>
+    </div>
+    <div class="form-field">
+      <label>Wall link (for the kiosk)</label>
+      <code><%= wall_url(@household.dashboard_token) %></code>
+    </div>
+    <div class="form-actions">
+      <%= f.submit "Save", class: "btn btn-primary" %>
+      <%= link_to "Back", admin_root_path, class: "btn btn-quiet" %>
+    </div>
+  <% end %>
+</div>

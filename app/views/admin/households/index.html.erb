@@ -1,0 +1,33 @@
+<h1>Households</h1>
+
+<%= render "shared/form_errors", object: @household %>
+
+<div class="form-card">
+  <%= form_with model: @household, url: admin_households_path do |f| %>
+    <div class="form-field">
+      <%= f.label :name, "New household name" %>
+      <%= f.text_field :name, placeholder: "e.g. Home" %>
+    </div>
+    <div class="form-actions">
+      <%= f.submit "Create household", class: "btn btn-primary" %>
+    </div>
+  <% end %>
+</div>
+
+<table>
+  <thead>
+    <tr><th>Name</th><th>Members</th><th>Wall link</th><th></th></tr>
+  </thead>
+  <tbody>
+    <% @households.each do |household| %>
+      <tr>
+        <td><%= link_to household.name, edit_admin_household_path(household) %></td>
+        <td><%= household.users.count %></td>
+        <td><%= link_to wall_path(household.dashboard_token), wall_path(household.dashboard_token) %></td>
+        <td>
+          <%= button_to "Delete", admin_household_path(household), method: :delete, class: "btn btn-danger", form: { data: { turbo_confirm: "Delete household and all its tasks?" } } %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

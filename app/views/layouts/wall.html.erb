@@ -1,0 +1,18 @@
+<%# Kiosk wall layout: no nav chrome, full-bleed grid, larger type. %>
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= @household&.name || "Family Status" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= yield :head %>
+    <link rel="icon" href="/icon.png" type="image/png">
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module" %>
+  </head>
+
+  <body class="kiosk">
+    <%= yield %>
+  </body>
+</html>

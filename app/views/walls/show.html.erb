@@ -1,0 +1,7 @@
+<div class="dashboard-grid" data-controller="live"
+     data-live-household-id-value="<%= @household.id %>"
+     data-live-token-value="<%= @household.dashboard_token %>">
+  <% @members.each do |member| %>
+    <%= render "shared/person_card", user: member, household: @household %>
+  <% end %>
+</div>

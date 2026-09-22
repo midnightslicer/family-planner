@@ -1,0 +1,15 @@
+<%# Shared color picker: curated palette grid plus custom hex input.
+    Locals: form (a FormBuilder with a `color` field). %>
+<div class="color-picker">
+  <div class="palette">
+    <% ApplicationHelper::PALETTE.each do |hex| %>
+      <label class="swatch" style="background: <%= hex %>" title="<%= hex %>">
+        <%= form.radio_button :color, hex, checked: (form.object.color || "#6366f1") == hex %>
+      </label>
+    <% end %>
+  </div>
+  <div class="custom-color">
+    <%= form.label :color, "Or custom hex", value: nil %>
+    <%= form.text_field :color, placeholder: "#6366f1", pattern: "#[0-9a-fA-F]{6}" %>
+  </div>
+</div>

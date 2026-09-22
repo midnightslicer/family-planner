@@ -1,0 +1,13 @@
+<%# Devise signup is invite-only: the form is normally unreachable (the
+    registrations controller redirects); this screen explains why. %>
+<h1>Joining requires an invite</h1>
+
+<div class="invite-banner">
+  <p>
+    Accounts on this <%= app_name %> instance are created by invitation only.
+    Ask the household admin to send you an invitation link by email.
+  </p>
+  <div class="invite-actions">
+    <%= link_to "Back to sign in", new_user_session_path, class: "btn btn-quiet" %>
+  </div>
+</div>

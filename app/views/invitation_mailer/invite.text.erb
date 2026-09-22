@@ -1,0 +1,11 @@
+You're invited to join <%= @app_name %>!
+
+<%= @inviter&.display_name || "The admin" %> has invited you to join the
+household <%= @household.name %> on <%= @app_name %>.
+<% if @note.present? %>
+
+Note: <%= @note %>
+<% end %>
+
+Join here (expires in 7 days, single use):
+<%= @join_url %>

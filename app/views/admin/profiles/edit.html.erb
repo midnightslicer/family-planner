@@ -1,0 +1,19 @@
+<h1>Your profile</h1>
+
+<%= render "shared/form_errors", object: @user %>
+
+<div class="form-card">
+  <%= form_with model: @user, url: admin_update_profile_path, method: :patch do |f| %>
+    <div class="form-field">
+      <%= f.label :display_name, "Display name" %>
+      <%= f.text_field :display_name %>
+    </div>
+    <div class="form-field">
+      <%= f.label :color, "Your color" %>
+      <%= render "shared/color_picker", form: f %>
+    </div>
+    <div class="form-actions">
+      <%= f.submit "Save", class: "btn btn-primary" %>
+    </div>
+  <% end %>
+</div>
