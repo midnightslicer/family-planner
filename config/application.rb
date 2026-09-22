@@ -16,6 +16,12 @@ module FamilyStatus
     # Common ones are `templates`, `generators`, or `middleware`, for example.
     config.autoload_lib(ignore: %w[assets tasks])
 
+    # Active Record encryption key material for secrets stored in the
+    # database (e.g. the SMTP password Setting).
+    config.active_record.encryption.primary_key = credentials.dig(:active_record_encryption, :primary_key)
+    config.active_record.encryption.deterministic_key = credentials.dig(:active_record_encryption, :deterministic_key)
+    config.active_record.encryption.key_derivation_salt = credentials.dig(:active_record_encryption, :key_derivation_salt)
+
     # Configuration for the application, engines, and railties goes here.
     #
     # These settings can be overridden in specific environments using the files
