@@ -1,11 +1,20 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+#
+# Devise users need email + encrypted_password. Model-specific columns
+# (handle, display_name, color, admin) are set per fixture below.
 
-# This model initially had no columns defined. If you add columns to the
-# model remove the "{}" from the fixture names and add the columns immediately
-# below each fixture, per the syntax in the comments below
-#
-one: {}
-# column: value
-#
-two: {}
-# column: value
+admin:
+  email: admin@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(User, "password") %>
+  handle: admin
+  display_name: Admin User
+  color: "#6366f1"
+  admin: true
+
+member:
+  email: member@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(User, "password") %>
+  handle: member
+  display_name: Member User
+  color: "#22c55e"
+  admin: false

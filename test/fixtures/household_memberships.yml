@@ -1,0 +1,7 @@
+admin_smiths:
+  user: admin
+  household: smiths
+
+member_smiths:
+  user: member
+  household: smiths
