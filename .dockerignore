@@ -50,4 +50,4 @@
 /.dockerignore
 /Dockerfile*
 /compose*.yml
-/entrypoint.sh
+!/entrypoint.sh
