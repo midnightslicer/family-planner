@@ -1,0 +1,14 @@
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - storage:/rails/storage
+    env_file:
+      - .env
+    environment:
+      RAILS_ENV: production
+
+volumes:
+  storage:
