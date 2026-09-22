@@ -10,7 +10,6 @@ FROM docker.io/library/ruby:${RUBY_VERSION}-slim AS base
 
 WORKDIR /rails
 
-# Runtime packages: libsqlite3 for the sqlite3 gem, jemalloc for lower memory.
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y libsqlite3-0 libjemalloc2 curl && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
@@ -19,7 +18,7 @@ ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
     BUNDLE_WITHOUT="development" \
-    LD_PRELOAD="/usr/lib/$(uname -m)-linux-gnu/libjemalloc.so.2"
+    LD_PRELOAD="/usr/lib/x86_64-linux-gnu/libjemalloc.so.2"
 
 # ---- Build stage: gems, JS bundles, and precompiled assets ----
 FROM base AS build
@@ -34,7 +33,7 @@ ARG NODE_VERSION=26
 RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - && \
     apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
-RUN corepack enable
+RUN corepack enable || npm install -g yarn
 
 # Install gems first (layer cache: only rebuilds when Gemfile changes).
 COPY Gemfile Gemfile.lock ./
