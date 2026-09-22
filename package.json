@@ -6,5 +6,9 @@
   },
   "devDependencies": {
     "esbuild": "^0.28.2"
+  },
+  "dependencies": {
+    "@hotwired/stimulus": "^3.2.2",
+    "@hotwired/turbo-rails": "^8.0.23"
   }
 }
