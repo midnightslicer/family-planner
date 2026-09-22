@@ -1,5 +1,5 @@
 <h1>Set up <%= Setting.get("app_name").presence || "Family Status" %></h1>
-<p>Step 1 of 2 — app settings and email</p>
+<p>Step 1 of 2: app settings and email</p>
 
 <div class="form-card">
   <%= form_with url: setup_settings_path, method: :patch, scope: :settings do |f| %>
