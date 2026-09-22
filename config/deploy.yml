@@ -1,0 +1,50 @@
+# Kamal 3 deploy config for family-status.
+# Secrets (KAMAL_REGISTRY_PASSWORD, RAILS_MASTER_KEY) live in .kamal/secrets
+# or a server-side .env; see README "Deploy".
+
+service: family-status
+image: family-status
+
+# Deploy to these servers. Change the host to your VPS.
+servers:
+  web:
+    - 192.168.0.1
+
+# Enable SSL auto certification via Let's Encrypt and allow for multiple apps
+# on a single web server. Requires config.assume_ssl + config.force_ssl in
+# production.rb (already set in the Rails 8 default when behind a proxy).
+proxy:
+  ssl: true
+  host: status.example.com
+
+registry:
+  server: localhost:5555
+  username: your-user
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+env:
+  secret:
+    - RAILS_MASTER_KEY
+  clear:
+    # SQLite lives on the storage volume; single app instance only.
+    SOLID_QUEUE_IN_PUMA: true
+
+aliases:
+  console: app exec --interactive --reuse "bin/rails console"
+  shell: app exec --interactive --reuse "bash"
+  logs: app logs -f
+  dbc: app exec --interactive --reuse "bin/rails dbconsole --include-password"
+
+# Persistent volume for the SQLite database and Active Storage files.
+volumes:
+  - "family_status_storage:/rails/storage"
+
+# Bridge fingerprinted assets between deploys to avoid 404s mid-flight.
+asset_path: /rails/public/assets
+
+builder:
+  arch: amd64
+
+# Uncomment to build remotely for faster amd64 builds on arm64 machines:
+#  remote: ssh://docker@docker-builder-server
