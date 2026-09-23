@@ -33,4 +33,12 @@ class HouseholdScopingTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".person-card", count: 2  # admin + member, not other-household users
   end
+
+  test "dashboard spells out each person's status in words" do
+    Task.create!(household: @smiths, title: "Dishes", assigned_to: @member, status: :in_progress)
+    Task.create!(household: @smiths, title: "Laundry", assigned_to: @admin, status: :planned)
+    get dashboard_path
+    assert_select ".status-chip", text: "Busy: Dishes"
+    assert_select ".status-chip", text: "Up next: Laundry"
+  end
 end

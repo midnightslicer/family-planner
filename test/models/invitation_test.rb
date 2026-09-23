@@ -62,6 +62,14 @@ class InvitationTest < ActiveSupport::TestCase
     assert_equal invitation, Invitation.find_by_raw_token(new_raw)
   end
 
+  test "accepted? reflects accepted_at" do
+    invitation = Invitation.create!(email: "new@example.com", household: @household, invited_by: @admin)
+    assert_not invitation.accepted?
+
+    invitation.accept!
+    assert invitation.accepted?
+  end
+
   test "expiry defaults to seven days out" do
     invitation = Invitation.create!(email: "new@example.com", household: @household, invited_by: @admin)
     assert_in_delta 7.days.from_now, invitation.expires_at, 1.second

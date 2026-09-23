@@ -1,7 +1,7 @@
 class TasksController < ApplicationController
   before_action :authenticate_user!
   before_action :set_household
-  before_action :set_task, only: [:show, :edit, :update, :destroy, :start, :complete, :cancel]
+  before_action :set_task, only: [:show, :edit, :update, :destroy, :start, :pause, :complete, :cancel]
   before_action :require_author, only: [:edit, :update, :destroy]
 
   # GET /tasks
@@ -47,6 +47,12 @@ class TasksController < ApplicationController
     respond_with_task :started, "Started #{@task.title}."
   end
 
+  # POST /tasks/:id/pause — in_progress → planned (Start resumes it)
+  def pause
+    @task.pause!
+    respond_with_task :paused, "Paused #{@task.title}."
+  end
+
   # POST /tasks/:id/complete — in_progress → completed (+ recurrence)
   def complete
     @task.complete!
@@ -87,7 +93,7 @@ class TasksController < ApplicationController
   end
 
   # Members may edit/delete only their own tasks; anyone in the household
-  # can start/complete/cancel.
+  # can start/pause/complete/cancel.
   def require_author
     head :forbidden unless @task.created_by_id == current_user.id
   end

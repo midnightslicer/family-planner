@@ -55,6 +55,17 @@ class TaskRecurrenceTest < ActiveSupport::TestCase
     assert copy.planned?
   end
 
+  test "recurs? is false for the empty recurrence interval" do
+    # recurrence_interval returns the enum key, so "" reads back as
+    # "no_recurrence" — .present? would wrongly report it as recurring.
+    # Private, but it is the guard schedule_next_occurrence depends on.
+    one_off = Task.create!(household: @household, title: "One-off", recurrence_interval: "")
+    daily = Task.create!(household: @household, title: "Daily", recurrence_interval: "daily")
+
+    assert_not one_off.send(:recurs?)
+    assert daily.send(:recurs?)
+  end
+
   test "non-recurring tasks do not spawn copies" do
     task = Task.create!(household: @household, title: "One-off", recurrence_interval: "")
     task.start!
@@ -93,5 +104,21 @@ class TaskRecurrenceTest < ActiveSupport::TestCase
     assert task.undone?
     assert_not task.complete!          # undone → completed forbidden
     assert_not task.start!             # undone → in_progress forbidden
+  end
+
+  test "pause returns an in-progress task to planned so it can be resumed" do
+    task = Task.create!(household: @household, title: "Homework", recurrence_interval: "daily")
+    assert_not task.pause!             # planned → planned forbidden
+
+    task.start!
+    started_at = task.starts_at
+    assert_no_difference -> { Task.count } do   # pausing never spawns a recurrence
+      assert task.pause!
+    end
+    assert task.planned?
+
+    assert task.start!
+    assert task.in_progress?
+    assert_equal started_at, task.starts_at
   end
 end

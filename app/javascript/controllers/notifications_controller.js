@@ -4,8 +4,6 @@ import { Controller } from "@hotwired/stimulus"
 // (never auto-prompts). The button requests permission and dismisses the
 // banner once granted or denied.
 export default class extends Controller {
-  static targets = ["button"]
-
   connect() {
     if (!("Notification" in window)) {
       this.element.remove()
@@ -18,6 +16,10 @@ export default class extends Controller {
 
   async enable() {
     await Notification.requestPermission()
+    this.element.remove()
+  }
+
+  dismiss() {
     this.element.remove()
   }
 }

@@ -15,12 +15,21 @@ class Task < ApplicationRecord
 
   scope :for_household, ->(household) { where(household_id: household.id) }
 
-  # Transitions: planned→in_progress ("Start"), in_progress→completed,
-  # in_progress→undone ("Cancel"). Any other transition is ignored (false).
+  # Transitions: planned→in_progress ("Start"), in_progress→planned ("Pause"),
+  # in_progress→completed, in_progress→undone ("Cancel"). Any other
+  # transition is ignored (false).
   def start!
     return false unless planned?
 
     update!(status: :in_progress, starts_at: starts_at || Time.current)
+    true
+  end
+
+  # Keeps starts_at, so Start picks the task back up where it was.
+  def pause!
+    return false unless in_progress?
+
+    update!(status: :planned)
     true
   end
 
@@ -91,8 +100,10 @@ class Task < ApplicationRecord
   end
 
 
+  # recurrence_interval returns the enum key, so the "" member reads back as
+  # "no_recurrence" and is always present? — ask the enum instead.
   def recurs?
-    recurrence_interval.present?
+    !recurs_no_recurrence?
   end
 
   def broadcast_change

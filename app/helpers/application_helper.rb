@@ -27,7 +27,11 @@ module ApplicationHelper
     #a8a29e #d97706 #9333ea #0f766e
   ].freeze
 
-  def person_card_style(user)
-    "background: linear-gradient(160deg, #{user.color} 0%, #{user.color}cc 100%); color: #{contrast_color(user.color)};"
+  # One or two letters for the avatar disc on a person card.
+  def initials(name)
+    parts = name.to_s.split(/[\s_-]+/).reject(&:empty?)
+    return "?" if parts.empty?
+
+    parts.first(2).map { |part| part[0] }.join.upcase
   end
 end

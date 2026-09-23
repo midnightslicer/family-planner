@@ -1,5 +1,5 @@
 <h1>Set up <%= Setting.get("app_name").presence || "Family Status" %></h1>
-<p>Step 1 of 2: app settings and email</p>
+<p class="page-intro">Step 1 of 2: app settings and email</p>
 
 <div class="form-card">
   <%= form_with url: setup_settings_path, method: :patch, scope: :settings do |f| %>
@@ -39,5 +39,7 @@
       <%= f.submit "Save and continue", class: "btn btn-primary" %>
     </div>
   <% end %>
-  <%= button_to "Send test email", setup_test_email_path, method: :post, class: "btn" %>
+  <div class="form-actions">
+    <%= button_to "Send test email", setup_test_email_path, method: :post, class: "btn" %>
+  </div>
 </div>

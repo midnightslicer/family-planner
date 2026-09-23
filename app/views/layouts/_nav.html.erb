@@ -6,10 +6,10 @@ end %>
 <header class="nav-brand"><%= app_name %></header>
 <% if current_user %>
   <div class="nav-links">
-    <%= link_to "Dashboard", dashboard_path %>
-    <%= link_to "Tasks", tasks_path %>
+    <%= link_to "Dashboard", dashboard_path, "aria-current": ("page" if current_page?(dashboard_path)) %>
+    <%= link_to "Tasks", tasks_path, "aria-current": ("page" if current_page?(tasks_path)) %>
     <% if current_user.admin? %>
-      <%= link_to "Admin", admin_root_path %>
+      <%= link_to "Admin", admin_root_path, "aria-current": ("page" if request.path.start_with?("/admin")) %>
     <% end %>
   </div>
   <% if current_user.households.size > 1 %>
@@ -18,12 +18,10 @@ end %>
     <% end %>
   <% end %>
   <div class="nav-user">
-    <% if current_user %>
-      <span class="person-identity" style="--user-color: <%= current_user.color %>; --user-fg: <%= contrast_color(current_user.color) %>">
-        <%= current_user.display_name %>
-      </span>
-      <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "btn btn-quiet" %>
-    <% end %>
+    <span class="nav-user-name" style="--user-color: <%= current_user.color %>">
+      <%= current_user.display_name %>
+    </span>
+    <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "btn btn-quiet btn-small" %>
   </div>
 <% else %>
   <div class="nav-links">

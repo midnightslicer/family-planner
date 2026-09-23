@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_22_153915) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_22_203628) do
   create_table "household_memberships", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "household_id", null: false
@@ -31,12 +31,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_153915) do
 
   create_table "invitations", force: :cascade do |t|
     t.datetime "accepted_at"
+    t.datetime "created_at", null: false
     t.string "email", null: false
     t.datetime "expires_at", null: false
     t.integer "household_id", null: false
     t.integer "invited_by_id"
     t.string "note"
     t.string "token", null: false
+    t.datetime "updated_at", null: false
     t.index ["email"], name: "index_invitations_on_email"
     t.index ["household_id"], name: "index_invitations_on_household_id"
     t.index ["invited_by_id"], name: "index_invitations_on_invited_by_id"

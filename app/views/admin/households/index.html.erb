@@ -14,6 +14,9 @@
   <% end %>
 </div>
 
+<h2>All households</h2>
+
+<div class="table-wrap">
 <table>
   <thead>
     <tr><th>Name</th><th>Members</th><th>Wall link</th><th></th></tr>
@@ -24,10 +27,11 @@
         <td><%= link_to household.name, edit_admin_household_path(household) %></td>
         <td><%= household.users.count %></td>
         <td><%= link_to wall_path(household.dashboard_token), wall_path(household.dashboard_token) %></td>
-        <td>
-          <%= button_to "Delete", admin_household_path(household), method: :delete, class: "btn btn-danger", form: { data: { turbo_confirm: "Delete household and all its tasks?" } } %>
+        <td class="table-actions">
+          <%= button_to "Delete", admin_household_path(household), method: :delete, class: "btn btn-danger btn-small", form: { data: { turbo_confirm: "Delete household and all its tasks?" } } %>
         </td>
       </tr>
     <% end %>
   </tbody>
 </table>
+</div>

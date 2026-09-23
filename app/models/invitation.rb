@@ -17,8 +17,12 @@ class Invitation < ApplicationRecord
     find_by(token: Digest::SHA256.hexdigest(raw.to_s))
   end
 
+  def accepted?
+    accepted_at.present?
+  end
+
   def pending?
-    !accepted_at && !expired?
+    !accepted? && !expired?
   end
 
   def expired?
@@ -26,7 +30,7 @@ class Invitation < ApplicationRecord
   end
 
   def status
-    return "accepted" if accepted_at
+    return "accepted" if accepted?
     return "expired" if expired?
 
     "pending"
@@ -34,7 +38,7 @@ class Invitation < ApplicationRecord
 
   # Marks the invitation accepted; refused if already used or expired.
   def accept!
-    return false if accepted_at || expired?
+    return false if accepted? || expired?
 
     update!(accepted_at: Time.current)
   end

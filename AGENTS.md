@@ -43,10 +43,35 @@ first admin account, the only user creation path besides invitations).
 - `config/initializers/mailer.rb`: SMTP configured from `Setting.get(...)`;
   `Setting`'s `value` column is encrypted (`encrypts :value`), covering
   `smtp_password`. Never handle it in plaintext.
-- `app/assets/stylesheets/application.css`: all styling. The class vocabulary
-  (`person-card`, `status-chip status-*`, `task-card`, `form-card`, `btn`,
-  `household-switch`, `invite-banner`, `color-picker`, …) is the contract with
-  the views. Reuse it; don't invent new classes.
+- `app/assets/stylesheets/application.css`: all app styling, plus
+  `kiosk.css`, whose every rule is scoped to `body.kiosk` (the wall view).
+  Both are served by Propshaft; `stylesheet_link_tag :app` in the layouts
+  picks up every file in the directory. The class vocabulary is the contract
+  with the views — reuse it, don't invent new classes:
+  - shell: `nav`/`nav-inner`/`nav-brand`/`nav-links`/`nav-user`/`nav-user-name`,
+    `container`, `page-header`, `page-intro`, `household-switch`
+  - messages: `flash-stack` (the always-present `#flash` container that
+    `TasksController` prepends into), `flash-notice`, `flash-alert`
+  - forms: `form-card`, `form-field` (also on a `fieldset`), `form-actions`,
+    `btn` + `btn-primary`/`btn-danger`/`btn-quiet`/`btn-small`, `devise-links`
+  - tables: `table-wrap` (scroll container) + bare `table`, `table-actions`
+  - components: `dashboard-grid`, `person-card` > `person-identity` >
+    `person-avatar` + `person-meta` > `person-name` + `person-handle`, then
+    `person-status`; `status-chip status-*`; `task-list`, `task-card`,
+    `task-title`, `task-meta`, `task-recurrence`, `task-actions`;
+    `invite-banner` + `invite-actions`; `color-picker` > `palette` > `swatch`
+    and `custom-color`.
+  `button_to` renders a `<form>`; inside a flex row the wrapping form is set
+  to `display: contents` so the button itself lays out. Add new action rows to
+  that selector list.
+- **Theming is tokens only.** Every colour a component uses comes from a
+  custom property on `:root`; light and dark differ solely in the values.
+  `@media (prefers-color-scheme: dark)` redefines that token set and nothing
+  else — never put a colour rule inside it, and never hard-code a hex outside
+  the token block, or one theme will be wrong. `:root` also declares
+  `color-scheme: light dark` so the UA-drawn parts follow (scrollbars, the
+  datetime picker, checkbox glyphs). `body.kiosk` pins `color-scheme: dark`
+  and its own token values, so the wall stays dark whatever the OS says.
 - `entrypoint.sh` / `Dockerfile` / `compose.yml` / `config/deploy.yml`:
   production shipping (Kamal 3, server on port 3000).
 

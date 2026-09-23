@@ -29,6 +29,7 @@ Rails.application.routes.draw do
   resources :tasks do
     member do
       post :start
+      post :pause
       post :complete
       post :cancel
     end
