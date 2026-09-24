@@ -23,15 +23,15 @@ class Task < ApplicationRecord
   # about the task being finished, so it doesn't notify again.
   attr_accessor :recurrence_copy
 
-  STATUS_VERBS = { "in_progress" => "started", "planned" => "paused", "completed" => "completed", "undone" => "cancelled" }.freeze
+  STATUS_VERBS = { "in_progress" => "started", "planned" => "paused", "completed" => "finished", "undone" => "skipped" }.freeze
 
   scope :for_household, ->(household) { where(household_id: household.id) }
 
-  # Transitions: planned→in_progress ("Start"), in_progress→planned ("Pause"),
-  # in_progress→completed, in_progress→undone ("Cancel"). Any other
-  # transition is ignored (false).
+  # Transitions: planned→in_progress ("Start"), undone→in_progress (restart a
+  # cancelled one-off), in_progress→planned ("Pause"), in_progress→completed,
+  # in_progress→undone ("Never mind"). Any other transition is ignored (false).
   def start!
-    return false unless planned?
+    return false unless planned? || restartable?
 
     update!(status: :in_progress, starts_at: starts_at || Time.current)
     true
@@ -59,6 +59,12 @@ class Task < ApplicationRecord
     update!(status: :undone)
     schedule_next_occurrence
     true
+  end
+
+  # A cancelled recurring task already spawned its next copy on cancel, so
+  # restarting it would schedule a duplicate; only one-offs come back.
+  def restartable?
+    undone? && !recurs?
   end
 
   private

@@ -17,7 +17,7 @@ class GettingStarted
       invite_step,
       Step.new(key: :task, title: "Add something you're doing",
                detail: "Your card on the board shows your current task and what's next.",
-               done: @household.tasks.exists?, link_label: "New task", path: routes.new_task_path),
+               done: @household.tasks.exists?, link_label: "Add a task", path: routes.new_task_path),
       Step.new(key: :security, title: "Make signing in quicker and safer",
                detail: "Add a passkey (Face ID, fingerprint or device PIN) or turn on two-step verification.",
                done: @user.passkeys.exists? || @user.two_factor_enabled?, link_label: "Account", path: routes.account_root_path),

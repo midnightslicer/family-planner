@@ -6,24 +6,34 @@ class TasksController < ApplicationController
   before_action :set_task, only: [:show, :edit, :update, :destroy, :start, :pause, :complete, :cancel]
   before_action :require_author, only: [:edit, :update, :destroy]
 
-  # GET /tasks: what's active, then the most recent finished ones (finished
-  # tasks pile up, especially recurring ones, so they aren't all listed).
+  # GET /tasks: what's in progress, then what's to do, then the most recent
+  # finished ones (those pile up, especially recurring ones, so they aren't
+  # all listed).
   def index
     tasks = household_tasks.includes(:assigned_to)
-    @active_tasks = tasks.where(status: [:in_progress, :planned]).order(status: :desc, starts_at: :asc, id: :asc)
-    @done_tasks = tasks.where(status: [:completed, :undone]).order(updated_at: :desc).limit(RECENTLY_DONE_LIMIT)
+    @active_tasks = tasks.where(status: [:in_progress, :planned])
+                         .in_order_of(:status, %w[in_progress planned]).order(created_at: :desc)
+    # Skipped one-offs first: they can still be restarted.
+    @done_tasks = tasks.where(status: [:undone, :completed])
+                       .in_order_of(:status, %w[undone completed]).order(updated_at: :desc)
+                       .limit(RECENTLY_DONE_LIMIT)
   end
 
   # GET /tasks/new
   def new
-    @task = household_tasks.new(assigned_to: current_user, starts_at: Time.current.change(sec: 0))
+    @task = household_tasks.new(assigned_to: current_user)
   end
 
-  # POST /tasks
+  # POST /tasks — "I'm doing this now" (start_now) creates and starts it.
   def create
     @task = household_tasks.new(task_params.merge(created_by: current_user))
     if @task.save
-      respond_with_task "Task created."
+      if params[:start_now]
+        @task.start!
+        respond_with_task "Started #{@task.title}."
+      else
+        respond_with_task "Added #{@task.title}."
+      end
     else
       render :new, status: :unprocessable_content
     end
@@ -40,13 +50,13 @@ class TasksController < ApplicationController
   # PATCH/PUT /tasks/:id
   def update
     if @task.update(task_params)
-      respond_with_task "Task updated."
+      respond_with_task "Saved."
     else
       render :edit, status: :unprocessable_content
     end
   end
 
-  # POST /tasks/:id/start: planned -> in_progress
+  # POST /tasks/:id/start: planned (or a skipped one-off) -> in_progress
   def start
     transition(@task.start!, "Started #{@task.title}.")
   end
@@ -58,12 +68,12 @@ class TasksController < ApplicationController
 
   # POST /tasks/:id/complete: in_progress -> completed (+ recurrence)
   def complete
-    transition(@task.complete!, "Completed #{@task.title}.")
+    transition(@task.complete!, "Done with #{@task.title}.")
   end
 
   # POST /tasks/:id/cancel: in_progress -> undone (+ recurrence)
   def cancel
-    transition(@task.cancel!, "Cancelled #{@task.title}.")
+    transition(@task.cancel!, "Skipped #{@task.title}.")
   end
 
   # DELETE /tasks/:id
@@ -72,7 +82,7 @@ class TasksController < ApplicationController
     if turbo_stream_request?
       render turbo_stream: turbo_stream.remove(@task)
     else
-      redirect_to tasks_path, notice: "Task deleted.", status: :see_other
+      redirect_to tasks_path, notice: "Deleted.", status: :see_other
     end
   end
 
@@ -100,7 +110,7 @@ class TasksController < ApplicationController
       respond_with_task notice
     else
       @task.reload
-      respond_with_task "#{@task.title} is already #{@task.status.humanize.downcase}.", kind: :alert
+      respond_with_task "#{@task.title} is already marked #{helpers.task_status_label(@task)}.", kind: :alert
     end
   end
 
