@@ -6,19 +6,24 @@ class TasksController < ApplicationController
 
   # GET /tasks
   def index
-    @tasks = household_tasks.order(created_at: :desc)
+    @tasks = household_tasks.in_order_of(:status, %w[in_progress planned undone completed]).order(created_at: :desc)
   end
 
   # GET /tasks/new
   def new
-    @task = household_tasks.new(assigned_to: current_user, starts_at: Time.current.change(sec: 0))
+    @task = household_tasks.new(assigned_to: current_user)
   end
 
-  # POST /tasks
+  # POST /tasks — "I'm doing this now" (start_now) creates and starts it.
   def create
     @task = household_tasks.new(task_params.merge(created_by: current_user))
     if @task.save
-      respond_with_task :created, "Task created."
+      if params[:start_now]
+        @task.start!
+        respond_with_task :started, "Started #{@task.title}."
+      else
+        respond_with_task :created, "Added #{@task.title}."
+      end
     else
       render :new, status: :unprocessable_entity
     end
@@ -35,13 +40,13 @@ class TasksController < ApplicationController
   # PATCH/PUT /tasks/:id
   def update
     if @task.update(task_params)
-      respond_with_task :updated, "Task updated."
+      respond_with_task :updated, "Saved."
     else
       render :edit, status: :unprocessable_entity
     end
   end
 
-  # POST /tasks/:id/start — planned → in_progress
+  # POST /tasks/:id/start — planned (or cancelled one-off) → in_progress
   def start
     @task.start!
     respond_with_task :started, "Started #{@task.title}."
@@ -56,7 +61,7 @@ class TasksController < ApplicationController
   # POST /tasks/:id/complete — in_progress → completed (+ recurrence)
   def complete
     @task.complete!
-    respond_with_task :completed, "Completed #{@task.title}."
+    respond_with_task :completed, "Done with #{@task.title}."
   end
 
   # DELETE /tasks/:id
@@ -66,14 +71,14 @@ class TasksController < ApplicationController
     if turbo_stream_request?
       render turbo_stream: turbo_stream.remove(Task.new(id: task_id))
     else
-      redirect_to tasks_path, notice: "Task deleted.", status: :see_other
+      redirect_to tasks_path, notice: "Deleted.", status: :see_other
     end
   end
 
   # POST /tasks/:id/cancel — in_progress → undone (+ recurrence)
   def cancel
     @task.cancel!
-    respond_with_task :cancelled, "Cancelled #{@task.title}."
+    respond_with_task :cancelled, "Skipped #{@task.title}."
   end
 
   private

@@ -103,7 +103,18 @@ class TaskRecurrenceTest < ActiveSupport::TestCase
     assert task.cancel!
     assert task.undone?
     assert_not task.complete!          # undone → completed forbidden
-    assert_not task.start!             # undone → in_progress forbidden
+    assert task.start!                 # cancelled one-off can be restarted
+    assert task.in_progress?
+  end
+
+  test "a cancelled recurring task cannot be restarted" do
+    task = Task.create!(household: @household, title: "Chores", recurrence_interval: "weekly")
+    task.start!
+    task.cancel!
+
+    assert_not task.restartable?
+    assert_not task.start!             # its next copy already exists
+    assert task.undone?
   end
 
   test "pause returns an in-progress task to planned so it can be resumed" do

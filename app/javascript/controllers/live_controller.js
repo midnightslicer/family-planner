@@ -86,7 +86,7 @@ export default class extends Controller {
     if (!("Notification" in window) || Notification.permission !== "granted") return
 
     new Notification("Family Status", {
-      body: `Task updated (#${data.task_id})`,
+      body: data.title ? `${data.title} changed` : "One of your tasks changed",
       tag: `task-${data.task_id}`
     })
   }

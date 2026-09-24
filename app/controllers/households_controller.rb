@@ -1,6 +1,9 @@
 class HouseholdsController < ApplicationController
   include ActionController::Live
 
+  HEARTBEAT_SECONDS = 15
+  POLL_SECONDS = 1
+
   # POST /switch_household — validates membership, updates the session.
   def switch
     household = current_user.households.find_by(id: params[:household_id])
@@ -25,10 +28,23 @@ class HouseholdsController < ApplicationController
 
     queue = TaskBroadcaster.subscribe(household.id)
     response.stream.write ": connected\n\n"
+    last_write = Time.current
     loop do
-      message = queue.pop
-      response.stream.write "event: task_update\ndata: #{message}\n\n"
-    rescue ActionController::Live::ClientDisconnected
+      message = queue.pop(timeout: POLL_SECONDS)
+      if message
+        response.stream.write "event: task_update\ndata: #{message}\n\n"
+        last_write = Time.current
+      elsif Time.current - last_write >= HEARTBEAT_SECONDS
+        # The heartbeat is also how a closed tab gets noticed: the write
+        # raises ClientDisconnected and the thread exits.
+        response.stream.write ": ping\n\n"
+        last_write = Time.current
+      end
+      # An open stream holds the request's share of the load interlock, so a
+      # pending dev code reload would block every other request behind it.
+      # Hang up instead; EventSource reconnects on its own.
+      break if reload_pending?
+    rescue ActionController::Live::ClientDisconnected, IOError
       break
     end
   ensure
@@ -50,6 +66,10 @@ class HouseholdsController < ApplicationController
 
   # Members access their household's stream; the wall supplies the household's
   # dashboard token as a query parameter.
+  def reload_pending?
+    Rails.application.config.enable_reloading && Rails.application.reloader.check!
+  end
+
   def find_stream_household
     if current_user
       current_user.households.find_by(id: params[:id])

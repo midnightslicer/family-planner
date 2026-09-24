@@ -14,6 +14,18 @@ module ApplicationHelper
     "#ffffff"
   end
 
+  # What each task status is called on screen.
+  TASK_STATUS_LABELS = {
+    "planned" => "To do",
+    "in_progress" => "Doing",
+    "undone" => "Skipped",
+    "completed" => "Done"
+  }.freeze
+
+  def task_status_label(task)
+    TASK_STATUS_LABELS.fetch(task.status)
+  end
+
   def app_name
     Setting.get("app_name").presence || "Family Status"
   rescue ActiveRecord::NoDatabaseError, ActiveRecord::ConnectionNotEstablished

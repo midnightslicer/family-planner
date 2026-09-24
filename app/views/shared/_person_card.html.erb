@@ -17,16 +17,10 @@
   <div class="person-status">
     <% if current_task %>
       <span class="status-chip status-in_progress">Busy: <%= current_task.title %></span>
-      <% if current_task.ends_at %>
-        <span class="task-meta"><%= distance_of_time_in_words(Time.current, current_task.ends_at) %> left</span>
-      <% end %>
     <% elsif next_planned %>
       <span class="status-chip status-planned">Up next: <%= next_planned.title %></span>
-      <% if next_planned.starts_at %>
-        <span class="task-meta"><%= next_planned.starts_at.strftime("%H:%M") %></span>
-      <% end %>
     <% else %>
-      <span class="status-chip status-completed">Available</span>
+      <span class="status-chip status-completed">Free</span>
     <% end %>
   </div>
 </div>
