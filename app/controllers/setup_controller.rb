@@ -1,71 +1,81 @@
-# First-run setup wizard. Step 1: app settings (name + SMTP, with a send
-# test email action). Step 2: the first admin account. Completing step 2
-# creates the admin, a default household named after the app, signs in, and
-# redirects to the dashboard.
+# First-run setup: one page that names the household and creates the first
+# (admin) account. Email/SMTP is optional and lives in Admin > Settings.
+#
+# A fresh server is open to whoever reaches it first, so outside development
+# the page asks for the setup code printed in the server's log at boot (see
+# AppSettings.setup_code). Opening /setup?code=... skips typing it.
 class SetupController < ApplicationController
-  before_action :require_no_users!
-  before_action :skip_if_setup_complete
+  include AccountSignup
 
-  SETTINGS_KEYS = %w[app_name smtp_host smtp_port smtp_user smtp_password smtp_from smtp_tls].freeze
+  skip_before_action :require_setup
+  before_action :require_no_users!
+  before_action :require_unlocked, except: :unlock
+  rate_limit to: 10, within: 5.minutes, only: :unlock, with: -> {
+    redirect_to setup_path, alert: "Too many attempts. Wait a few minutes and try again."
+  }
 
   def show
-    @settings = settings_hash
+    @user = User.new(color: User.suggested_color)
+    @household_name = ""
   end
 
-  def update_settings
-    SETTINGS_KEYS.each do |key|
-      Setting.set(key, params.dig(:settings, key).presence)
-    end
-    redirect_to setup_account_path
-  end
-
-  def test_email
-    if smtp_configured?
-      SetupMailer.test_email.deliver_later
-      redirect_back(fallback_location: setup_path, notice: "Test email sent — check the letter_opener preview (dev) or your inbox.")
+  def unlock
+    if AppSettings.valid_setup_code?(params[:code])
+      session[:setup_unlocked] = true
+      redirect_to setup_path
     else
-      redirect_back(fallback_location: setup_path, alert: "SMTP is not configured — fill in the SMTP fields first.")
+      flash.now[:alert] = "That setup code doesn't match. Copy it from the server log (or run bin/rails setup:code)."
+      render :unlock, status: :unprocessable_content
     end
   end
 
-  def account
-    @user = User.new
-    @app_name = Setting.get("app_name").presence || "Family Status"
+  def passkey_options
+    render_signup_passkey_options(User.new(signup_params))
   end
 
-  def create_account
-    @user = User.new(user_params.merge(admin: true))
-    @app_name = Setting.get("app_name").presence || "Family Status"
+  def create
+    @household_name = params[:household_name].to_s.strip.presence || "Home"
+    @user = User.new(signup_params.merge(admin: true))
 
-    if @user.save
-      household = Household.create!(name: @app_name)
-      @user.household_memberships.create!(household: household)
-      sign_in @user
-      redirect_to dashboard_path, notice: "Welcome! Your household is ready."
+    if attach_signup_passkey(@user) && create_first_account
+      session.delete(:setup_unlocked)
+      sign_in(:user, @user)
+      redirect_to dashboard_path, notice: "You're all set. Next, invite your family."
     else
-      render :account, status: :unprocessable_entity
+      render :show, status: :unprocessable_content
     end
   end
 
   private
 
-  def user_params
-    params.require(:user).permit(:display_name, :handle, :email, :password, :password_confirmation, :color)
-  end
+  def create_first_account
+    created = false
+    User.transaction do
+      raise ActiveRecord::Rollback if User.exists? || !@user.save
 
-  def settings_hash
-    SETTINGS_KEYS.index_with { |key| Setting.get(key) }
-  end
-
-  def smtp_configured?
-    Setting.get("smtp_host").present?
+      household = Household.create!(name: @household_name)
+      @user.household_memberships.create!(household: household)
+      Setting.set("app_name", @household_name) if Setting.get("app_name").blank?
+      # Links in emails need the public address; this is the one the admin
+      # is using right now. Editable in Admin > Settings; APP_URL overrides.
+      Setting.set("app_url", request.base_url) if Setting.get("app_url").blank?
+      created = true
+    end
+    created
   end
 
   def require_no_users!
-    redirect_to dashboard_path if User.any?
+    redirect_to dashboard_path if User.exists?
   end
 
-  def skip_if_setup_complete
-    true
+  def require_unlocked
+    return if !AppSettings.setup_code_required? || session[:setup_unlocked]
+
+    if params[:code].present? && AppSettings.valid_setup_code?(params[:code])
+      session[:setup_unlocked] = true
+      redirect_to setup_path if request.get?
+    else
+      render :unlock, status: (request.get? ? :ok : :forbidden), formats: :html
+    end
   end
 end

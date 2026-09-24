@@ -1,0 +1,7 @@
+<% content_for :title, "Join #{@invitation.household.name}" %>
+<h1>You already have an account</h1>
+<p class="page-intro">
+  <strong><%= @invitation.email %></strong> is already registered here. Sign in and you'll come straight back
+  to join <strong><%= @invitation.household.name %></strong>.
+</p>
+<%= link_to "Sign in", new_user_session_path, class: "btn btn-primary" %>

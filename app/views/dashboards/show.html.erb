@@ -1,7 +1,21 @@
-<h1><%= @household.name %> dashboard</h1>
+<% content_for :title, @household.name %>
+<% content_for :head, turbo_refreshes_with(method: :morph, scroll: :preserve) %>
+<%= turbo_stream_from @household, :members %>
+
+<div class="page-header">
+  <h1><%= @household.name %></h1>
+  <%= link_to "New task", new_task_path, class: "btn btn-primary" %>
+</div>
+
+<%= render "dashboards/checklist", checklist: @checklist if @checklist.visible? %>
 <%= render "shared/notifications_banner" %>
-<div class="dashboard-grid" data-controller="live" data-live-household-id-value="<%= @household.id %>" data-live-user-id-value="<%= current_user.id %>">
+
+<div class="dashboard-grid" data-controller="auto-refresh">
   <% @members.each do |member| %>
-    <%= render "shared/person_card", user: member, household: @household %>
+    <%= render "shared/person_card", user: member, household: @household, status: @statuses[member.id] %>
   <% end %>
 </div>
+
+<% if @members.size == 1 && current_user.admin? %>
+  <p class="empty-hint">It's just you so far. <%= link_to "Invite your family", new_admin_invitation_path %> to fill the board.</p>
+<% end %>

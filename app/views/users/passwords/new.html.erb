@@ -1,5 +1,9 @@
 <h1>Forgot your password?</h1>
-<p class="page-intro">We'll email you a link to set a new one.</p>
+<% if AppSettings.smtp_configured? %>
+  <p class="page-intro">We'll email you a link to set a new one.</p>
+<% else %>
+  <p class="page-intro">This board can't send email yet, so ask your admin for a password reset link (Admin, People).</p>
+<% end %>
 
 <div class="form-card">
   <%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :post }) do |f| %>

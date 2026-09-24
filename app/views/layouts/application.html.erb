@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= content_for(:title) || "Family Status" %></title>
+    <title><%= [content_for(:title), app_name].compact.join(" · ") %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Family Status">
+    <meta name="application-name" content="<%= app_name %>">
     <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
+    <%= action_cable_meta_tag %>
 
     <%= yield :head %>
 
@@ -23,7 +24,7 @@
   <body>
     <nav class="nav">
       <div class="nav-inner">
-        <%= render "layouts/nav" if user_signed_in? || any_users? %>
+        <%= render "layouts/nav" %>
       </div>
     </nav>
 
@@ -32,6 +33,12 @@
       <% if notice %><p class="flash-notice"><%= notice %></p><% end %>
       <% if alert %><p class="flash-alert"><%= alert %></p><% end %>
     </div>
+
+    <% if user_signed_in? %>
+      <%# Browser notifications for this person arrive here (see Task#notify_assignee). %>
+      <%= turbo_stream_from current_user, :notifications %>
+      <div id="notifications" hidden></div>
+    <% end %>
 
     <main class="container">
       <%= yield %>

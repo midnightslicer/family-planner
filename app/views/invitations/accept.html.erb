@@ -1,0 +1,13 @@
+<% content_for :title, "Join #{@invitation.household.name}" %>
+<h1>Join <%= @invitation.household.name %>?</h1>
+<p class="page-intro">
+  <%= @invitation.invited_by&.display_name || "An admin" %> invited
+  <%= @invitation.email.presence || "you" %> to this household. You're signed in as <strong><%= current_user.email %></strong>.
+</p>
+
+<div class="form-card">
+  <div class="form-actions">
+    <%= button_to "Join #{@invitation.household.name}", accept_invitation_path(params[:token]), class: "btn btn-primary" %>
+    <%= link_to "Not now", dashboard_path, class: "btn btn-quiet" %>
+  </div>
+</div>

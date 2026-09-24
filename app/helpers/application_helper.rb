@@ -14,18 +14,8 @@ module ApplicationHelper
     "#ffffff"
   end
 
-  def app_name
-    Setting.get("app_name").presence || "Family Status"
-  rescue ActiveRecord::NoDatabaseError, ActiveRecord::ConnectionNotEstablished
-    "Family Status"
-  end
-
   # Curated palette for the color picker partial.
-  PALETTE = %w[
-    #6366f1 #8b5cf6 #ec4899 #f43f5e #ef4444 #f97316 #f59e0b #eab308
-    #84cc16 #22c55e #10b981 #14b8a6 #06b6d4 #0ea5e9 #3b82f6 #64748b
-    #a8a29e #d97706 #9333ea #0f766e
-  ].freeze
+  PALETTE = User::PALETTE
 
   # One or two letters for the avatar disc on a person card.
   def initials(name)
@@ -33,5 +23,9 @@ module ApplicationHelper
     return "?" if parts.empty?
 
     parts.first(2).map { |part| part[0] }.join.upcase
+  end
+
+  def two_factor_status(user)
+    user.two_factor_enabled? ? "On" : "Off"
   end
 end

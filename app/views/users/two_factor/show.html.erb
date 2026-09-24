@@ -1,0 +1,18 @@
+<% content_for :title, "Verification code" %>
+<h1>Enter your code</h1>
+<p class="page-intro">Open your authenticator app and enter the 6-digit code for <%= app_name %>.</p>
+
+<div class="form-card">
+  <%= form_with url: user_two_factor_path, method: :post do |f| %>
+    <div class="form-field">
+      <%= f.label :code, "Verification code" %>
+      <%= f.text_field :code, autofocus: true, autocomplete: "one-time-code", inputmode: "numeric",
+                              required: true, maxlength: 12, class: "code-input", placeholder: "123456" %>
+      <small>Lost your phone? Enter one of your recovery codes instead.</small>
+    </div>
+    <div class="form-actions">
+      <%= f.submit "Verify", class: "btn btn-primary" %>
+      <%= link_to "Start over", new_user_session_path, class: "btn btn-quiet" %>
+    </div>
+  <% end %>
+</div>

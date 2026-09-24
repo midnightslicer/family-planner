@@ -1,42 +1,50 @@
-# Kamal 3 deploy config for family-status.
-# Secrets (KAMAL_REGISTRY_PASSWORD, RAILS_MASTER_KEY) live in .kamal/secrets
-# or a server-side .env; see README "Deploy".
+# Kamal 2+ deploy config for family-status. Fill in the three values marked
+# CHANGE ME, then run `bin/kamal setup` once and `bin/kamal deploy` after.
+# No application secrets are needed: SECRET_KEY_BASE is generated on first
+# boot and kept on the storage volume (see entrypoint.sh).
 
 service: family-status
 image: family-status
 
-# Deploy to these servers. Change the host to your VPS.
 servers:
   web:
-    - 192.168.0.1
+    - 192.168.0.1 # CHANGE ME: your server's IP or hostname
 
-# Enable SSL auto certification via Let's Encrypt and allow for multiple apps
-# on a single web server. Requires config.assume_ssl + config.force_ssl in
-# production.rb (already set in the Rails 8 default when behind a proxy).
+# kamal-proxy gets a Let's Encrypt certificate for this host and forwards
+# to Thruster on port 3000 inside the container.
 proxy:
   ssl: true
-  host: status.example.com
+  host: status.example.com # CHANGE ME: a DNS name pointing at the server
+  app_port: 3000
+  healthcheck:
+    path: /up
 
 registry:
-  server: localhost:5555
+  # CHANGE ME: e.g. ghcr.io with your GitHub username, or Docker Hub.
+  server: ghcr.io
   username: your-user
   password:
     - KAMAL_REGISTRY_PASSWORD
 
 env:
-  secret:
-    - RAILS_MASTER_KEY
   clear:
-    # SQLite lives on the storage volume; single app instance only.
-    SOLID_QUEUE_IN_PUMA: true
+    # Email links use this; it also limits which Host headers are accepted.
+    APP_URL: https://status.example.com
+  # Optional. Uncomment and add values to .kamal/secrets to configure email
+  # from here instead of Admin > Settings.
+  # secret:
+  #   - SMTP_HOST
+  #   - SMTP_USER
+  #   - SMTP_PASSWORD
 
 aliases:
   console: app exec --interactive --reuse "bin/rails console"
   shell: app exec --interactive --reuse "bash"
   logs: app logs -f
-  dbc: app exec --interactive --reuse "bin/rails dbconsole --include-password"
+  setup-code: app exec --reuse "bin/rails setup:code"
+  dbc: app exec --interactive --reuse "bin/rails dbconsole"
 
-# Persistent volume for the SQLite database and Active Storage files.
+# SQLite database, the generated secret, and uploads. Single app instance.
 volumes:
   - "family_status_storage:/rails/storage"
 
@@ -45,6 +53,5 @@ asset_path: /rails/public/assets
 
 builder:
   arch: amd64
-
-# Uncomment to build remotely for faster amd64 builds on arm64 machines:
-#  remote: ssh://docker@docker-builder-server
+  # Build on the server instead (faster from an arm64 laptop):
+  # remote: ssh://root@192.168.0.1

@@ -38,7 +38,6 @@ Rails.application.configure do
 
   # Preview mail in the browser instead of sending it [https://github.com/ryanb/letter_opener]
   config.action_mailer.delivery_method = :letter_opener
-  config.action_mailer.delivery_job = nil
   config.action_mailer.perform_caching = false
 
   # Set localhost to be used by links generated in mailer templates.

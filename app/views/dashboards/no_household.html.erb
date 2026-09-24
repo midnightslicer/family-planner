@@ -1,0 +1,9 @@
+<% content_for :title, "No household" %>
+<h1>You're not in a household yet</h1>
+<p class="page-intro">
+  Your account works, but it isn't part of any household right now (it may have been removed or deleted).
+  Ask an admin to send you a new invitation link.
+</p>
+<% if current_user.admin? %>
+  <%= link_to "Go to Admin", admin_root_path, class: "btn btn-primary" %>
+<% end %>

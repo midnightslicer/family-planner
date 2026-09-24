@@ -1,20 +1,69 @@
-<h1>Edit household</h1>
+<% content_for :title, @household.name %>
+<%= render "admin/tabs" %>
+<h1><%= @household.name %></h1>
 
 <%= render "shared/form_errors", object: @household %>
 
-<div class="form-card">
-  <%= form_with model: @household, url: admin_household_path(@household), method: :patch do |f| %>
-    <div class="form-field">
-      <%= f.label :name, "Name" %>
-      <%= f.text_field :name %>
-    </div>
-    <div class="form-field">
-      <label>Wall link (for the kiosk)</label>
-      <code><%= wall_url(@household.dashboard_token) %></code>
+<section class="account-section">
+  <h2>Wall display</h2>
+  <p class="page-intro">
+    Open this link on a tablet or spare screen and add it to the home screen. It needs no sign-in and
+    updates live, so treat it like a key: anyone with the link can see the board.
+  </p>
+  <div class="form-card" data-controller="clipboard">
+    <div class="copy-field">
+      <input type="text" value="<%= wall_url(@household.dashboard_token, **AppSettings.url_options) %>" readonly
+             aria-label="Wall link" data-clipboard-target="source">
+      <button type="button" class="btn" data-clipboard-target="button" data-action="clipboard#copy">Copy</button>
+      <%= link_to "Open", wall_path(@household.dashboard_token), class: "btn btn-quiet", target: "_blank", rel: "noopener" %>
     </div>
     <div class="form-actions">
-      <%= f.submit "Save", class: "btn btn-primary" %>
-      <%= link_to "Back", admin_root_path, class: "btn btn-quiet" %>
+      <%= button_to "Make a new link", regenerate_wall_link_admin_household_path(@household), class: "btn btn-quiet btn-small",
+                    form: { data: { turbo_confirm: "The current wall link will stop working. Continue?" } } %>
     </div>
-  <% end %>
-</div>
+  </div>
+</section>
+
+<section class="account-section">
+  <h2>Members</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Name</th><th>Email</th><th></th></tr></thead>
+      <tbody>
+        <% @members.each do |membership| %>
+          <tr>
+            <td><%= membership.user.display_name %></td>
+            <td><%= membership.user.email %></td>
+            <td class="table-actions">
+              <%= button_to "Remove", admin_household_membership_path(@household, membership), method: :delete,
+                            class: "btn btn-danger btn-small",
+                            form: { data: { turbo_confirm: "Remove #{membership.user.display_name} from #{@household.name}? Their account stays." } } %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <p><%= link_to "Invite someone to #{@household.name}", new_admin_invitation_path, class: "btn" %></p>
+</section>
+
+<section class="account-section">
+  <h2>Rename</h2>
+  <div class="form-card">
+    <%= form_with model: @household, url: admin_household_path(@household), method: :patch do |f| %>
+      <div class="form-field">
+        <%= f.label :name, "Name" %>
+        <%= f.text_field :name, required: true, maxlength: 80 %>
+      </div>
+      <div class="form-actions">
+        <%= f.submit "Save", class: "btn btn-primary" %>
+      </div>
+    <% end %>
+  </div>
+</section>
+
+<section class="account-section">
+  <h2>Delete</h2>
+  <%= button_to "Delete household", admin_household_path(@household), method: :delete, class: "btn btn-danger",
+                form: { data: { turbo_confirm: "Delete #{@household.name} and all its tasks? This can't be undone." } } %>
+</section>

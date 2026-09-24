@@ -1,0 +1,34 @@
+<% content_for :title, "Two-step verification" %>
+<h1>Turn on two-step verification</h1>
+
+<div class="form-card two-factor-setup">
+  <ol class="setup-steps">
+    <li>
+      <strong>Scan this with your authenticator app</strong>
+      <small>1Password, Google Authenticator, Microsoft Authenticator, Aegis, or the Passwords app on iPhone and Mac.</small>
+      <div class="qr-frame"><%= raw @qr_svg %></div>
+      <details class="help-details">
+        <summary>Can't scan it?</summary>
+        <p>
+          On this phone? <%= link_to "Open in your authenticator app", @uri %>.
+          Or type this key in (time-based, 6 digits):
+        </p>
+        <p><code class="secret-key"><%= Totp.display_secret(@secret) %></code></p>
+      </details>
+    </li>
+    <li>
+      <strong>Enter the 6-digit code it shows</strong>
+      <%= form_with url: account_two_factor_path, method: :post do |f| %>
+        <div class="form-field">
+          <%= f.label :code, "Code from the app" %>
+          <%= f.text_field :code, autofocus: true, autocomplete: "one-time-code", inputmode: "numeric",
+                                  required: true, maxlength: 7, class: "code-input", placeholder: "123456" %>
+        </div>
+        <div class="form-actions">
+          <%= f.submit "Turn on", class: "btn btn-primary" %>
+          <%= link_to "Cancel", account_root_path, class: "btn btn-quiet" %>
+        </div>
+      <% end %>
+    </li>
+  </ol>
+</div>

@@ -3,29 +3,35 @@ Rails.application.routes.draw do
   # Can be used by load balancers and uptime monitors.
   get "up" => "rails/health#show", as: :rails_health_check
 
-  # First-run setup wizard (also the target of the first-run gate)
-  get   "setup",              to: "setup#show",           as: :setup
-  patch "setup/settings",     to: "setup#update_settings", as: :setup_settings
-  post  "setup/test_email",   to: "setup#test_email",     as: :setup_test_email
-  get   "setup/account",      to: "setup#account",        as: :setup_account
-  post  "setup/account",      to: "setup#create_account"
+  # First-run setup (also the target of the first-run gate)
+  get  "setup",                 to: "setup#show",            as: :setup
+  post "setup",                 to: "setup#create"
+  post "setup/unlock",          to: "setup#unlock",          as: :setup_unlock
+  post "setup/passkey_options", to: "setup#passkey_options", as: :setup_passkey_options
 
-  # Devise — registrations overridden for invite-only signup
-  devise_for :users, controllers: { registrations: "registrations" }
+  # Sign-in: Devise password flow (no public sign-up), then an optional
+  # authenticator-code step; or a passkey.
+  devise_for :users, skip: :registrations,
+                     controllers: { sessions: "users/sessions", passwords: "users/passwords" }
+  get  "users/two_factor",        to: "users/two_factor#show",            as: :user_two_factor
+  post "users/two_factor",        to: "users/two_factor#create"
+  post "users/passkey/options",   to: "users/passkey_sessions#options",   as: :user_passkey_options
+  post "users/passkey",           to: "users/passkey_sessions#create",    as: :user_passkey_session
 
   # Public invitation join flow
-  get  "invitations/:token",      to: "invitations#show", as: :invitation
-  post "invitations/:token/join", to: "invitations#join", as: :join_invitation
+  get  "invitations/:token",                 to: "invitations#show",            as: :invitation
+  post "invitations/:token/join",            to: "invitations#join",            as: :join_invitation
+  post "invitations/:token/accept",          to: "invitations#accept",          as: :accept_invitation
+  post "invitations/:token/passkey_options", to: "invitations#passkey_options", as: :invitation_passkey_options
 
-  # Household switching + card fragment + SSE stream (auth via controller) + public wall
-  post "switch_household",     to: "households#switch", as: :switch_household
-  get  "households/:id/stream", to: "households#stream", as: :household_stream
-  get  "households/:id/cards/:user_id", to: "households#card", as: :household_card, constraints: ->(req) { req.format == :html }
-  get  "h/:dashboard_token",    to: "walls#show",       as: :wall
+  # Household switching + public wall (live updates arrive over Action Cable)
+  post "switch_household",  to: "households#switch", as: :switch_household
+  get  "h/:dashboard_token", to: "walls#show",       as: :wall
 
   # Authenticated app
   root to: "dashboards#show", as: :dashboard_root
-  get "dashboard", to: "dashboards#show", as: :dashboard
+  get  "dashboard", to: "dashboards#show", as: :dashboard
+  post "dashboard/dismiss_checklist", to: "dashboards#dismiss_checklist", as: :dismiss_checklist
   resources :tasks do
     member do
       post :start
@@ -35,21 +41,34 @@ Rails.application.routes.draw do
     end
   end
 
+  # Everyone's own account: profile, password, passkeys, two-step verification
+  namespace :account do
+    root to: "profiles#show"
+    resource :profile, only: :update
+    resource :password, only: :update
+    resources :passkeys, only: [:create, :update, :destroy] do
+      post :options, on: :collection
+    end
+    resource :two_factor, only: [:new, :create, :destroy], controller: "two_factor"
+    resource :recovery_codes, only: :create
+  end
+
   # Admin namespace (admin check in Admin::BaseController)
   namespace :admin do
     root to: "households#index", as: :root
-    resources :households, only: [:index, :create, :edit, :update, :destroy]
-    resources :invitations, only: [:index, :new, :create, :destroy] do
-      member do
-        post :resend
-      end
+    resources :households, only: [:index, :create, :edit, :update, :destroy] do
+      post :regenerate_wall_link, on: :member
+      resources :memberships, only: :destroy
+    end
+    resources :invitations, only: [:index, :new, :create, :show, :destroy] do
+      post :resend, on: :member
+    end
+    resources :users, only: [:index, :update, :destroy] do
+      post :reset_security, on: :member
+      post :password_link, on: :member
     end
     resource :settings, only: [:show, :update] do
-      collection do
-        post :test_email
-      end
+      post :test_email, on: :collection
     end
-    get   "profile", to: "profiles#edit",   as: :profile
-    patch "profile", to: "profiles#update", as: :update_profile
   end
 end

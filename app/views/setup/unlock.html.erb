@@ -1,0 +1,28 @@
+<% content_for :title, "Set up" %>
+<h1>Set up <%= app_name %></h1>
+<p class="page-intro">
+  To prove this is your server, enter the setup code it printed when it started.
+</p>
+
+<div class="form-card">
+  <%= form_with url: setup_unlock_path, method: :post do |f| %>
+    <div class="form-field">
+      <%= f.label :code, "Setup code" %>
+      <%= f.text_field :code, autofocus: true, autocomplete: "off", spellcheck: false, required: true,
+                              class: "code-input", placeholder: "abcd-efgh-ijkl-mnop" %>
+    </div>
+    <div class="form-actions">
+      <%= f.submit "Continue", class: "btn btn-primary" %>
+    </div>
+  <% end %>
+
+  <details class="help-details">
+    <summary>Where do I find it?</summary>
+    <p>It's in the server log, in a box that starts "Family Status is ready to set up". Or print it again:</p>
+    <ul>
+      <li>Docker Compose: <code>docker compose exec web bin/rails setup:code</code></li>
+      <li>Kamal: <code>bin/kamal app exec "bin/rails setup:code"</code></li>
+      <li>Anywhere else: <code>bin/rails setup:code</code></li>
+    </ul>
+  </details>
+</div>

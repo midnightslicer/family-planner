@@ -1,0 +1,6 @@
+<%# Appended into #notifications by a broadcast; the Stimulus controller shows
+    it as a browser notification (if allowed) and removes the element. %>
+<div data-controller="notification"
+     data-notification-title-value="<%= title %>"
+     data-notification-body-value="<%= body %>"
+     data-notification-tag-value="<%= tag %>"></div>

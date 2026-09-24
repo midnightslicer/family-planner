@@ -1,3 +1,3 @@
 class Current < ActiveSupport::CurrentAttributes
-  attribute :household
+  attribute :household, :user, :settings
 end

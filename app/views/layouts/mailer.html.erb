@@ -15,12 +15,7 @@
     <div class="mailer-header"><%= @app_name || "Family Status" %></div>
     <%= yield %>
     <div class="mailer-footer">
-      <%= @app_name || "Family Status" %> · sent by
-      <%= begin
-        (ActionMailer::Base.default[:from] rescue nil) || ENV["SMTP_FROM"] || "family-status@localhost"
-      rescue StandardError
-        "family-status@localhost"
-      end %>
+      Sent by <%= @app_name || "Family Status" %>
     </div>
   </body>
 </html>

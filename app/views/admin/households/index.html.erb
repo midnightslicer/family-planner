@@ -1,37 +1,37 @@
+<% content_for :title, "Households" %>
+<%= render "admin/tabs" %>
 <h1>Households</h1>
-
-<%= render "shared/form_errors", object: @household %>
-
-<div class="form-card">
-  <%= form_with model: @household, url: admin_households_path do |f| %>
-    <div class="form-field">
-      <%= f.label :name, "New household name" %>
-      <%= f.text_field :name, placeholder: "e.g. Home" %>
-    </div>
-    <div class="form-actions">
-      <%= f.submit "Create household", class: "btn btn-primary" %>
-    </div>
-  <% end %>
-</div>
-
-<h2>All households</h2>
 
 <div class="table-wrap">
 <table>
   <thead>
-    <tr><th>Name</th><th>Members</th><th>Wall link</th><th></th></tr>
+    <tr><th>Name</th><th>Members</th><th></th></tr>
   </thead>
   <tbody>
     <% @households.each do |household| %>
       <tr>
         <td><%= link_to household.name, edit_admin_household_path(household) %></td>
-        <td><%= household.users.count %></td>
-        <td><%= link_to wall_path(household.dashboard_token), wall_path(household.dashboard_token) %></td>
+        <td><%= household.try(:members_count) || household.users.count %></td>
         <td class="table-actions">
-          <%= button_to "Delete", admin_household_path(household), method: :delete, class: "btn btn-danger btn-small", form: { data: { turbo_confirm: "Delete household and all its tasks?" } } %>
+          <%= link_to "Members & wall link", edit_admin_household_path(household), class: "btn btn-quiet btn-small" %>
         </td>
       </tr>
     <% end %>
   </tbody>
 </table>
+</div>
+
+<h2>Add a household</h2>
+<p class="page-intro">For a second home or another branch of the family. Each has its own board and wall link.</p>
+<%= render "shared/form_errors", object: @household %>
+<div class="form-card">
+  <%= form_with model: @household, url: admin_households_path do |f| %>
+    <div class="form-field">
+      <%= f.label :name, "Name" %>
+      <%= f.text_field :name, placeholder: "e.g. Grandma's house", required: true, maxlength: 80 %>
+    </div>
+    <div class="form-actions">
+      <%= f.submit "Create household", class: "btn btn-primary" %>
+    </div>
+  <% end %>
 </div>

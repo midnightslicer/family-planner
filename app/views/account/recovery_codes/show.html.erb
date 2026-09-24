@@ -1,0 +1,19 @@
+<% content_for :title, "Recovery codes" %>
+<h1>Save your recovery codes</h1>
+<p class="page-intro">
+  If you lose your phone, each of these codes gets you in once instead of an authenticator code.
+  Keep them somewhere safe, like your password manager. <strong>They won't be shown again.</strong>
+</p>
+
+<div class="form-card" data-controller="clipboard">
+  <ul class="recovery-codes">
+    <% @recovery_codes.each do |code| %>
+      <li><code><%= code %></code></li>
+    <% end %>
+  </ul>
+  <textarea class="visually-hidden" data-clipboard-target="source" readonly aria-hidden="true" tabindex="-1"><%= @recovery_codes.join("\n") %></textarea>
+  <div class="form-actions">
+    <button type="button" class="btn" data-clipboard-target="button" data-action="clipboard#copy">Copy codes</button>
+    <%= link_to "I've saved them", account_root_path, class: "btn btn-primary" %>
+  </div>
+</div>

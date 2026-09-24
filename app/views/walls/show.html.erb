@@ -1,7 +1,6 @@
-<div class="dashboard-grid" data-controller="live"
-     data-live-household-id-value="<%= @household.id %>"
-     data-live-token-value="<%= @household.dashboard_token %>">
+<%= turbo_stream_from @household, :members %>
+<div class="dashboard-grid" data-controller="auto-refresh" data-auto-refresh-interval-value="60">
   <% @members.each do |member| %>
-    <%= render "shared/person_card", user: member, household: @household %>
+    <%= render "shared/person_card", user: member, household: @household, status: @statuses[member.id] %>
   <% end %>
 </div>

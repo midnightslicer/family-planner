@@ -1,0 +1,46 @@
+<% content_for :title, "People" %>
+<%= render "admin/tabs" %>
+<div class="page-header">
+  <h1>People</h1>
+  <%= link_to "Invite someone", new_admin_invitation_path, class: "btn btn-primary" %>
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Name</th><th>Households</th><th>Signs in with</th><th>Admin</th><th></th></tr>
+  </thead>
+  <tbody>
+    <% @users.each do |user| %>
+      <% passkeys = @passkey_counts.fetch(user.id, 0) %>
+      <tr>
+        <td><%= user.display_name %><br><small><%= user.email %></small></td>
+        <td><%= user.households.map(&:name).sort.join(", ").presence || "None" %></td>
+        <td>
+          <%= [("password" if user.password_set?), (pluralize(passkeys, "passkey") if passkeys.positive?)].compact.join(" + ") %>
+          <% if user.two_factor_enabled? %><br><small>+ two-step verification</small><% end %>
+        </td>
+        <td>
+          <% if user == current_user %>
+            Yes (you)
+          <% else %>
+            <%= button_to (user.admin? ? "Yes: remove" : "No: make admin"), admin_user_path(user), method: :patch,
+                          params: { user: { admin: user.admin? ? "0" : "1" } }, class: "btn btn-quiet btn-small" %>
+          <% end %>
+        </td>
+        <td class="table-actions">
+          <% if user != current_user %>
+            <% if passkeys.positive? || user.two_factor_enabled? %>
+              <%= button_to "Reset sign-in", reset_security_admin_user_path(user), method: :post, class: "btn btn-quiet btn-small",
+                            form: { data: { turbo_confirm: "Remove #{user.display_name}'s passkeys and two-step verification? Use this if they lost their phone." } } %>
+            <% end %>
+            <%= button_to "Password reset link", password_link_admin_user_path(user), method: :post, class: "btn btn-quiet btn-small" %>
+            <%= button_to "Delete", admin_user_path(user), method: :delete, class: "btn btn-danger btn-small",
+                          form: { data: { turbo_confirm: "Delete #{user.display_name}'s account? Their tasks stay, unassigned." } } %>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+</div>

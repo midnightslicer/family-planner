@@ -1,0 +1,133 @@
+<% content_for :title, "Your account" %>
+<h1>Your account</h1>
+
+<section class="account-section">
+  <h2>Profile</h2>
+  <%= render "shared/form_errors", object: @user if @user.errors.any? && !@user.errors.include?(:password) && !@user.errors.include?(:current_password) %>
+  <div class="form-card">
+    <%= form_with model: @user, url: account_profile_path, method: :patch do |f| %>
+      <div class="form-field">
+        <%= f.label :display_name, "Name" %>
+        <%= f.text_field :display_name, required: true, maxlength: 60, autocomplete: "name" %>
+      </div>
+      <div class="form-field">
+        <%= f.label :handle, "Handle" %>
+        <%= f.text_field :handle, required: true, pattern: "[a-z0-9_]+", autocapitalize: "none", spellcheck: false %>
+        <small>Shown as @<%= @user.handle_was.presence || @user.handle %> on the board. Lowercase letters, numbers and underscores.</small>
+      </div>
+      <fieldset class="form-field">
+        <legend>Color</legend>
+        <%= render "shared/color_picker", form: f %>
+      </fieldset>
+      <div class="form-actions">
+        <%= f.submit "Save profile", class: "btn btn-primary" %>
+      </div>
+    <% end %>
+  </div>
+</section>
+
+<section class="account-section" id="passkeys">
+  <h2>Passkeys</h2>
+  <p class="page-intro">
+    Sign in with Face ID, a fingerprint or your device PIN instead of a password. Passkeys sync through
+    iCloud Keychain, Google Password Manager or your password manager, and can't be phished.
+  </p>
+
+  <% if @passkeys.any? %>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Name</th><th>Added</th><th>Last used</th><th></th></tr></thead>
+        <tbody>
+          <% @passkeys.each do |passkey| %>
+            <tr>
+              <td>
+                <%= form_with model: passkey, url: account_passkey_path(passkey), method: :patch, class: "inline-form" do |f| %>
+                  <%= f.label :name, "Passkey name", class: "visually-hidden", for: "passkey_name_#{passkey.id}" %>
+                  <%= f.text_field :name, maxlength: 60, id: "passkey_name_#{passkey.id}" %>
+                  <%= f.submit "Rename", class: "btn btn-quiet btn-small" %>
+                <% end %>
+              </td>
+              <td><%= passkey.created_at.strftime("%b %-d, %Y") %></td>
+              <td><%= passkey.last_used_at ? "#{time_ago_in_words(passkey.last_used_at)} ago" : "Not yet" %></td>
+              <td class="table-actions">
+                <%= button_to "Remove", account_passkey_path(passkey), method: :delete, class: "btn btn-danger btn-small",
+                              form: { data: { turbo_confirm: "Remove this passkey? You won't be able to sign in with it any more." } } %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+
+  <div class="form-card passkey-add" data-controller="passkey-register"
+       data-passkey-register-options-url-value="<%= options_account_passkeys_path %>"
+       data-passkey-register-create-url-value="<%= account_passkeys_path %>">
+    <button type="button" class="btn btn-primary" data-passkey-register-target="button" data-action="passkey-register#add" hidden>
+      <%= @passkeys.any? ? "Add another passkey" : "Add a passkey" %>
+    </button>
+    <p data-passkey-register-target="unsupported">
+      <small>This browser or connection can't create passkeys. They need a current browser and a secure (https) address.</small>
+    </p>
+    <p class="flash-alert" data-passkey-register-target="error" role="alert" hidden></p>
+  </div>
+</section>
+
+<section class="account-section" id="password">
+  <h2>Password</h2>
+  <% if @user.errors.include?(:password) || @user.errors.include?(:current_password) %>
+    <%= render "shared/form_errors", object: @user %>
+  <% end %>
+  <div class="form-card">
+    <%= form_with model: @user, url: account_password_path, method: :patch do |f| %>
+      <% if @user.password_set? %>
+        <div class="form-field">
+          <%= f.label :current_password, "Current password" %>
+          <%= f.password_field :current_password, autocomplete: "current-password", required: true %>
+        </div>
+      <% else %>
+        <p><small>You sign in with a passkey. Setting a password as well gives you a fallback on devices without it.</small></p>
+      <% end %>
+      <div class="form-field">
+        <%= f.label :password, @user.password_set? ? "New password" : "Password" %>
+        <%= f.password_field :password, autocomplete: "new-password", required: true, minlength: Devise.password_length.min %>
+        <small><%= Devise.password_length.min %> characters or more.</small>
+      </div>
+      <div class="form-actions">
+        <%= f.submit @user.password_set? ? "Change password" : "Set password", class: "btn btn-primary" %>
+      </div>
+    <% end %>
+  </div>
+</section>
+
+<section class="account-section" id="two-factor">
+  <h2>Two-step verification</h2>
+  <% if @user.two_factor_enabled? %>
+    <p class="page-intro">
+      <span class="status-chip status-completed">On</span>
+      Signing in with your password also asks for a code from your authenticator app.
+      You have <%= pluralize(@user.recovery_codes_remaining, "recovery code") %> left.
+    </p>
+    <div class="form-card">
+      <%= form_with url: account_recovery_codes_path, method: :post do |f| %>
+        <div class="form-field">
+          <%= f.label :code, "Current code", for: "recovery_code_confirm" %>
+          <%= f.text_field :code, id: "recovery_code_confirm", autocomplete: "one-time-code", inputmode: "numeric", required: true, class: "code-input" %>
+          <small>Enter a code from your app to get new recovery codes (the old ones stop working) or to turn this off.</small>
+        </div>
+        <div class="form-actions">
+          <%= f.submit "New recovery codes", class: "btn" %>
+          <%= button_tag "Turn off", type: "submit", class: "btn btn-danger", formaction: account_two_factor_path,
+                         name: "_method", value: "delete", data: { turbo_confirm: "Turn off two-step verification?" } %>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="page-intro">
+      <span class="status-chip status-undone">Off</span>
+      Adds a 6-digit code from an app like 1Password, Google Authenticator or your phone's password manager
+      whenever you sign in with a password. (Passkey sign-ins don't need it.)
+    </p>
+    <%= link_to "Turn on two-step verification", new_account_two_factor_path, class: "btn btn-primary" %>
+  <% end %>
+</section>

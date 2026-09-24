@@ -1,0 +1,27 @@
+<% content_for :title, "Invitation" %>
+<%= render "admin/tabs" %>
+<h1>Invitation for <%= @invitation.email.presence || @invitation.household.name %></h1>
+
+<% if @join_url %>
+  <div class="form-card" data-controller="clipboard">
+    <div class="form-field">
+      <label for="invite_link">Join link</label>
+      <div class="copy-field">
+        <input type="text" id="invite_link" value="<%= @join_url %>" readonly data-clipboard-target="source">
+        <button type="button" class="btn" data-clipboard-target="button" data-action="clipboard#copy">Copy</button>
+      </div>
+      <small>
+        Works once and expires <%= @invitation.expires_at.strftime("%b %-d") %>. This is the only time the link is shown;
+        if you lose it, use Resend on the invitations list to make a new one.
+      </small>
+    </div>
+  </div>
+<% else %>
+  <p>The link was shown once when the invitation was created. Resend it to get a fresh link (the old one stops working).</p>
+  <%= button_to "Resend", resend_admin_invitation_path(@invitation), method: :post, class: "btn" if @invitation.pending? %>
+<% end %>
+
+<div class="form-actions">
+  <%= link_to "Invite someone else", new_admin_invitation_path, class: "btn btn-primary" %>
+  <%= link_to "All invitations", admin_invitations_path, class: "btn btn-quiet" %>
+</div>

@@ -17,7 +17,7 @@
     <% end %>
   </div>
   <%# recurrence_interval returns the enum key, so "" reads back as
-      "no_recurrence" — .present? is true for it. %>
+      "no_recurrence", and .present? is true for it. %>
   <% unless task.recurs_no_recurrence? %>
     <div class="task-recurrence">Repeats <%= task.recurrence_interval.humanize.downcase %></div>
   <% end %>
@@ -29,7 +29,9 @@
       <%= button_to "Pause", pause_task_path(task), method: :post, class: "btn btn-quiet" %>
       <%= button_to "Cancel", cancel_task_path(task), method: :post, class: "btn btn-danger" %>
     <% end %>
-    <%= link_to "Edit", edit_task_path(task), class: "btn btn-quiet" %>
-    <%= button_to "Delete", task_path(task), method: :delete, class: "btn btn-quiet", form: { data: { turbo_confirm: "Delete this task?" } } %>
+    <% if task.created_by_id == current_user.id || current_user.admin? %>
+      <%= link_to "Edit", edit_task_path(task), class: "btn btn-quiet" %>
+      <%= button_to "Delete", task_path(task), method: :delete, class: "btn btn-quiet", form: { data: { turbo_confirm: "Delete this task?" } } %>
+    <% end %>
   </div>
 </div>

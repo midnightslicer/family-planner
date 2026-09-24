@@ -1,45 +1,38 @@
-<h1>Set up <%= Setting.get("app_name").presence || "Family Status" %></h1>
-<p class="page-intro">Step 1 of 2: app settings and email</p>
+<% content_for :title, "Set up" %>
+<h1>Welcome! Let's set up your board</h1>
+<p class="page-intro">This takes about a minute. You'll be the admin, and you can invite everyone else next.</p>
+
+<%= render "shared/form_errors", object: @user %>
 
 <div class="form-card">
-  <%= form_with url: setup_settings_path, method: :patch, scope: :settings do |f| %>
+  <%= form_with model: @user, url: setup_path, method: :post,
+                data: { controller: "passkey-signup", passkey_signup_options_url_value: setup_passkey_options_path } do |f| %>
     <div class="form-field">
-      <%= f.label :app_name, "App name" %>
-      <%= f.text_field :app_name, value: @settings["app_name"], placeholder: "e.g. The Smiths" %>
+      <%= label_tag :household_name, "Household name" %>
+      <%= text_field_tag :household_name, @household_name, placeholder: "e.g. The Smiths", required: true, maxlength: 80, autofocus: true %>
+      <small>Shown at the top of the board. You can rename it later.</small>
     </div>
+    <div class="form-field">
+      <%= f.label :display_name, "Your name" %>
+      <%= f.text_field :display_name, placeholder: "e.g. Alex", required: true, maxlength: 60, autocomplete: "name" %>
+    </div>
+    <div class="form-field">
+      <%= f.label :email, "Your email" %>
+      <%= f.email_field :email, required: true, autocomplete: "email" %>
+      <small>For signing in and password resets.</small>
+    </div>
+
+    <%= render "shared/signup_credentials", form: f %>
+
     <fieldset class="form-field">
-      <legend>SMTP (email for invitations and password resets)</legend>
-      <div class="form-field">
-        <%= f.label :smtp_host, "SMTP host" %>
-        <%= f.text_field :smtp_host, value: @settings["smtp_host"], placeholder: "smtp.example.com" %>
-      </div>
-      <div class="form-field">
-        <%= f.label :smtp_port, "SMTP port" %>
-        <%= f.text_field :smtp_port, value: @settings["smtp_port"], placeholder: "587" %>
-      </div>
-      <div class="form-field">
-        <%= f.label :smtp_user, "SMTP user" %>
-        <%= f.text_field :smtp_user, value: @settings["smtp_user"] %>
-      </div>
-      <div class="form-field">
-        <%= f.label :smtp_password, "SMTP password" %>
-        <%= f.text_field :smtp_password, value: @settings["smtp_password"], type: :password %>
-      </div>
-      <div class="form-field">
-        <%= f.label :smtp_from, "From address" %>
-        <%= f.text_field :smtp_from, value: @settings["smtp_from"], placeholder: "status@example.com" %>
-      </div>
-      <div class="form-field">
-        <%= f.label :smtp_tls do %>
-          <%= f.check_box :smtp_tls, checked: @settings["smtp_tls"] == "true" %> Use TLS
-        <% end %>
-      </div>
+      <legend>Your color on the board</legend>
+      <%= render "shared/color_picker", form: f %>
     </fieldset>
+
     <div class="form-actions">
-      <%= f.submit "Save and continue", class: "btn btn-primary" %>
+      <%= f.submit "Create my account", class: "btn btn-primary",
+                   data: { passkey_signup_target: "submit", passkey_label: "Create account with a passkey", password_label: "Create my account" } %>
+      <button type="button" class="btn btn-quiet" data-passkey-signup-target="toggle" data-action="passkey-signup#toggle" hidden>Use a password instead</button>
     </div>
   <% end %>
-  <div class="form-actions">
-    <%= button_to "Send test email", setup_test_email_path, method: :post, class: "btn" %>
-  </div>
 </div>

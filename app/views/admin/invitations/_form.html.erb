@@ -1,19 +1,31 @@
 <%= form_with model: @invitation, url: admin_invitations_path do |f| %>
   <%= render "shared/form_errors", object: @invitation %>
   <div class="form-field">
-    <%= f.label :email, "Email" %>
-    <%= f.email_field :email, placeholder: "kid@example.com" %>
+    <%= f.label :email, "Their email (optional)" %>
+    <%= f.email_field :email, placeholder: "sam@example.com", autofocus: true %>
+    <small>
+      <% if AppSettings.smtp_configured? %>
+        We'll email the link. Leave blank to just get a link to send yourself.
+      <% else %>
+        Email isn't set up, so you'll get a link to send them yourself (text, chat...). If you leave this
+        blank, they choose their own email when joining.
+      <% end %>
+    </small>
   </div>
-  <div class="form-field">
-    <%= f.label :household_id, "Household" %>
-    <%= f.collection_select :household_id, @households, :id, :name %>
-  </div>
+  <% if @households.size > 1 %>
+    <div class="form-field">
+      <%= f.label :household_id, "Household" %>
+      <%= f.collection_select :household_id, @households, :id, :name %>
+    </div>
+  <% else %>
+    <%= f.hidden_field :household_id, value: @invitation.household_id || @households.first&.id %>
+  <% end %>
   <div class="form-field">
     <%= f.label :note, "Note (optional)" %>
-    <%= f.text_area :note, rows: 2, placeholder: "e.g. Welcome to the family board!" %>
+    <%= f.text_area :note, rows: 2, maxlength: 500, placeholder: "e.g. Welcome to the family board!" %>
   </div>
   <div class="form-actions">
-    <%= f.submit "Send invitation", class: "btn btn-primary" %>
+    <%= f.submit "Create invitation", class: "btn btn-primary" %>
     <%= link_to "Back", admin_invitations_path, class: "btn btn-quiet" %>
   </div>
 <% end %>

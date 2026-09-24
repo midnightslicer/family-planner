@@ -7,11 +7,23 @@ class Task < ApplicationRecord
   enum :recurrence_interval, { no_recurrence: "", daily: "daily", weekly: "weekly", biweekly: "biweekly", monthly: "monthly" },
        prefix: :recurs
 
-  validates :title, presence: true
+  validates :title, presence: true, length: { maximum: 120 }
+  validates :description, length: { maximum: 2_000 }
   validate :assignee_must_be_household_member
+  validate :ends_after_start
   validates :recurrence_interval, inclusion: { in: recurrence_intervals.keys }
-  after_commit :broadcast_change, on: [:create, :update]
-  after_destroy :broadcast_destroy
+
+  # Live updates: every change re-renders the affected person cards on the
+  # household's dashboards and wall, and pings the assignee's browser when
+  # someone else touched their task.
+  after_commit :broadcast_member_cards
+  after_commit :notify_assignee, on: [:create, :update]
+
+  # The planned copy a recurring task spawns; its assignee already heard
+  # about the task being finished, so it doesn't notify again.
+  attr_accessor :recurrence_copy
+
+  STATUS_VERBS = { "in_progress" => "started", "planned" => "paused", "completed" => "completed", "undone" => "cancelled" }.freeze
 
   scope :for_household, ->(household) { where(household_id: household.id) }
 
@@ -69,6 +81,7 @@ class Task < ApplicationRecord
     return if new_starts_at.nil?
 
     Task.create!(
+      recurrence_copy: true,
       household: household,
       title: title,
       description: description,
@@ -99,46 +112,46 @@ class Task < ApplicationRecord
     Time.zone.local(next_month.year, next_month.month, day, base.hour, base.min, base.sec)
   end
 
-
   # recurrence_interval returns the enum key, so the "" member reads back as
   # "no_recurrence" and is always present? — ask the enum instead.
   def recurs?
     !recurs_no_recurrence?
   end
 
-  def broadcast_change
-    TaskBroadcaster.broadcast(household_id, {
-      type: "task_update",
-      task_id: id,
-      household_id: household_id,
-      assigned_to_id: assigned_to_id,
-      event: action_name_for_broadcast
-    })
-  rescue StandardError
-    Rails.logger.info("TaskBroadcaster unavailable: #{$ERROR_INFO.message}")
+  def ends_after_start
+    return if starts_at.blank? || ends_at.blank? || ends_at >= starts_at
+
+    errors.add(:ends_at, "must be after the start time")
   end
 
-  def broadcast_destroy
-    TaskBroadcaster.broadcast(household_id, {
-      type: "task_destroy",
-      task_id: id,
-      household_id: household_id,
-      assigned_to_id: assigned_to_id,
-      event: "destroyed"
-    })
-  rescue StandardError
-    Rails.logger.info("TaskBroadcaster unavailable: #{$ERROR_INFO.message}")
+  def broadcast_member_cards
+    return if destroyed_by_association
+
+    user_ids = [assigned_to_id]
+    user_ids << assigned_to_id_before_last_save if saved_change_to_assigned_to_id?
+    household&.broadcast_member_cards(user_ids.compact.uniq)
+  rescue StandardError => error
+    Rails.logger.warn("Live update failed for task #{id}: #{error.class}: #{error.message}")
   end
 
-  def action_name_for_broadcast
-    if previously_changed? :status
-      "status_change"
-    else
-      "created"
-    end
-  end
+  def notify_assignee
+    actor = Current.user
+    return if recurrence_copy || actor.nil? || assigned_to.nil? || assigned_to == actor
 
-  def previously_changed?(attr)
-    previous_changes.key?(attr.to_s)
+    message =
+      if previously_new_record? || saved_change_to_assigned_to_id?
+        "#{actor.display_name} assigned you: #{title}"
+      elsif saved_change_to_status?
+        "#{actor.display_name} #{STATUS_VERBS.fetch(status, 'updated')} #{title}"
+      end
+    return unless message
+
+    Turbo::StreamsChannel.broadcast_append_to(
+      assigned_to, :notifications,
+      target: "notifications", partial: "shared/notification",
+      locals: { title: household.name, body: message, tag: "task-#{id}" }
+    )
+  rescue StandardError => error
+    Rails.logger.warn("Notification failed for task #{id}: #{error.class}: #{error.message}")
   end
 end

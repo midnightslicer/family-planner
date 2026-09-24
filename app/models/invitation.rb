@@ -4,7 +4,10 @@ class Invitation < ApplicationRecord
   belongs_to :household
   belongs_to :invited_by, class_name: "User", optional: true
 
-  validates :email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }
+  # Email is optional: without one the invite is a single-use link the admin
+  # can text, and the person types their own email when joining.
+  normalizes :email, with: ->(email) { email.strip.downcase.presence }
+  validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_nil: true
   validates :token, presence: true, uniqueness: true
 
   before_validation :generate_token, on: :create
@@ -36,11 +39,25 @@ class Invitation < ApplicationRecord
     "pending"
   end
 
-  # Marks the invitation accepted; refused if already used or expired.
+  # Marks the invitation accepted; refused if already used or expired. The
+  # conditional update means two simultaneous joins can't both succeed.
   def accept!
     return false if accepted? || expired?
 
-    update!(accepted_at: Time.current)
+    now = Time.current
+    claimed = Invitation.where(id: id, accepted_at: nil).where("expires_at > ?", now).update_all(accepted_at: now, updated_at: now)
+    return false unless claimed == 1
+
+    self.accepted_at = now
+    true
+  end
+
+  def existing_user
+    User.find_by(email: email) if email.present?
+  end
+
+  def open_link?
+    email.blank?
   end
 
   # Issues a fresh raw token (stored as digest), invalidating the old link.

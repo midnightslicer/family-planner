@@ -1,14 +1,26 @@
+# Run the board on one machine: `docker compose up -d`, then open
+# http://localhost:3000 and enter the setup code from `docker compose logs web`.
+#
+# Everything is optional; set any of these in a .env file next to this one:
+#   APP_URL=https://status.example.com   public address used in email links
+#   FORCE_SSL=true                        when a reverse proxy serves https
+#   SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASSWORD / SMTP_FROM
 services:
   web:
     build: .
+    restart: unless-stopped
     ports:
       - "3000:3000"
     volumes:
       - storage:/rails/storage
     env_file:
-      - .env
+      - path: .env
+        required: false
     environment:
-      RAILS_ENV: production
+      # Plain http on a LAN by default. Passkeys, the clipboard button and
+      # notifications need https (or http://localhost), so put a TLS proxy in
+      # front and set FORCE_SSL=true to use them from other devices.
+      FORCE_SSL: ${FORCE_SSL:-false}
 
 volumes:
   storage:

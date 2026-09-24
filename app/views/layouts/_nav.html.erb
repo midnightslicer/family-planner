@@ -1,20 +1,18 @@
-<% app_name = begin
-  Setting.get("app_name").presence || "Family Status"
-rescue ActiveRecord::NoDatabaseError, ActiveRecord::ConnectionNotEstablished
-  "Family Status"
-end %>
-<header class="nav-brand"><%= app_name %></header>
+<%= link_to app_name, (user_signed_in? ? dashboard_path : new_user_session_path), class: "nav-brand" %>
 <% if current_user %>
   <div class="nav-links">
-    <%= link_to "Dashboard", dashboard_path, "aria-current": ("page" if current_page?(dashboard_path)) %>
-    <%= link_to "Tasks", tasks_path, "aria-current": ("page" if current_page?(tasks_path)) %>
+    <%= link_to "Dashboard", dashboard_path, "aria-current": ("page" if current_page?(dashboard_path) || current_page?(dashboard_root_path)) %>
+    <%= link_to "Tasks", tasks_path, "aria-current": ("page" if request.path.start_with?("/tasks")) %>
+    <%= link_to "Account", account_root_path, "aria-current": ("page" if request.path.start_with?("/account")) %>
     <% if current_user.admin? %>
       <%= link_to "Admin", admin_root_path, "aria-current": ("page" if request.path.start_with?("/admin")) %>
     <% end %>
   </div>
-  <% if current_user.households.size > 1 %>
-    <%= form_with url: switch_household_path, method: :post, class: "household-switch", data: { turbo_stream: true } do |f| %>
-      <%= f.select :household_id, options_from_collection_for_select(current_user.households, :id, :name, current_household&.id), {}, onchange: "this.form.requestSubmit()" %>
+  <% households = current_user.households.order(:name).to_a %>
+  <% if households.size > 1 %>
+    <%= form_with url: switch_household_path, method: :post, class: "household-switch", data: { controller: "autosubmit" } do |f| %>
+      <%= f.label :household_id, "Household", class: "visually-hidden" %>
+      <%= f.select :household_id, options_from_collection_for_select(households, :id, :name, current_household&.id), {}, data: { action: "change->autosubmit#submit" } %>
     <% end %>
   <% end %>
   <div class="nav-user">
@@ -22,9 +20,5 @@ end %>
       <%= current_user.display_name %>
     </span>
     <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "btn btn-quiet btn-small" %>
-  </div>
-<% else %>
-  <div class="nav-links">
-    <%= link_to "Sign in", new_user_session_path %>
   </div>
 <% end %>

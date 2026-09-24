@@ -1,9 +1,8 @@
+<% content_for :title, "Invitation" %>
 <h1>This invitation can't be used</h1>
 <p>
-  The invitation link is invalid, has expired, or has already been accepted.
-  Invitations last 7 days and can only be used once.
+  The link is incomplete, has expired, or has already been used. Invitations
+  last 7 days and work once.
 </p>
-<p>
-  Ask your household admin for a new invitation.
-</p>
-<%= link_to "Back to sign in", new_user_session_path, class: "btn btn-quiet" %>
+<p>Ask whoever invited you to send a new link.</p>
+<%= link_to "Go to sign in", new_user_session_path, class: "btn btn-quiet" %>

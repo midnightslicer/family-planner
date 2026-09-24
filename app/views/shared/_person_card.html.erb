@@ -1,10 +1,12 @@
-<%# Shared person card: identical on the authenticated dashboard and the
-    public kiosk wall. Locals: user, household. %>
-<% current_task = user.assigned_tasks.for_household(household).where(status: :in_progress).order(:starts_at).first
-   next_planned = user.assigned_tasks.for_household(household).where(status: :planned).order(:starts_at).first %>
+<%# Shared person card: identical on the authenticated dashboard, the public
+    kiosk wall and live broadcasts. Locals: user, household, and optionally
+    status ({ current:, next: } from Household#member_statuses, which pages
+    compute once for every card). %>
+<% status = local_assigns[:status] || household.member_statuses[user.id]
+   current_task = status[:current]
+   next_planned = status[:next] %>
 <div class="person-card"
      id="<%= dom_id(user, :person_card) %>"
-     data-household-id="<%= household.id %>"
      data-user-id="<%= user.id %>"
      style="--user-color: <%= user.color %>; --user-fg: <%= contrast_color(user.color) %>">
   <div class="person-identity">
@@ -18,12 +20,14 @@
     <% if current_task %>
       <span class="status-chip status-in_progress">Busy: <%= current_task.title %></span>
       <% if current_task.ends_at %>
-        <span class="task-meta"><%= distance_of_time_in_words(Time.current, current_task.ends_at) %> left</span>
+        <span class="task-meta">
+          <%= current_task.ends_at.future? ? "#{distance_of_time_in_words(Time.current, current_task.ends_at)} left" : "running over" %>
+        </span>
       <% end %>
     <% elsif next_planned %>
       <span class="status-chip status-planned">Up next: <%= next_planned.title %></span>
       <% if next_planned.starts_at %>
-        <span class="task-meta"><%= next_planned.starts_at.strftime("%H:%M") %></span>
+        <span class="task-meta"><%= next_planned.starts_at.to_date == Date.current ? next_planned.starts_at.strftime("%H:%M") : next_planned.starts_at.strftime("%a %-d %b, %H:%M") %></span>
       <% end %>
     <% else %>
       <span class="status-chip status-completed">Available</span>

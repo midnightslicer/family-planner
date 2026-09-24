@@ -31,8 +31,9 @@ class AdminPagesTest < ActionDispatch::IntegrationTest
                  css_select("tbody tr td:first-child").map { |td| td.text.strip }
   end
 
-  test "households, settings and profile render" do
-    [ admin_households_path, admin_settings_path, admin_profile_path ].each do |path|
+  test "households, settings, people and account pages render" do
+    [ admin_households_path, edit_admin_household_path(@household), admin_settings_path,
+      admin_users_path, new_admin_invitation_path, account_root_path ].each do |path|
       get path
       assert_response :success, "#{path} returned #{response.status}"
     end

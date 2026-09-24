@@ -1,0 +1,6 @@
+<nav class="admin-tabs" aria-label="Admin">
+  <%= link_to "Households", admin_root_path, "aria-current": ("page" if controller_name == "households") %>
+  <%= link_to "Invitations", admin_invitations_path, "aria-current": ("page" if controller_name == "invitations") %>
+  <%= link_to "People", admin_users_path, "aria-current": ("page" if controller_name == "users") %>
+  <%= link_to "Settings", admin_settings_path, "aria-current": ("page" if controller_name == "settings") %>
+</nav>

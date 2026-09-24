@@ -1,15 +1,18 @@
 class DashboardsController < ApplicationController
   before_action :authenticate_user!
-  before_action :require_household!
 
   def show
+    return render(:no_household) unless current_household
+
     @household = current_household
     @members = @household.members_by_name
+    @statuses = @household.member_statuses
+    @checklist = GettingStarted.new(current_user, @household)
   end
 
-  private
-
-  def require_household!
-    redirect_to(new_user_session_path) unless current_user&.households.any?
+  # POST /dashboard/dismiss_checklist
+  def dismiss_checklist
+    current_user.update_column(:onboarding_dismissed_at, Time.current)
+    redirect_to dashboard_path, status: :see_other
   end
 end

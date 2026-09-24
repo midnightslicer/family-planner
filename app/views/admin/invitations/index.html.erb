@@ -1,6 +1,8 @@
+<% content_for :title, "Invitations" %>
+<%= render "admin/tabs" %>
 <div class="page-header">
   <h1>Invitations</h1>
-  <%= link_to "New invitation", new_admin_invitation_path, class: "btn btn-primary" %>
+  <%= link_to "Invite someone", new_admin_invitation_path, class: "btn btn-primary" %>
 </div>
 
 <div class="table-wrap">
@@ -18,9 +20,9 @@
   <tbody>
     <% @invitations.each do |invitation| %>
       <tr>
-        <td><%= invitation.email %></td>
+        <td><%= invitation.email.presence || "Link only" %></td>
         <td><%= invitation.household.name %></td>
-        <td><%= invitation.invited_by&.display_name || "—" %></td>
+        <td><%= invitation.invited_by&.display_name || "Unknown" %></td>
         <td><span class="status-chip status-<%= invitation.accepted? ? "completed" : (invitation.expired? ? "undone" : "planned") %>"><%= invitation.status %></span></td>
         <td><%= invitation.expires_at.strftime("%b %-d, %Y") %></td>
         <td class="table-actions">
