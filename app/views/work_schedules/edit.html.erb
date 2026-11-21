@@ -1,0 +1,93 @@
+<% content_for :title, "Work schedule" %>
+<h1>Work schedule</h1>
+<p class="page-intro">Optional. Tick the days you work: while you're working, your card says so, where you are and how to reach you. Meetings and other events you add still show on top.</p>
+
+<%= form_with url: work_schedule_path, method: :patch, scope: :work_schedule, class: "form-card form-card-wide",
+              data: { controller: "work-week" } do |f| %>
+  <fieldset class="form-field picker-field">
+    <legend>Your week</legend>
+    <div class="work-days">
+      <% WorkSchedulesController::WEEK.each do |weekday| %>
+        <% shift = @shifts[weekday]
+           name = "work_schedule[days][#{weekday}]" %>
+        <div class="work-day" data-work-week-target="day">
+          <label class="work-day-name">
+            <input type="checkbox" name="<%= name %>[on]" value="1" <%= "checked" if shift %> data-work-week-target="on">
+            <span><%= Date::DAYNAMES[weekday] %></span>
+          </label>
+          <label class="visually-hidden" for="work_<%= weekday %>_from"><%= Date::DAYNAMES[weekday] %> from</label>
+          <input type="time" id="work_<%= weekday %>_from" name="<%= name %>[from_time]" value="<%= shift&.from_time || "09:00" %>" step="900" data-work-week-target="from">
+          <span class="work-day-to" aria-hidden="true">to</span>
+          <label class="visually-hidden" for="work_<%= weekday %>_until"><%= Date::DAYNAMES[weekday] %> until</label>
+          <input type="time" id="work_<%= weekday %>_until" name="<%= name %>[until_time]" value="<%= shift&.until_time || "17:00" %>" step="900" data-work-week-target="until">
+          <label class="visually-hidden" for="work_<%= weekday %>_place"><%= Date::DAYNAMES[weekday] %>: where</label>
+          <input type="text" id="work_<%= weekday %>_place" name="<%= name %>[place]" value="<%= shift&.place %>" maxlength="60"
+                 list="work-places" placeholder="Where? (Remote, Office…)" autocomplete="off" data-work-week-target="place">
+        </div>
+      <% end %>
+    </div>
+    <datalist id="work-places">
+      <option value="Remote">
+      <% @locations.each do |location| %><option value="<%= location.name %>"><% end %>
+    </datalist>
+    <div class="work-week-tools" hidden data-work-week-target="tools">
+      <button type="button" class="btn btn-small btn-quiet" data-action="work-week#copyMonday"><%= icon_label(:repeat, "Copy Monday to Tuesday–Friday") %></button>
+    </div>
+    <small>Working from one of your locations (like "Little house")? Pick it and you'll show as there during work hours.</small>
+  </fieldset>
+
+  <fieldset class="form-field">
+    <legend>While you're working</legend>
+    <div class="kind-options avail-options" role="radiogroup">
+      <% ScheduleHelper::AVAILABILITY.each do |value, (label, icon_name, css)| %>
+        <label class="kind-option <%= css %>" title="<%= ScheduleHelper::AVAILABILITY_HINTS[value] %>">
+          <input type="radio" name="work_schedule[availability]" value="<%= value %>" <%= "checked" if current_user.work_availability == value %>>
+          <%= icon(icon_name) %><span><%= label %></span>
+        </label>
+      <% end %>
+    </div>
+  </fieldset>
+
+  <div class="form-actions">
+    <%= f.button type: "submit", class: "btn btn-primary" do %><%= icon_label(:save, "Save work schedule") %><% end %>
+    <%= link_to "Back to your day", tasks_path, class: "btn btn-quiet" %>
+  </div>
+<% end %>
+
+<section class="account-section days-off-section" id="days-off">
+  <h2 class="section-title"><%= icon(:sun) %>Days off</h2>
+  <p class="page-intro">Vacation, a sick day, a holiday: the family sees you're off, and your work hours don't show.</p>
+  <%= form_with model: DayOff.new, url: days_off_path, method: :post, class: "form-card form-card-wide" do |f| %>
+    <div class="form-row form-row-3">
+      <div class="form-field">
+        <%= f.label :starts_on, "From" %>
+        <%= f.date_field :starts_on, required: true, value: Date.current.iso8601 %>
+      </div>
+      <div class="form-field">
+        <%= f.label :ends_on, "Until (optional)" %>
+        <%= f.date_field :ends_on %>
+      </div>
+      <div class="form-field">
+        <%= f.label :note, "Note (optional)" %>
+        <%= f.text_field :note, maxlength: 60, placeholder: "e.g. Vacation", autocomplete: "off" %>
+      </div>
+    </div>
+    <div class="form-actions">
+      <%= f.button type: "submit", class: "btn btn-primary" do %><%= icon_label(:plus, "Add days off") %><% end %>
+    </div>
+  <% end %>
+
+  <% if @days_off.any? %>
+    <ul class="sched-list panel days-off-list">
+      <% @days_off.each do |off| %>
+        <li class="sched-item">
+          <span class="sched-time"><%= off.single_day? ? day_name(off.starts_on) : "#{day_name(off.starts_on)} – #{day_name(off.ends_on)}" %></span>
+          <div class="sched-body"><span class="sched-title"><%= off.note || "Day off" %></span></div>
+          <div class="sched-actions">
+            <%= button_to day_off_path(off), method: :delete, class: "btn btn-quiet btn-icon btn-icon-danger", title: "Remove", "aria-label": "Remove this day off" do %><%= icon(:trash) %><% end %>
+          </div>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</section>

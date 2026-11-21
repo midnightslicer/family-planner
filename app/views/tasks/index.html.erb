@@ -16,6 +16,8 @@
           <% if status[:current] %>
             <%= availability_chip(status[:current]) %>
             <p class="person-now"><%= now_line(status[:current], current_user) %></p>
+          <% elsif status[:off] %>
+            <span class="status-chip avail-free"><%= icon(:sun) %>Day off<%= " · #{status[:off].note}" if status[:off].note %></span>
           <% else %>
             <span class="status-chip avail-free"><%= icon(:sun) %>Free</span>
           <% end %>
@@ -23,9 +25,9 @@
         <% if schedule.today.any? %>
           <ol class="family-day">
             <% schedule.today.each do |task| %>
-              <li class="<%= 'is-past' if task.past? %><%= ' is-now' if task.happening_at? %>">
+              <li class="<%= 'is-past' if task.past? %><%= ' is-now' if task.happening_at? %><%= ' is-work' if task.work? %>">
                 <span class="sched-time"><%= time_range(task, with_day: :never) %></span>
-                <span><%= task.title_for(current_user) %><%= " · #{task.place_name}" if task.place_name && task.visible_to?(current_user) %><%= icon(:lock, label: "Private") if task.private? %></span>
+                <span><%= icon(:briefcase) if task.work? %><%= task.title_for(current_user) %><%= " · #{task.place_name}" if task.place_name && task.visible_to?(current_user) %><%= icon(:lock, label: "Private") if task.private? %></span>
               </li>
             <% end %>
           </ol>
@@ -45,7 +47,7 @@
 <% else %>
   <% me = @person == current_user
      s = @schedule %>
-  <%= render "tasks/person_header", person: @person, where: @where, at: @schedule.at, now_task: @schedule.now, locations: @locations %>
+  <%= render "tasks/person_header", person: @person, where: @where, at: @schedule.at, now_task: @schedule.now, locations: @locations, schedule: @schedule %>
 
   <% if s.now %>
     <div class="now-banner <%= "is-#{s.now.availability}" %>">
@@ -80,9 +82,17 @@
     </section>
   </div>
 
-  <% if s.later.any? %>
+  <% if s.later.any? || s.days_off.any? %>
     <h2 class="section-title"><%= icon(:calendar) %>Coming up</h2>
-    <ul class="sched-list panel"><%= render partial: "tasks/item", collection: s.later, as: :task, locals: { show_day: true } %></ul>
+    <ul class="sched-list panel">
+      <% s.days_off.each do |off| %>
+        <li class="sched-item sched-day-off">
+          <span class="sched-time"><%= off.single_day? ? day_name(off.starts_on) : "#{day_name(off.starts_on)} – #{day_name(off.ends_on)}" %></span>
+          <div class="sched-body"><span class="sched-title"><%= icon(:sun) %>Day off<%= " · #{off.note}" if off.note %></span></div>
+        </li>
+      <% end %>
+      <%= render partial: "tasks/item", collection: s.later, as: :task, locals: { show_day: true } %>
+    </ul>
   <% end %>
 
   <% done = s.done.reject { |task| s.today.include?(task) } %>

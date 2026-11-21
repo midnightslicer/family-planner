@@ -1,8 +1,26 @@
 <%# One row on a schedule. To-dos have a tick-off circle; events show their
     time. Locals: task, show_day (events not today show their day). %>
-<% editable = [task.created_by_id, task.assigned_to_id].include?(current_user.id) || current_user.admin?
+<% editable = !task.work? && ([task.created_by_id, task.assigned_to_id].include?(current_user.id) || current_user.admin?)
    past = task.past? %>
-<% unless task.visible_to?(current_user) %>
+<% if task.work? %>
+  <%# Work hours, from the person's work schedule. %>
+  <li class="sched-item sched-event sched-work<%= ' is-past' if past %><%= ' is-now' if task.happening_at? %>">
+    <span class="sched-time"><%= time_range(task, with_day: :never) %></span>
+    <div class="sched-body">
+      <span class="sched-title"><%= icon(:briefcase) %>Work</span>
+      <span class="sched-meta">
+        <% if task.happening_at? %><span class="status-chip status-in_progress">Now</span><% end %>
+        <%= availability_chip(task) %>
+        <% if task.place_name %><span><%= task.location ? location_icon(task.location) : icon(:map_pin) %><%= task.place_name %></span><% end %>
+      </span>
+    </div>
+    <% if task.user == current_user %>
+      <div class="sched-actions">
+        <%= link_to edit_work_schedule_path, class: "btn btn-quiet btn-icon", title: "Work schedule", "aria-label": "Edit your work schedule" do %><%= icon(:pencil) %><% end %>
+      </div>
+    <% end %>
+  </li>
+<% elsif !task.visible_to?(current_user) %>
   <%# Someone else's private event: when, and how reachable, nothing more. %>
   <li class="sched-item sched-event is-private<%= ' is-past' if past %><%= ' is-now' if task.happening_at? %>" id="<%= dom_id(task) %>">
     <span class="sched-time"><%= time_range(task, with_day: local_assigns[:show_day] ? :unless_today : :never) %></span>

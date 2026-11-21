@@ -21,10 +21,27 @@
   </div>
   <% if me %>
     <div class="header-actions">
+      <% if schedule.off %>
+        <%= button_to day_off_path(schedule.off), method: :delete, class: "btn btn-small",
+                      form: (schedule.off.single_day? ? {} : { data: { turbo_confirm: "Remove all of these days off (#{day_name(schedule.off.starts_on)} – #{day_name(schedule.off.ends_on)})?" } }) do %><%= icon_label(:briefcase, "I'm working after all") %><% end %>
+      <% elsif person.works? %>
+        <%= button_to days_off_path, params: { today: 1 }, method: :post, class: "btn btn-small" do %><%= icon_label(:sun, "I'm off today") %><% end %>
+      <% end %>
+      <%= link_to edit_work_schedule_path, class: "btn btn-small btn-quiet" do %><%= icon_label(:briefcase, person.works? ? "Work & days off" : "Add work hours") %><% end %>
       <%= link_to account_root_path, class: "btn btn-quiet btn-icon", title: "Edit your profile", "aria-label": "Edit your profile" do %><%= icon(:pencil) %><% end %>
     </div>
   <% end %>
 </header>
+
+<% if schedule.off %>
+  <div class="now-banner is-free day-off-banner">
+    <span class="banner-icon"><%= icon(:sun) %></span>
+    <div>
+      <strong><%= me ? "You're off today" : "#{person.display_name.split.first} is off today" %></strong>
+      <small><%= schedule.off.note || (schedule.off.single_day? ? "Day off" : "Off until #{day_name(schedule.off.ends_on)}") %></small>
+    </div>
+  </div>
+<% end %>
 
 <% if me %>
   <div class="where-bar">

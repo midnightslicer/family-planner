@@ -60,6 +60,8 @@ class Task < ApplicationRecord
     starts_at.present?
   end
 
+  def work? = false
+
   # Private items show their details only to whoever they're for and
   # whoever added them; everyone else sees "Busy". A nil viewer (the public
   # wall, live broadcasts) never sees them.

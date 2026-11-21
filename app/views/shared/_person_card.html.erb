@@ -25,7 +25,10 @@
   <div class="person-status">
     <% if current_task %>
       <%= availability_chip(current_task) %>
-      <p class="person-now"><%= now_line(current_task) %></p>
+      <p class="person-now"><%= icon(:briefcase) if current_task.work? %><%= now_line(current_task) %></p>
+    <% elsif status[:off] %>
+      <span class="status-chip avail-free"><%= icon(:sun) %>Day off</span>
+      <% if status[:off].note %><p class="person-now"><%= status[:off].note %></p><% end %>
     <% else %>
       <span class="status-chip avail-free"><%= icon(:sun) %>Free</span>
     <% end %>

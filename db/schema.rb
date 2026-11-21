@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_22_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_22_020000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -37,6 +37,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_010000) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "days_off", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.date "starts_on", null: false
+    t.date "ends_on", null: false
+    t.string "note"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "starts_on", "ends_on"], name: "index_days_off_on_user_id_and_starts_on_and_ends_on"
   end
 
   create_table "feedings", force: :cascade do |t|
@@ -204,6 +214,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_010000) do
     t.datetime "updated_at", null: false
     t.string "webauthn_id"
     t.date "birthday"
+    t.string "work_availability", default: "text", null: false
     t.index ["admin"], name: "index_users_on_admin"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["handle"], name: "index_users_on_handle", unique: true
@@ -211,8 +222,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_010000) do
     t.index ["webauthn_id"], name: "index_users_on_webauthn_id", unique: true
   end
 
+  create_table "work_shifts", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.integer "weekday", null: false
+    t.string "from_time", null: false
+    t.string "until_time", null: false
+    t.string "place"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "weekday"], name: "index_work_shifts_on_user_id_and_weekday", unique: true
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "days_off", "users"
   add_foreign_key "feedings", "households"
   add_foreign_key "feedings", "pets"
   add_foreign_key "feedings", "users", column: "fed_by_id"
@@ -235,4 +258,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_010000) do
   add_foreign_key "tasks", "locations"
   add_foreign_key "tasks", "users", column: "assigned_to_id"
   add_foreign_key "tasks", "users", column: "created_by_id"
+  add_foreign_key "work_shifts", "users"
 end

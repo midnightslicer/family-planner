@@ -54,6 +54,10 @@ Rails.application.routes.draw do
     resource :subscription, only: [:create, :destroy], controller: "pet_subscriptions"
   end
   resources :locations, except: :show
+  # Your regular work hours (optional) and days off.
+  resource :work_schedule, only: [:edit, :update]
+  post   "days_off",     to: "days_off#create",  as: :days_off
+  delete "days_off/:id", to: "days_off#destroy", as: :day_off
   resources :people, only: :show
   post "people/me/location", to: "people#locate", as: :locate_me
 

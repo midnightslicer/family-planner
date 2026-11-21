@@ -6,10 +6,13 @@
 #   later   events after today and to-dos held for a later day
 #   done    what they finished or skipped today
 #   at      the location their current event puts them at, if any
+#   work    today's work hours (a WorkBlock), unless they're off
+#   off     today's DayOff, if they're off
+#   days_off coming days off
 class PersonSchedule
   UPCOMING_DAYS = 14
 
-  attr_reader :person, :now, :todos, :today, :later, :done, :at
+  attr_reader :person, :now, :todos, :today, :later, :done, :at, :work, :off, :days_off
 
   # `viewer` sees others' private to-dos not at all, and their private
   # events only as "Busy" (the views ask Task#visible_to?).
@@ -24,9 +27,14 @@ class PersonSchedule
 
     open, closed = items.partition(&:open?)
     @done = closed.sort_by(&:updated_at).reverse
-    @today = items.select { |task| task.timed? && task.starts_at.to_date <= today && task.finishes_at > now.beginning_of_day && !task.undone? }
-                  .sort_by(&:starts_at)
-    @now = open.find { |task| task.happening_at?(now) } || open.find(&:in_progress?)
+    places = household.locations.to_a
+    @off = person.day_off_on(today)
+    @days_off = person.days_off.select { |off| off.ends_on >= today && !off.covers?(today) }
+    @work = WorkBlock.on(person, today, locations: places)
+    @today = (items.select { |task| task.timed? && task.starts_at.to_date <= today && task.finishes_at > now.beginning_of_day && !task.undone? } +
+              [@work].compact).sort_by(&:starts_at)
+    @now = open.find { |task| task.happening_at?(now) } || open.find(&:in_progress?) ||
+           WorkBlock.current(person, now, locations: places)
     @at = @now&.whereabouts(now)
     @todos = open.reject(&:timed?).reject { |task| task.later?(today) }
                  .sort_by { |task| [task.in_progress? ? 0 : 1, task.due_on || Date.new(9999), task.created_at] }

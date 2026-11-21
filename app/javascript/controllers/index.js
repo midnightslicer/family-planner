@@ -33,6 +33,9 @@ application.register("photo-upload", PhotoUploadController)
 import QuickAddController from "./quick_add_controller"
 application.register("quick-add", QuickAddController)
 
+import WorkWeekController from "./work_week_controller"
+application.register("work-week", WorkWeekController)
+
 import PickerController from "./picker_controller"
 application.register("picker", PickerController)
 

@@ -1,0 +1,133 @@
+require "test_helper"
+
+class WorkScheduleTest < ActionDispatch::IntegrationTest
+  setup do
+    @member = users(:member)
+    @admin = users(:admin)
+    @smiths = households(:smiths)
+    @little = @smiths.locations.create!(name: "Little house", kind: "house")
+  end
+
+  def card(user) = "##{ActionView::RecordIdentifier.dom_id(user, :person_card)}"
+
+  def weekdays(from: "09:00", until_time: "17:00", place: "Little house")
+    (1..5).to_h { |wday| [wday.to_s, { on: "1", from_time: from, until_time: until_time, place: place }] }
+  end
+
+  # Monday 2026-11-23.
+  def monday_at(hour, min = 0) = Time.zone.local(2026, 11, 23, hour, min)
+
+  test "nobody has to have a work schedule" do
+    sign_in @member
+    get tasks_path
+    assert_select "a", text: "Add work hours"
+    assert_select "button", text: "I'm off today", count: 0
+    get dashboard_path
+    assert_select "#{card(@member)} .avail-free", text: "Free"
+  end
+
+  test "saving work hours, place and availability" do
+    sign_in @member
+    patch work_schedule_path, params: { work_schedule: { availability: "busy", days: weekdays } }
+    assert_redirected_to edit_work_schedule_path
+    assert_equal [1, 2, 3, 4, 5], @member.work_shifts.pluck(:weekday)
+    assert_equal "busy", @member.reload.work_availability
+
+    # Unticking a day removes it.
+    patch work_schedule_path, params: { work_schedule: { availability: "busy", days: weekdays.except("5") } }
+    assert_equal [1, 2, 3, 4], @member.work_shifts.reload.pluck(:weekday)
+  end
+
+  test "a bad time is explained and nothing changes" do
+    sign_in @member
+    patch work_schedule_path, params: { work_schedule: { days: { "1" => { on: "1", from_time: "nine", until_time: "17:00" } } } }
+    assert_response :unprocessable_content
+    assert_select ".flash-alert", text: /Monday/
+    assert_equal 0, @member.work_shifts.count
+  end
+
+  test "during work hours the card shows work, its place and availability" do
+    @member.update!(work_availability: "text")
+    @member.work_shifts.create!(weekday: 1, from_time: "09:00", until_time: "17:00", place: "Little house")
+    travel_to monday_at(10) do
+      sign_in @member
+      get dashboard_path
+      assert_select "#{card(@member)} .avail-text", text: "Text only"
+      assert_select "#{card(@member)} .person-now", text: "Work · until 5 PM · Little house"
+      assert_select "#{card(@member)} .person-where", text: /Little house/
+
+      get tasks_path
+      assert_select ".sched-work .sched-title", text: "Work"
+    end
+  end
+
+  test "a meeting during work shows instead of work" do
+    @member.work_shifts.create!(weekday: 1, from_time: "09:00", until_time: "17:00", place: "Remote")
+    Task.create!(household: @smiths, title: "Standup", assigned_to: @member, availability: "busy",
+                 starts_at: monday_at(10), ends_at: monday_at(10, 30))
+    travel_to monday_at(10, 10) do
+      sign_in @member
+      get dashboard_path
+      assert_select "#{card(@member)} .person-now", text: "Standup · until 10:30 AM"
+    end
+  end
+
+  test "before work, it's what's next" do
+    @member.work_shifts.create!(weekday: 1, from_time: "09:00", until_time: "17:00", place: "Remote")
+    travel_to monday_at(7) do
+      sign_in @member
+      get dashboard_path
+      assert_select "#{card(@member)} .avail-free", text: "Free"
+      assert_select "#{card(@member)} .person-next", text: "Next: Work · 9 AM"
+    end
+  end
+
+  test "I'm off today is one tap, the family sees it, and it can be undone" do
+    @member.work_shifts.create!(weekday: 1, from_time: "09:00", until_time: "17:00")
+    travel_to monday_at(10) do
+      sign_in @member
+      post days_off_path, params: { today: 1 }, headers: { "Referer" => tasks_url }
+      assert_redirected_to tasks_url
+      off = @member.days_off.sole
+      assert_equal Date.new(2026, 11, 23), off.starts_on
+
+      get tasks_path
+      assert_select ".day-off-banner", text: /You're off today/
+      assert_select ".sched-work", count: 0
+
+      sign_in @admin
+      get dashboard_path
+      assert_select "#{card(@member)} .status-chip", text: "Day off"
+      get tasks_path(person: "family")
+      assert_select ".family-column .status-chip", text: "Day off"
+
+      sign_in @member
+      delete day_off_path(off)
+      assert_equal 0, @member.days_off.count
+    end
+  end
+
+  test "a run of days off with a note shows as coming up" do
+    travel_to monday_at(10) do
+      sign_in @member
+      post days_off_path, params: { day_off: { starts_on: "2026-12-24", ends_on: "2026-12-28", note: "Christmas" } }
+      get tasks_path
+      assert_select ".sched-day-off", text: /Day off · Christmas/
+    end
+  end
+
+  test "you can only remove your own days off" do
+    theirs = @admin.days_off.create!(starts_on: Date.current, ends_on: Date.current)
+    sign_in @member
+    delete day_off_path(theirs)
+    assert_response :not_found
+    assert DayOff.exists?(theirs.id)
+  end
+
+  test "a night shift runs past midnight" do
+    @member.work_shifts.create!(weekday: 1, from_time: "22:00", until_time: "06:00")
+    travel_to Time.zone.local(2026, 11, 24, 2, 0) do
+      assert WorkBlock.current(@member.reload, Time.current)
+    end
+  end
+end

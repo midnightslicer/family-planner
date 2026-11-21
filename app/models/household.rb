@@ -18,21 +18,32 @@ class Household < ApplicationRecord
     users.order(:display_name)
   end
 
-  # For every member, what they're doing now, their next event within the
-  # week, and where they last said they were, in two queries instead of a
-  # few per card. "Now" is an event whose time has come, else a to-do they
-  # started; `at` is the location that event puts them at, which outranks
-  # their last "I'm at". Returns { user_id => { current:, next:, at:, location: } }.
+  # For every member, what they're doing now, what's next, whether they're
+  # off today and where they are, in a fixed handful of queries rather than
+  # a few per card. "Now" is an event whose time has come, else a to-do
+  # they started, else their work hours (WorkBlock); `at` is the location
+  # that puts them at, which outranks their last "I'm at"; `off` is today's
+  # DayOff. Returns { user_id => { current:, next:, at:, off:, location: } }.
   def member_statuses(now = Time.current)
     statuses = Hash.new { |hash, key| hash[key] = {} }
     open_tasks = tasks.open.where.not(assigned_to_id: nil).includes(:location)
                       .where("status = :doing OR (starts_at < :horizon AND COALESCE(ends_at, starts_at) >= :earliest)",
                              doing: Task.statuses[:in_progress], horizon: now + 7.days, earliest: now - Task::DEFAULT_LENGTH)
                       .order(:starts_at, :id).to_a
-    open_tasks.group_by(&:assigned_to_id).each do |user_id, items|
-      statuses[user_id][:current] = items.find { |task| task.happening_at?(now) } || items.find(&:in_progress?)
-      statuses[user_id][:at] = statuses[user_id][:current]&.whereabouts(now)
-      statuses[user_id][:next] = items.find { |task| task.timed? && task.planned? && task.starts_at > now }
+    by_user = open_tasks.group_by(&:assigned_to_id)
+    places = locations.to_a
+    users.includes(:work_shifts, :days_off).each do |user|
+      items = by_user.fetch(user.id, [])
+      status = statuses[user.id]
+      status[:current] = items.find { |task| task.happening_at?(now) } || items.find(&:in_progress?) ||
+                         WorkBlock.current(user, now, locations: places)
+      status[:at] = status[:current]&.whereabouts(now)
+      upcoming_work = WorkBlock.on(user, now.to_date, locations: places)
+      upcoming_work = nil unless upcoming_work&.starts_at&.>(now)
+      status[:next] = [items.find { |task| task.timed? && task.planned? && task.starts_at > now }, upcoming_work]
+                      .compact.min_by(&:starts_at)
+      status[:off] = user.day_off_on(now.to_date)
+      statuses.delete(user.id) if status.compact.empty?
     end
     LocationReport.latest_for(self, "User", users.select(:id)).each do |user_id, report|
       statuses[user_id][:location] = report

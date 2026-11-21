@@ -23,6 +23,7 @@ class User < ApplicationRecord
   validates :display_name, presence: true, length: { maximum: 60 }
   validates :color, format: { with: /\A#[0-9a-fA-F]{6}\z/, message: "must be a 6-digit hex color" }
   validate :birthday_not_in_future
+  validates :work_availability, inclusion: { in: %w[free text busy] }
 
   has_many :household_memberships, dependent: :destroy
   has_many :households, through: :household_memberships
@@ -34,6 +35,8 @@ class User < ApplicationRecord
   has_many :location_reports_made, class_name: "LocationReport", foreign_key: :reported_by_id, dependent: :nullify
   has_many :feedings_given, class_name: "Feeding", foreign_key: :fed_by_id, dependent: :nullify
   has_many :pet_subscriptions, dependent: :delete_all
+  has_many :work_shifts, -> { order(:weekday) }, dependent: :delete_all
+  has_many :days_off, -> { order(:starts_on) }, class_name: "DayOff", dependent: :delete_all
   has_many :pets_added, class_name: "Pet", foreign_key: :created_by_id, dependent: :nullify
   has_many :locations_added, class_name: "Location", foreign_key: :created_by_id, dependent: :nullify
 
@@ -61,6 +64,14 @@ class User < ApplicationRecord
   # (after a name, colour or photo change).
   def broadcast_card
     households.each { |household| household.broadcast_member_cards([id]) }
+  end
+
+  def works?
+    work_shifts.any?
+  end
+
+  def day_off_on(date = Date.current)
+    days_off.find { |off| off.covers?(date) }
   end
 
   def member_of?(household)

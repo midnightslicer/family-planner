@@ -1793,6 +1793,34 @@ ul.sched-list.panel { padding: 0.25rem clamp(1.125rem, 3vw, 1.5rem); }
 .private-check span { display: inline-flex; align-items: center; gap: 0.375rem; }
 .private-check .icon { color: var(--text-muted); }
 
+/* Work hours and days off */
+.sched-work .sched-title,
+.sched-day-off .sched-title { display: inline-flex; align-items: center; gap: 0.4375rem; }
+.sched-work .sched-title .icon { color: var(--accent); }
+.sched-day-off .sched-title .icon { color: var(--status-completed); }
+.sched-day-off .sched-time { color: var(--status-completed); }
+.person-now .icon-briefcase,
+.family-day .icon-briefcase { width: 0.9375rem; height: 0.9375rem; margin-right: 0.3125rem; color: var(--accent); vertical-align: -0.15em; }
+.day-off-banner .banner-icon { color: var(--status-completed); background: var(--status-completed-bg); }
+.day-header .header-actions { align-self: flex-start; }
+
+.work-days { display: grid; gap: 0.5rem; margin-top: 0.5rem; }
+.work-day {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(6.5rem, 1fr) auto minmax(6.5rem, 1fr) minmax(9rem, 2fr);
+  align-items: center;
+  gap: 0.5rem;
+  transition: opacity var(--fast) ease;
+}
+.work-day:not(:has(input[type="checkbox"]:checked)) > input { opacity: 0.4; }
+.work-day-name { display: flex; align-items: center; gap: 0.25rem; font-weight: 600; cursor: pointer; }
+.work-day-to { font-size: 0.875rem; color: var(--text-muted); }
+.work-week-tools { margin-top: 0.75rem; }
+.days-off-section { margin-top: 2.5rem; }
+.days-off-section .section-title { margin-top: 0; }
+.days-off-section .section-title .icon { color: var(--status-completed); }
+.days-off-list { margin-top: 1rem; max-width: 760px; }
+
 .done-today { margin-top: 2rem; }
 .done-today > summary { display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600; color: var(--text-muted); }
 .done-today > summary .icon { color: var(--status-completed); }
@@ -2022,6 +2050,10 @@ form[aria-busy="true"] .btn {
   .quick-add-row .btn span { display: none; }
   .sched-time { min-width: 4.5rem; white-space: normal; }
   .sched-actions { opacity: 1; }
+  .work-day { grid-template-columns: 1fr 1fr; }
+  .work-day-name { grid-column: 1 / -1; }
+  .work-day-to { display: none; }
+  .work-day > input[type="text"] { grid-column: 1 / -1; }
 }
 
 /* ---------- Reduced motion ---------- */

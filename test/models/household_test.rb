@@ -13,7 +13,7 @@ class HouseholdTest < ActiveSupport::TestCase
     counter = ->(*, payload) { queries += 1 unless payload[:name] == "SCHEMA" }
     statuses = ActiveSupport::Notifications.subscribed(counter, "sql.active_record") { household.member_statuses }
 
-    assert_equal 2, queries # tasks, then where everyone last said they were
+    assert_operator queries, :<=, 7 # tasks, locations, members with work hours and days off, last whereabouts: never one per member
     assert_equal "Now", statuses[member.id][:current].title
     assert_equal "Sooner", statuses[member.id][:next].title
     assert_equal({}, statuses[users(:admin).id])
