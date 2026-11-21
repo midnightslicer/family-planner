@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_22_110100) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_22_120000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -106,6 +106,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_110100) do
     t.string "comment"
     t.datetime "created_at", null: false
     t.string "spot"
+    t.boolean "penned", default: false, null: false
     t.index ["household_id", "subject_type", "id"], name: "index_location_reports_on_household_id_and_subject_type_and_id"
     t.index ["household_id"], name: "index_location_reports_on_household_id"
     t.index ["location_id"], name: "index_location_reports_on_location_id"

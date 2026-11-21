@@ -10,7 +10,7 @@ class PetCheckIn
 
   KINDS = %w[location feeding].freeze
 
-  attr_accessor :household, :actor, :kind, :location_id, :new_location_name, :comment, :spot
+  attr_accessor :household, :actor, :kind, :location_id, :new_location_name, :comment, :spot, :penned
   attr_reader :pet_ids
 
   validates :kind, inclusion: { in: KINDS }
@@ -30,6 +30,10 @@ class PetCheckIn
     kind == "location"
   end
 
+  def penned?
+    ActiveModel::Type::Boolean.new.cast(penned) || false
+  end
+
   def pets
     @pets ||= household.pets.here.where(id: pet_ids).by_name.to_a
   end
@@ -47,7 +51,7 @@ class PetCheckIn
       location.save! if location? && location.new_record?
       pets.each do |pet|
         if location?
-          LocationReport.create!(household: household, subject: pet, location: location, spot: spot, reported_by: actor, comment: comment)
+          LocationReport.create!(household: household, subject: pet, location: location, spot: spot, penned: penned?, reported_by: actor, comment: comment)
         else
           Feeding.create!(household: household, pet: pet, fed_by: actor, comment: comment)
         end
@@ -61,7 +65,7 @@ class PetCheckIn
   def summary
     names = pets.map(&:name).to_sentence
     if location?
-      "#{names} #{pets.one? ? 'is' : 'are'} at #{location.name}#{" (#{spot})" if spot.present? && location.house?}."
+      "#{names} #{pets.one? ? 'is' : 'are'} at #{location.name}#{" (#{spot_words})" if spot_words}."
     else
       "Fed #{names}."
     end
@@ -78,7 +82,7 @@ class PetCheckIn
       names = followed.map(&:name).to_sentence
       body =
         if location?
-          "#{actor&.display_name || 'Someone'}: #{names} #{followed.one? ? 'is' : 'are'} at #{location.name}"
+          "#{actor&.display_name || 'Someone'}: #{names} #{followed.one? ? 'is' : 'are'} at #{location.name}#{" (#{spot_words})" if spot_words}"
         else
           "#{actor&.display_name || 'Someone'} fed #{names}"
         end
@@ -91,6 +95,14 @@ class PetCheckIn
     end
   rescue StandardError => error
     Rails.logger.warn("Pet notifications failed: #{error.class}: #{error.message}")
+  end
+
+  # What the saved reports will say, after LocationReport drops what
+  # doesn't apply here (inside/outside away from houses, penned indoors).
+  def spot_words
+    return unless location?
+
+    LocationReport.new(location: location, spot: spot, penned: penned?).tap(&:valid?).spot_words
   end
 
   def some_pets_chosen

@@ -11,7 +11,7 @@
           <% if feeding %>
             <strong>Fed</strong>
           <% else %>
-            At <strong><%= entry.location&.name || "somewhere else" %></strong><%= ", #{entry.spot}" if entry.spot %>
+            At <strong><%= entry.location&.name || "somewhere else" %></strong><%= ", #{entry.spot_words}" if entry.spot_words %>
           <% end %>
           <small><%= time_tag_ago(entry.created_at) %><%= " · #{who.display_name}" if who %></small>
         </span>

@@ -1858,6 +1858,10 @@ ul.sched-list.panel { padding: 0.25rem clamp(1.125rem, 3vw, 1.5rem); }
 /* Inside/outside: only once a house is picked. */
 .spot-field { display: none; }
 form:has(.pick-house input:checked) .spot-field { display: block; animation: slide-down 260ms var(--ease-out); }
+/* Penned up: outside at a house, or at any place that isn't a house. */
+.pen-field { display: none; }
+form:has(.pick-place:not(.pick-house) input:checked) .pen-field,
+form:has(.pick-house input:checked):has(.spot-field input[value="outside"]:checked) .pen-field { display: block; animation: slide-down 260ms var(--ease-out); }
 
 /* Pets that are away for now */
 .section-title.away-title .count { margin-left: 0.25rem; }

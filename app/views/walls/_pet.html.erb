@@ -7,7 +7,7 @@
     <span class="person-name"><%= pet.name %><%= icon(:cake, label: "Birthday today", class: "birthday-cake") if birthday_today?(pet.birthday) %></span>
     <%# The section already says where; this says how fresh that is. %>
     <span class="wall-pet-where">
-      <% if report %><small><%= "#{report.spot.capitalize} · " if report.spot %>seen <%= time_tag_ago(report.created_at) %></small><% else %><small>Not reported yet</small><% end %>
+      <% if report %><small><%= "#{report.spot_words.upcase_first} · " if report.spot_words %>seen <%= time_tag_ago(report.created_at) %></small><% else %><small>Not reported yet</small><% end %>
     </span>
     <%= fed_chip(status) %>
   </div>

@@ -96,6 +96,30 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     assert_select "##{ActionView::RecordIdentifier.dom_id(@rex, :pet_card)} .pet-where-name", text: "House · Outside"
   end
 
+  test "outdoors you can say a pet is penned up, and it shows" do
+    get new_pet_location_path
+    assert_select ".pen-field input[type=checkbox][name='check_in[penned]']"
+
+    post pet_locations_path, params: { check_in: { pet_ids: [@rex.id], location_id: @house.id, spot: "outside", penned: "1" } }
+    follow_redirect!
+    assert_select ".flash-notice", text: "Rex is at House (outside, penned up)."
+    assert_select "##{ActionView::RecordIdentifier.dom_id(@rex, :pet_card)} .pet-where-name", text: "House · Outside · Penned up"
+
+    post pet_locations_path, params: { check_in: { pet_ids: [@rex.id], location_id: @yard.id, penned: "1" } }
+    assert @rex.status.report.penned?
+    follow_redirect!
+    assert_select ".flash-notice", text: "Rex is at #{@yard.name} (penned up)."
+  end
+
+  test "penned up is ignored inside a house or with no inside or outside given" do
+    post pet_locations_path, params: { check_in: { pet_ids: [@rex.id], location_id: @house.id, spot: "inside", penned: "1" } }
+    assert_not @rex.status.report.penned?
+    post pet_locations_path, params: { check_in: { pet_ids: [@rex.id], location_id: @house.id, penned: "1" } }
+    assert_not @rex.status.report.penned?
+    follow_redirect!
+    assert_select ".flash-notice", text: "Rex is at House."
+  end
+
   test "inside or outside is ignored away from a house" do
     post pet_locations_path, params: { check_in: { pet_ids: [@rex.id], location_id: @yard.id, spot: "inside" } }
     assert_nil @rex.status.report.spot

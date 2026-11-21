@@ -29,6 +29,6 @@ class PetLocationsController < ApplicationController
   end
 
   def check_in_params
-    params.fetch(:check_in, {}).permit(:location_id, :new_location_name, :comment, :spot, pet_ids: [])
+    params.fetch(:check_in, {}).permit(:location_id, :new_location_name, :comment, :spot, :penned, pet_ids: [])
   end
 end

@@ -23,8 +23,12 @@ class LocationReport < ApplicationRecord
 
   normalizes :comment, with: ->(comment) { comment.squish.presence }
   normalizes :spot, with: ->(spot) { spot.strip.downcase.presence }
-  # Inside/outside only means something at a house.
-  before_validation { self.spot = nil unless location&.house? }
+  # Inside/outside only means something at a house; penned up only means
+  # something outdoors (outside at a house, or anywhere that isn't one).
+  before_validation do
+    self.spot = nil unless location&.house?
+    self.penned = false unless pennable?
+  end
 
   after_commit :broadcast
 
@@ -37,6 +41,15 @@ class LocationReport < ApplicationRecord
 
   def self.recent
     order(id: :desc).includes(:location, :reported_by)
+  end
+
+  def pennable?
+    location.present? && (!location.house? || spot == "outside")
+  end
+
+  # "outside, penned up" / "inside" / "penned up" / nil.
+  def spot_words
+    [spot, ("penned up" if penned?)].compact.join(", ").presence
   end
 
   private
