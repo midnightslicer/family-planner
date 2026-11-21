@@ -99,6 +99,14 @@ class ScheduleFlowTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "a started to-do's banner shows when it started as text, not markup" do
+    task = Task.create!(household: @smiths, title: "Call the chiropractor", assigned_to: @member)
+    task.start!
+    get tasks_path
+    assert_select ".now-banner small time", text: "just now"
+    assert_no_match(/&lt;time/, response.body)
+  end
+
   test "the assignee can edit an item someone else gave them" do
     task = Task.create!(household: @smiths, title: "From admin", assigned_to: @member, created_by: @admin)
     patch task_path(task), params: { task: { title: "Mine to change" } }

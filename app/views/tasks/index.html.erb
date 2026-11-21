@@ -54,7 +54,7 @@
       <span class="banner-icon"><%= icon(s.now.timed? ? :clock : :zap) %></span>
       <div>
         <strong><%= me ? "You're on" : "Now" %>: <%= s.now.title_for(current_user) %></strong>
-        <small><%= s.now.timed? ? "until #{clock(s.now.finishes_at)}" : "started #{time_tag_ago(s.now.started_at || s.now.updated_at)}" %><%= " · #{s.now.place_name}" if s.now.place_name && s.now.visible_to?(current_user) %></small>
+        <small><% if s.now.timed? %>until <%= clock(s.now.finishes_at) %><% else %>started <%= time_tag_ago(s.now.started_at || s.now.updated_at) %><% end %><%= " · #{s.now.place_name}" if s.now.place_name && s.now.visible_to?(current_user) %></small>
       </div>
       <%= availability_chip(s.now) %>
     </div>
