@@ -28,6 +28,10 @@
         house never loses what's typed above. %>
     <% new_home = @pet.home&.new_record?
        selected = new_home || homes.empty? ? Location::NEW : @pet.home_id %>
+    <label class="inline-check visitor-check">
+      <%= f.check_box :visitor %>
+      <span>We dog-sit them: they come and go</span>
+    </label>
     <div class="form-field new-place-host">
       <%= f.label :home_id, "Sleeps at" %>
       <%= f.select :home_id, options_for_select([["Not set", ""]] + homes.map { |l| [l.name, l.id] } + [["New place…", Location::NEW]], selected) %>

@@ -7,7 +7,7 @@
     <span class="person-avatar" style="<%= PetsHelper::PET_DISC_STYLE %>" aria-hidden="true"><%= pet_avatar_content(pet) %></span>
     <span class="person-meta">
       <span class="person-name"><%= pet.name %><%= icon(:cake, label: "Birthday today", class: "birthday-cake") if birthday_today?(pet.birthday) %></span>
-      <span class="pet-sub"><%= [pet.species, age_in_words(pet.birthday)].compact_blank.join(" · ").presence || "Pet" %></span>
+      <span class="pet-sub"><%= [pet.species, age_in_words(pet.birthday), ("Visiting" if pet.visitor?)].compact_blank.join(" · ").presence || "Pet" %></span>
     </span>
   <% end %>
 

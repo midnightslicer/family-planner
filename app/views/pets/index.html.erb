@@ -39,7 +39,7 @@
           <span class="person-avatar" style="<%= PetsHelper::PET_DISC_STYLE %>" aria-hidden="true"><%= pet_avatar_content(pet) %></span>
           <span class="person-meta">
             <span class="person-name"><%= pet.name %></span>
-            <span class="pet-sub">Away since <%= pet.away_since.strftime("%b %-d") %></span>
+            <span class="pet-sub"><%= "Visitor · " if pet.visitor? %>Away since <%= pet.away_since.strftime("%b %-d") %><%= " · #{pluralize(pet.visits.size, 'visit')} so far" if pet.visitor? %></span>
           </span>
         <% end %>
         <div class="sched-actions">

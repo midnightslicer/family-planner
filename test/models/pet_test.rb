@@ -66,6 +66,25 @@ class PetTest < ActiveSupport::TestCase
     assert_nil @rex.reload.home_id unless @rex.home_id == @house.id
   end
 
+  test "each stretch a pet is here is a visit, for 'here N days last year'" do
+    travel_to Time.zone.local(2026, 1, 1, 9) do
+      @pepper = @smiths.pets.create!(name: "Pepper", visitor: true)
+    end
+    travel_to(Time.zone.local(2026, 1, 4, 9)) { @pepper.leave! }
+    travel_to(Time.zone.local(2026, 6, 1, 9)) { @pepper.arrive! }
+    travel_to(Time.zone.local(2026, 6, 3, 9)) { @pepper.leave! }
+
+    visits = @pepper.visits.reload
+    assert_equal 2, visits.size
+    assert_equal 5.days, visits.sum(&:duration)
+    assert visits.none? { |visit| visit.left_at.nil? }
+  end
+
+  test "removing a pet ends its visit" do
+    @rex.archive!
+    assert @rex.visits.reload.all?(&:left_at)
+  end
+
   test "ages read naturally" do
     today = Date.new(2026, 11, 21)
     assert_equal "3 years", age_in_words(Date.new(2023, 6, 1), today)

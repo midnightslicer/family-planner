@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_22_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_22_100000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -149,6 +149,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_090000) do
     t.index ["user_id"], name: "index_pet_subscriptions_on_user_id"
   end
 
+  create_table "pet_visits", force: :cascade do |t|
+    t.integer "pet_id", null: false
+    t.integer "household_id", null: false
+    t.datetime "arrived_at", null: false
+    t.datetime "left_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["household_id"], name: "index_pet_visits_on_household_id"
+    t.index ["pet_id", "arrived_at"], name: "index_pet_visits_on_pet_id_and_arrived_at"
+  end
+
   create_table "pets", force: :cascade do |t|
     t.integer "household_id", null: false
     t.integer "created_by_id"
@@ -162,6 +173,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_090000) do
     t.datetime "updated_at", null: false
     t.datetime "away_since"
     t.datetime "archived_at"
+    t.boolean "visitor", default: false, null: false
     t.index ["created_by_id"], name: "index_pets_on_created_by_id"
     t.index ["home_id"], name: "index_pets_on_home_id"
     t.index ["household_id"], name: "index_pets_on_household_id"
@@ -273,6 +285,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_090000) do
   add_foreign_key "passkeys", "users"
   add_foreign_key "pet_subscriptions", "pets"
   add_foreign_key "pet_subscriptions", "users"
+  add_foreign_key "pet_visits", "households"
+  add_foreign_key "pet_visits", "pets"
   add_foreign_key "pets", "households"
   add_foreign_key "pets", "locations", column: "home_id"
   add_foreign_key "pets", "users", column: "created_by_id"

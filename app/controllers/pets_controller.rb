@@ -50,13 +50,13 @@ class PetsController < ApplicationController
   # POST /pets/:id/away: not here for now (a dog we sit went home). Kept,
   # with its history, under Away on the pets page.
   def away
-    @pet.update!(away_since: Time.current)
+    @pet.leave!
     redirect_to pets_path, notice: "#{@pet.name} is marked away. Find them under Away when they're back.", status: :see_other
   end
 
   # POST /pets/:id/back
   def back
-    @pet.update!(away_since: nil)
+    @pet.arrive!
     redirect_to pet_path(@pet), notice: "#{@pet.name} is back. Where are they?", status: :see_other
   end
 
@@ -72,7 +72,7 @@ class PetsController < ApplicationController
   end
 
   def pet_params
-    params.require(:pet).permit(:name, :species, :birthday, :meals_per_day, :feeding_notes, :photo, :remove_photo)
+    params.require(:pet).permit(:name, :species, :birthday, :meals_per_day, :feeding_notes, :photo, :remove_photo, :visitor)
   end
 
   # "Sleeps at" is an existing location, nothing, or a new house typed in

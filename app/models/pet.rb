@@ -12,6 +12,8 @@ class Pet < ApplicationRecord
   has_many :feedings, dependent: :delete_all
   has_many :location_reports, as: :subject, dependent: :delete_all
   has_many :subscriptions, class_name: "PetSubscription", dependent: :delete_all
+  # Every stretch it's been here (dogs we sit come and go).
+  has_many :visits, -> { order(:arrived_at) }, class_name: "PetVisit", dependent: :delete_all
   has_many :subscribers, through: :subscriptions, source: :user
 
   small_photo :photo
@@ -32,6 +34,7 @@ class Pet < ApplicationRecord
   scope :here, -> { where(away_since: nil) }
   scope :away, -> { where.not(away_since: nil) }
 
+  after_create { visits.create!(household: household, arrived_at: created_at) }
   after_commit { household.broadcast_refresh }
 
   # For the dashboard and pet cards, everything in a few queries instead of a
@@ -50,10 +53,35 @@ class Pet < ApplicationRecord
     end
   end
 
-  # "Remove": gone from the app, kept (with its reports and feedings) for
-  # history.
+  # "Remove": gone from the app, kept (with its reports, feedings and
+  # visits) for history.
   def archive!
-    update!(archived_at: Time.current)
+    transaction do
+      close_visit
+      update!(archived_at: Time.current)
+    end
+  end
+
+  # "Not here right now": off the board until it's back; the visit ends.
+  def leave!
+    return false if away?
+
+    transaction do
+      close_visit
+      update!(away_since: Time.current)
+    end
+    true
+  end
+
+  # Back here: a new visit starts.
+  def arrive!
+    return false unless away?
+
+    transaction do
+      update!(away_since: nil)
+      visits.create!(household: household, arrived_at: Time.current)
+    end
+    true
   end
 
   def archived?
@@ -73,6 +101,10 @@ class Pet < ApplicationRecord
   end
 
   private
+
+  def close_visit
+    visits.open.update_all(left_at: Time.current, updated_at: Time.current)
+  end
 
   def birthday_not_in_future
     errors.add(:birthday, "can't be in the future") if birthday && birthday > Date.current
