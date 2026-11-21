@@ -1622,6 +1622,7 @@ fieldset.picker-field { margin-top: 0; margin-bottom: 1.25rem; }
 
 .nav-brand .icon { color: var(--accent); width: 1.375rem; height: 1.375rem; }
 .nav-brand:hover .icon { transform: rotate(-10deg) scale(1.12); }
+.nav-brand[aria-current="page"] .icon { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 55%, transparent)); }
 .nav-links a:hover .icon { transform: translateY(-1px) scale(1.12); }
 
 /* Each button icon has its own little gesture on hover. */
