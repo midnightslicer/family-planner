@@ -13,8 +13,13 @@ Rails.application.configure do
     policy.img_src     :self, :data
     policy.font_src    :self
     # Action Cable's websocket; 'self' covers ws(s) in current browsers, the
-    # explicit origin helps older Safari.
-    policy.connect_src :self, -> { "#{request.ssl? ? 'wss' : 'ws'}://#{request.host_with_port}" }
+    # explicit origin helps older Safari. The lambda runs against the
+    # controller for normal pages but against the bare request when a
+    # middleware renders the response (a 404 for an unknown route).
+    policy.connect_src :self, -> {
+      req = is_a?(ActionDispatch::Request) ? self : request
+      "#{req.ssl? ? 'wss' : 'ws'}://#{req.host_with_port}"
+    }
     policy.object_src  :none
     policy.base_uri    :self
     policy.form_action :self

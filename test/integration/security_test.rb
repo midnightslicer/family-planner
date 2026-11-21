@@ -44,7 +44,8 @@ class SecurityTest < ActionDispatch::IntegrationTest
     sign_in @admin
     post admin_invitations_path, params: { invitation: { email: "", household_id: @household.id } },
                                  headers: { "Host" => "evil.example" }
-    follow_redirect!
+    # The redirect honors the Host header, but the link inside the page must not.
+    get URI(response.location).path
     assert_select "input#invite_link[value^=?]", "https://status.example.org/invitations/"
   end
 

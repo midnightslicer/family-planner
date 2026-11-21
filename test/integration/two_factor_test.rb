@@ -43,7 +43,7 @@ class TwoFactorTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_content
 
     post user_two_factor_path, params: { code: Totp.code_at(secret, Totp.time_step + 1) }
-    assert_redirected_to dashboard_root_path
+    assert_redirected_to dashboard_path # back to the page asked for before signing in
     get dashboard_path
     assert_response :success
   end

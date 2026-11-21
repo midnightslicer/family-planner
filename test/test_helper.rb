@@ -13,6 +13,18 @@ module ActiveSupport
   end
 end
 
+# Requests made by integration tests share the test's thread, so Current (the
+# per-request cache of settings, user and household) would leak from one
+# request into the next and into the test's own assertions.
+module ResetCurrentAfterRequest
+  def process(...)
+    super(...)
+  ensure
+    Current.reset
+  end
+end
+ActionDispatch::Integration::Session.prepend(ResetCurrentAfterRequest)
+
 class ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
 

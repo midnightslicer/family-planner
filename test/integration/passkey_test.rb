@@ -82,9 +82,11 @@ class PasskeyTest < ActionDispatch::IntegrationTest
     register_passkey
     passkey = @member.passkeys.sole
 
+    sign_out @member
     sign_in users(:admin)
     delete account_passkey_path(passkey)
     assert_response :not_found
+    sign_in users(:admin) # a 404 doesn't save the session, and sign_in only applies to the next request
     patch account_passkey_path(passkey), params: { passkey: { name: "mine now" } }
     assert_response :not_found
   end
