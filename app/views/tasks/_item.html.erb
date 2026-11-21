@@ -55,7 +55,7 @@
       <% if task.place_name %><span><%= task.location ? location_icon(task.location) : icon(:map_pin) %><%= task.place_name %></span><% end %>
       <% if task.due_on && !task.timed? %><span><%= icon(:calendar) %><%= day_name(task.due_on) %></span><% end %>
       <% unless task.recurs_no_recurrence? %><span class="task-recurrence"><%= icon(:repeat) %><%= task.recurrence_interval.humanize.downcase %></span><% end %>
-      <% if task.created_by && !task.assignment_for(task.created_by) %><span><%= icon(:user) %>from <%= task.created_by.display_name %></span><% end %>
+      <% if task.created_by && task.created_by != current_user && !task.assignment_for(task.created_by) %><span><%= icon(:user) %>from <%= task.created_by.display_name %></span><% end %>
       <% if others.any? %>
         <span class="who-list" title="<%= others.map { |a| "#{a.user.display_name}#{' (waiting)' if a.pending?}" }.join(', ') %>">
           <%= task.active_assignments.size > others.size ? "with" : "for" %>
