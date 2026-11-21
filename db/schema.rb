@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_22_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_22_110100) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -179,6 +179,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_100000) do
     t.index ["household_id"], name: "index_pets_on_household_id"
   end
 
+  create_table "residences", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.integer "household_id", null: false
+    t.integer "location_id", null: false
+    t.datetime "started_at", null: false
+    t.datetime "ended_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["household_id"], name: "index_residences_on_household_id"
+    t.index ["location_id"], name: "index_residences_on_location_id"
+    t.index ["user_id"], name: "index_residences_on_user_id"
+  end
+
   create_table "settings", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "key", null: false
@@ -255,6 +268,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_100000) do
     t.index ["webauthn_id"], name: "index_users_on_webauthn_id", unique: true
   end
 
+  create_table "work_schedule_versions", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.datetime "effective_at", null: false
+    t.string "availability", null: false
+    t.json "shifts", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_work_schedule_versions_on_user_id"
+  end
+
   create_table "work_shifts", force: :cascade do |t|
     t.integer "user_id", null: false
     t.integer "weekday", null: false
@@ -290,11 +313,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_100000) do
   add_foreign_key "pets", "households"
   add_foreign_key "pets", "locations", column: "home_id"
   add_foreign_key "pets", "users", column: "created_by_id"
+  add_foreign_key "residences", "households"
+  add_foreign_key "residences", "locations"
+  add_foreign_key "residences", "users"
   add_foreign_key "task_assignments", "tasks"
   add_foreign_key "task_assignments", "users"
   add_foreign_key "tasks", "households"
   add_foreign_key "tasks", "locations"
   add_foreign_key "tasks", "users", column: "created_by_id"
   add_foreign_key "tasks", "users", column: "finished_by_id"
+  add_foreign_key "work_schedule_versions", "users"
   add_foreign_key "work_shifts", "users"
 end

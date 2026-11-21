@@ -34,6 +34,7 @@ class WorkSchedulesController < ApplicationController
     end
 
     if errors.empty?
+      WorkScheduleVersion.snapshot!(managed_person)
       announce_change
       redirect_to edit_work_schedule_path(**managed_person_param), notice: managed_person.work_shifts.reload.any? ? "Work schedule saved." : "No work hours set.", status: :see_other
     else

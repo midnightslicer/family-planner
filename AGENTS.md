@@ -197,7 +197,13 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   are the active ones; `all_pets` / `all_locations` include archived ones,
   and reports, feedings and events keep pointing at them, so history
   survives. Keep data that charts will need (who, what, when) rather than
-  overwriting or deleting it.
+  overwriting or deleting it. The history tables: `location_reports` and
+  `feedings` (append-only; undo deletes a mistaken row), `tasks`
+  (`finished_at`, `finished_by`), `task_assignments`, `pet_visits` (each
+  stretch a pet is here; `pets.visitor` marks dogs we sit), `residences`
+  (who lived in which house when), `work_schedule_versions` (a copy per
+  save), `days_off`. Where someone was because of an event comes from the
+  task's time, people and `location_id`.
 - **Household scoping is mandatory** on every task query: filter by
   `Current.household.id` (or the token household on the wall). Non-members get
   404, not 403.

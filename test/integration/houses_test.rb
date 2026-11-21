@@ -59,6 +59,17 @@ class HousesTest < ActionDispatch::IntegrationTest
     assert_select "##{ActionView::RecordIdentifier.dom_id(@ours)} .task-meta", text: /Home to Member/
   end
 
+  test "moving house keeps where they lived before" do
+    membership = @smiths.household_memberships.find_by!(user: @me)
+    travel_to(Time.zone.local(2026, 1, 1)) { membership.update!(home: @ours) }
+    travel_to(Time.zone.local(2026, 6, 1)) { membership.update!(home: @brick) }
+    travel_to(Time.zone.local(2026, 9, 1)) { @brick.archive! }
+
+    history = @me.residences.order(:started_at).map { |r| [r.location.name, r.started_at.to_date, r.ended_at&.to_date] }
+    assert_equal [["Our House", Date.new(2026, 1, 1), Date.new(2026, 6, 1)],
+                  ["Red Brick House", Date.new(2026, 6, 1), Date.new(2026, 9, 1)]], history
+  end
+
   test "deleting a house leaves its people with no house set" do
     membership = @smiths.household_memberships.find_by!(user: @me)
     membership.update!(home: @ours)

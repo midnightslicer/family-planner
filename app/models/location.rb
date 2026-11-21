@@ -10,6 +10,9 @@ class Location < ApplicationRecord
   has_many :location_reports, dependent: :nullify
   has_many :tasks, dependent: :nullify
   has_many :residents, class_name: "HouseholdMembership", foreign_key: :home_id, inverse_of: :home, dependent: :nullify
+  # Only a real delete (the whole household going) takes this history;
+  # removing a place in the app archives it instead.
+  has_many :residences, dependent: :delete_all
   has_many :pets_living_here, class_name: "Pet", foreign_key: :home_id, inverse_of: :home, dependent: :nullify
 
   small_photo :photo

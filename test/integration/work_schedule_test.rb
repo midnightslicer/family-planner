@@ -57,6 +57,16 @@ class WorkScheduleTest < ActionDispatch::IntegrationTest
     assert_select "input[name='work_schedule[days][2][place_other]'][value='Client site']"
   end
 
+  test "each save keeps a dated copy of the schedule" do
+    sign_in @member
+    patch work_schedule_path, params: { work_schedule: { availability: "busy", days: weekdays } }
+    patch work_schedule_path, params: { work_schedule: { availability: "text", days: weekdays.slice("1") } }
+    versions = @member.work_schedule_versions.order(:effective_at)
+    assert_equal [5, 1], versions.map { |v| v.shifts.size }
+    assert_equal %w[busy text], versions.map(&:availability)
+    assert_equal({ "weekday" => 1, "from_time" => "09:00", "until_time" => "17:00", "place" => "Little house" }, versions.last.shifts.first)
+  end
+
   test "a bad time is explained and nothing changes" do
     sign_in @member
     patch work_schedule_path, params: { work_schedule: { days: { "1" => { on: "1", from_time: "nine", until_time: "17:00" } } } }

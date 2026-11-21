@@ -8,6 +8,7 @@ class Household < ApplicationRecord
   has_many :feedings, dependent: :delete_all
   # `pets` and `locations` are the ones in use; removing one archives it, so
   # history that mentions it keeps it. `all_*` include the archived ones.
+  has_many :residences, dependent: :delete_all
   has_many :all_pets, class_name: "Pet", dependent: :destroy
   has_many :all_locations, class_name: "Location", dependent: :destroy
   has_many :pets, -> { where(archived_at: nil) }, inverse_of: :household
