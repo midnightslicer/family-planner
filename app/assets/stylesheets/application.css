@@ -822,12 +822,11 @@ tbody tr:hover { background: var(--surface-sunken); }
 
 .person-meta { min-width: 0; display: flex; flex-direction: column; gap: 0.125rem; }
 
+/* Names wrap rather than being cut off. */
 .person-name {
   font-weight: 600;
   line-height: 1.25;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .person-handle {

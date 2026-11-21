@@ -111,7 +111,9 @@ body.kiosk .avail-busy { color: #fca5a5; background: rgba(220, 38, 38, 0.18);  b
    (wall_fit_controller.js) shrinks the board if a big family still
    overflows, since the wall can't scroll. */
 body.kiosk .wall-board {
-  columns: 340px;
+  /* At most one column per place (--places), so shrinking to fit never
+     leaves empty columns. */
+  columns: 340px var(--places, 4);
   column-gap: clamp(1rem, 2vw, 1.5rem);
   padding: clamp(1rem, 2vw, 1.5rem);
   transform-origin: top left;
@@ -129,14 +131,14 @@ body.kiosk .wall-place {
 body.kiosk .wall-place-header { display: flex; align-items: center; gap: 0.875rem; min-width: 0; }
 body.kiosk .wall-place-header .place-photo { width: 3rem; border-radius: 12px; }
 body.kiosk .wall-place-header .place-photo > .icon { width: 50%; height: 50%; }
+/* Long place names wrap rather than being cut off. */
 body.kiosk .wall-place-header h2 {
   flex: 1;
   min-width: 0;
   margin: 0;
   font-size: clamp(1.375rem, 2vw, 1.75rem);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 body.kiosk .wall-here { display: inline-flex; flex: none; }
 body.kiosk .wall-here .person-avatar {

@@ -3,7 +3,8 @@
     their status cards (people, then pets). Anyone whose place isn't known
     goes in "Somewhere else". Read-only: no buttons, links inert
     (kiosk.css). Any change anywhere refreshes it live. %>
-<div class="wall-board" data-controller="auto-refresh wall-fit" data-auto-refresh-interval-value="60">
+<div class="wall-board" data-controller="auto-refresh wall-fit" data-auto-refresh-interval-value="60"
+     style="--places: <%= [@sections.size, 1].max %>">
   <% @sections.each do |section| %>
     <section class="wall-place">
       <header class="wall-place-header">
