@@ -1,12 +1,8 @@
-<%= link_to app_name, (user_signed_in? ? dashboard_path : new_user_session_path), class: "nav-brand" %>
+<%= link_to (user_signed_in? ? dashboard_path : new_user_session_path), class: "nav-brand" do %><%= icon(:house) %><span><%= app_name %></span><% end %>
 <% if current_user %>
   <div class="nav-links">
-    <%= link_to "Dashboard", dashboard_path, "aria-current": ("page" if current_page?(dashboard_path) || current_page?(dashboard_root_path)) %>
-    <%= link_to "Tasks", tasks_path, "aria-current": ("page" if request.path.start_with?("/tasks")) %>
-    <%= link_to "Account", account_root_path, "aria-current": ("page" if request.path.start_with?("/account")) %>
-    <% if current_user.admin? %>
-      <%= link_to "Admin", admin_root_path, "aria-current": ("page" if request.path.start_with?("/admin")) %>
-    <% end %>
+    <%= link_to icon_label(:grid, "Dashboard"), dashboard_path, "aria-current": ("page" if current_page?(dashboard_path) || current_page?(dashboard_root_path)) %>
+    <%= link_to icon_label(:list, "Tasks"), tasks_path, "aria-current": ("page" if request.path.start_with?("/tasks")) %>
   </div>
   <% households = current_user.households.order(:name).to_a %>
   <% if households.size > 1 %>
@@ -15,10 +11,29 @@
       <%= f.select :household_id, options_from_collection_for_select(households, :id, :name, current_household&.id), {}, data: { action: "change->autosubmit#submit" } %>
     <% end %>
   <% end %>
+  <%# Your photo (or initials) is the way into your account: a <details>
+      menu, so it opens without JS; the menu controller closes it on an
+      outside click or Escape. %>
   <div class="nav-user">
-    <span class="nav-user-name" style="--user-color: <%= current_user.color %>">
-      <%= current_user.display_name %>
-    </span>
-    <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "btn btn-quiet btn-small" %>
+    <details class="user-menu" data-controller="menu" data-action="click@document->menu#outside keydown.esc@document->menu#close">
+      <summary class="user-menu-button" title="<%= current_user.display_name %>"
+               <%= "aria-current=page" if request.path.start_with?("/account", "/admin") %>>
+        <span class="person-avatar nav-avatar" aria-hidden="true"
+              style="--user-color: <%= current_user.color %>; --user-fg: <%= contrast_color(current_user.color) %>"><%= avatar_content(current_user) %></span>
+        <span class="visually-hidden">Account menu for <%= current_user.display_name %></span>
+        <%= icon(:chevron_down) %>
+      </summary>
+      <div class="user-menu-panel">
+        <div class="user-menu-header">
+          <strong><%= current_user.display_name %></strong>
+          <small>@<%= current_user.handle %></small>
+        </div>
+        <%= link_to icon_label(:user, "Your account"), account_root_path %>
+        <% if current_user.admin? %>
+          <%= link_to icon_label(:shield, "Admin"), admin_root_path %>
+        <% end %>
+        <%= button_to destroy_user_session_path, method: :delete do %><%= icon_label(:log_out, "Sign out") %><% end %>
+      </div>
+    </details>
   </div>
 <% end %>

@@ -1,37 +1,41 @@
 <%# Task card used on the tasks page (list) and show view. %>
-<div class="task-card" id="<%= dom_id(task) %>" data-task-id="<%= task.id %>">
+<div class="task-card task-card-<%= task.status %>" id="<%= dom_id(task) %>" data-task-id="<%= task.id %>">
   <div class="task-title"><%= task.title %></div>
   <% if task.description.present? %>
     <p class="task-meta"><%= task.description %></p>
   <% end %>
   <div class="task-meta">
-    <span class="status-chip status-<%= task.status %>"><%= task_status_label(task) %></span>
+    <span class="status-chip status-<%= task.status %>"><%= task_status_icon(task) %><%= task_status_label(task) %></span>
     <% if task.assigned_to %>
-      <span>@<%= task.assigned_to.handle %></span>
+      <span><%= icon(:user) %>@<%= task.assigned_to.handle %></span>
     <% end %>
     <% if task.starts_at %>
-      <span>starts <%= task.starts_at.strftime("%b %-d, %H:%M") %></span>
+      <span><%= icon(:calendar) %>starts <%= task.starts_at.strftime("%b %-d, %H:%M") %></span>
     <% end %>
     <% if task.ends_at %>
-      <span>ends <%= task.ends_at.strftime("%H:%M") %></span>
+      <span><%= icon(:clock) %>ends <%= task.ends_at.strftime("%H:%M") %></span>
     <% end %>
   </div>
   <%# recurrence_interval returns the enum key, so "" reads back as
       "no_recurrence", and .present? is true for it. %>
   <% unless task.recurs_no_recurrence? %>
-    <div class="task-recurrence">Repeats <%= task.recurrence_interval.humanize.downcase %></div>
+    <div class="task-recurrence"><%= icon(:repeat) %>Repeats <%= task.recurrence_interval.humanize.downcase %></div>
   <% end %>
   <div class="task-actions">
     <% if task.planned? || task.restartable? %>
-      <%= button_to "Start", start_task_path(task), method: :post, class: "btn btn-primary" %>
+      <%= button_to start_task_path(task), method: :post, class: "btn btn-primary" do %><%= icon_label(:play, "Start") %><% end %>
     <% elsif task.in_progress? %>
-      <%= button_to "Done", complete_task_path(task), method: :post, class: "btn btn-primary" %>
-      <%= button_to "Pause", pause_task_path(task), method: :post, class: "btn btn-quiet" %>
-      <%= button_to "Never mind", cancel_task_path(task), method: :post, class: "btn btn-danger" %>
+      <%= button_to complete_task_path(task), method: :post, class: "btn btn-primary btn-success",
+                    data: { controller: "celebrate", action: "click->celebrate#burst" } do %><%= icon_label(:check, "Done") %><% end %>
+      <%= button_to pause_task_path(task), method: :post, class: "btn btn-quiet" do %><%= icon_label(:pause, "Pause") %><% end %>
+      <%= button_to cancel_task_path(task), method: :post, class: "btn btn-danger" do %><%= icon_label(:skip, "Never mind") %><% end %>
     <% end %>
     <% if task.created_by_id == current_user.id || current_user.admin? %>
-      <%= link_to "Edit", edit_task_path(task), class: "btn btn-quiet" %>
-      <%= button_to "Delete", task_path(task), method: :delete, class: "btn btn-quiet", form: { data: { turbo_confirm: "Delete this for good?" } } %>
+      <span class="task-actions-end">
+        <%= link_to edit_task_path(task), class: "btn btn-quiet btn-icon", title: "Edit", "aria-label": "Edit" do %><%= icon(:pencil) %><% end %>
+        <%= button_to task_path(task), method: :delete, class: "btn btn-quiet btn-icon btn-icon-danger", title: "Delete", "aria-label": "Delete",
+                      form: { data: { turbo_confirm: "Delete this for good?" } } do %><%= icon(:trash) %><% end %>
+      </span>
     <% end %>
   </div>
 </div>

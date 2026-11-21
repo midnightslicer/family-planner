@@ -120,7 +120,7 @@ class TasksController < ApplicationController
     if turbo_stream_request?
       render turbo_stream: [
         turbo_stream.replace(@task, partial: "tasks/task_card", locals: { task: @task }),
-        turbo_stream.prepend("flash", helpers.tag.p(message, class: "flash-#{kind}"))
+        turbo_stream.prepend("flash", helpers.flash_message(message, kind))
       ]
     else
       redirect_to tasks_path, kind => message, status: :see_other

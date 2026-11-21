@@ -6,7 +6,7 @@
      data-passkey-login-create-url-value="<%= user_passkey_session_path %>">
   <div class="passkey-signin">
     <button type="button" class="btn btn-primary btn-block" data-passkey-login-target="button" data-action="passkey-login#signIn" hidden>
-      Sign in with a passkey
+      <%= icon_label(:key, "Sign in with a passkey") %>
     </button>
     <p class="flash-alert" data-passkey-login-target="error" role="alert" hidden></p>
   </div>
@@ -26,7 +26,7 @@
       <%= f.label :remember_me, "Keep me signed in on this device" %>
     </div>
     <div class="form-actions">
-      <%= f.submit "Sign in", class: "btn btn-primary" %>
+      <%= f.button type: "submit", class: "btn btn-primary" do %><%= icon_label(:log_in, "Sign in") %><% end %>
     </div>
   <% end %>
   <%= render "users/shared/links" %>

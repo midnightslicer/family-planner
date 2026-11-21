@@ -1,18 +1,22 @@
 <section class="checklist" aria-labelledby="checklist-title">
   <div class="checklist-header">
-    <h2 id="checklist-title">Getting started</h2>
+    <h2 id="checklist-title"><%= icon(:sparkles) %>Getting started</h2>
     <span class="task-meta"><%= checklist.done_count %> of <%= checklist.steps.size %> done</span>
     <%= button_to "Hide", dismiss_checklist_path, class: "btn btn-quiet btn-small" %>
   </div>
+  <div class="checklist-progress" aria-hidden="true"
+       style="--progress: <%= (checklist.done_count * 100.0 / [checklist.steps.size, 1].max).round %>%"></div>
   <ol class="checklist-steps">
     <% checklist.steps.each do |step| %>
       <li class="checklist-step<%= ' is-done' if step.done %>">
-        <span class="checklist-mark" aria-hidden="true"><%= step.done ? "✓" : "" %></span>
+        <span class="checklist-mark" aria-hidden="true"><%= icon(:check) if step.done %></span>
         <div class="checklist-body">
           <strong><%= step.title %></strong><%= " (done)" if step.done %>
           <small><%= step.detail %></small>
         </div>
-        <%= link_to step.link_label, step.path, class: "btn btn-small#{' btn-primary' unless step.done}" unless step.done %>
+        <% unless step.done %>
+          <%= link_to step.path, class: "btn btn-small btn-primary" do %><span><%= step.link_label %></span><%= icon(:arrow_right) %><% end %>
+        <% end %>
       </li>
     <% end %>
   </ol>

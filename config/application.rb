@@ -37,6 +37,12 @@ module FamilyStatus
       config.active_record.encryption.public_send(:"#{name}=", value)
     end
 
+    # Profile photos arrive already cropped and shrunk by the browser, and
+    # there is no image library in the image (no libvips), so skip Active
+    # Storage's analysis and previews rather than log a failure per upload.
+    config.active_storage.analyzers = []
+    config.active_storage.previewers = []
+
     # Configuration for the application, engines, and railties goes here.
     #
     # These settings can be overridden in specific environments using the files

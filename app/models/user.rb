@@ -11,7 +11,15 @@ class User < ApplicationRecord
     #a8a29e #d97706 #9333ea #0f766e
   ].freeze
 
+  # Profile photos are square-cropped and shrunk in the browser before upload
+  # (avatar_upload_controller.js), so the server never processes images: it
+  # only checks that what arrived is a small raster image. No SVG: it can
+  # carry script.
+  AVATAR_TYPES = %w[image/jpeg image/png image/webp].freeze
+  AVATAR_MAX_BYTES = 2.megabytes
+
   encrypts :otp_secret
+  has_one_attached :avatar
   serialize :otp_recovery_codes, coder: JSON
 
   validates :handle, presence: true,
@@ -19,6 +27,7 @@ class User < ApplicationRecord
                      format: { with: HANDLE_FORMAT, message: "may only contain lowercase letters, numbers, and underscores" }
   validates :display_name, presence: true, length: { maximum: 60 }
   validates :color, format: { with: /\A#[0-9a-fA-F]{6}\z/, message: "must be a 6-digit hex color" }
+  validate :avatar_is_a_small_image
 
   has_many :household_memberships, dependent: :destroy
   has_many :households, through: :household_memberships
@@ -30,6 +39,19 @@ class User < ApplicationRecord
   # Set when an account is created with a passkey instead of a password.
   attr_accessor :signing_up_with_passkey
 
+  # The colour picker's "Custom color" box. It has its own name so it can't
+  # override the palette swatch (both used to post user[color], and the box,
+  # prefilled with the old colour, came last and won). Filled in, it wins.
+  attr_accessor :custom_color
+
+  # "Remove photo" on the profile form. A newly chosen photo takes precedence.
+  attr_reader :remove_avatar
+  def remove_avatar=(value)
+    @remove_avatar = ActiveModel::Type::Boolean.new.cast(value)
+  end
+
+  before_validation :apply_custom_color
+  before_validation :apply_remove_avatar
   before_validation :normalize_color
   before_validation :normalize_handle
   before_validation :ensure_handle, if: -> { handle.blank? }
@@ -39,6 +61,17 @@ class User < ApplicationRecord
   def self.suggested_color(household = nil)
     taken = household ? household.users.pluck(:color) : []
     (PALETTE - taken).sample || PALETTE.sample
+  end
+
+  # The person card for this user, re-rendered on every board they're on
+  # (after a name, colour or photo change).
+  def broadcast_card
+    households.each { |household| household.broadcast_member_cards([id]) }
+  end
+
+  # A stored photo, ignoring one that's attached but failed validation.
+  def avatar_saved?
+    avatar.attached? && avatar.blob.persisted?
   end
 
   def member_of?(household)
@@ -160,6 +193,25 @@ class User < ApplicationRecord
   def recovery_digest(code)
     normalized = code.to_s.downcase.gsub(/[^a-z2-7]/, "")
     OpenSSL::HMAC.hexdigest("SHA256", Rails.application.secret_key_base, "recovery-code:#{normalized}")
+  end
+
+  def apply_custom_color
+    self.color = custom_color if custom_color.present?
+  end
+
+  def apply_remove_avatar
+    self.avatar = nil if remove_avatar && !attachment_changes["avatar"]
+  end
+
+  def avatar_is_a_small_image
+    return unless attachment_changes["avatar"] && avatar.attached?
+
+    unless AVATAR_TYPES.include?(avatar.blob.content_type)
+      errors.add(:avatar, "must be a JPEG, PNG or WebP image")
+    end
+    if avatar.blob.byte_size > AVATAR_MAX_BYTES
+      errors.add(:avatar, "must be smaller than #{AVATAR_MAX_BYTES / 1.megabyte} MB")
+    end
   end
 
   def normalize_color

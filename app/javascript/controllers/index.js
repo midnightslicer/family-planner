@@ -9,8 +9,20 @@ application.register("auto-refresh", AutoRefreshController)
 import AutosubmitController from "./autosubmit_controller"
 application.register("autosubmit", AutosubmitController)
 
+import AvatarUploadController from "./avatar_upload_controller"
+application.register("avatar-upload", AvatarUploadController)
+
+import ColorPickerController from "./color_picker_controller"
+application.register("color-picker", ColorPickerController)
+
+import CelebrateController from "./celebrate_controller"
+application.register("celebrate", CelebrateController)
+
 import ClipboardController from "./clipboard_controller"
 application.register("clipboard", ClipboardController)
+
+import MenuController from "./menu_controller"
+application.register("menu", MenuController)
 
 import NotificationController from "./notification_controller"
 application.register("notification", NotificationController)

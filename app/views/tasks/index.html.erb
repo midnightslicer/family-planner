@@ -1,11 +1,11 @@
 <% content_for :title, "Tasks" %>
 <div class="page-header">
   <h1>Tasks: <%= current_household.name %></h1>
-  <%= link_to "Add a task", new_task_path, class: "btn btn-primary" %>
+  <%= link_to new_task_path, class: "btn btn-primary" do %><%= icon_label(:plus, "Add a task") %><% end %>
 </div>
 
 <% if @active_tasks.empty? && @done_tasks.empty? %>
-  <p class="empty-hint">No tasks yet. Add what you're doing or planning, and it shows up on your card on the board.</p>
+  <p class="empty-hint"><%= icon(:sparkles) %>No tasks yet. Add what you're doing or planning, and it shows up on your card on the board.</p>
 <% end %>
 
 <div class="task-list">
@@ -15,7 +15,7 @@
 </div>
 
 <% if @done_tasks.any? %>
-  <h2 class="section-title">Recently finished</h2>
+  <h2 class="section-title"><%= icon(:check_circle) %>Recently finished</h2>
   <div class="task-list">
     <% @done_tasks.each do |task| %>
       <%= render "tasks/task_card", task: task %>

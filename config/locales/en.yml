@@ -29,3 +29,9 @@
 
 en:
   hello: "Hello world"
+  activerecord:
+    attributes:
+      user:
+        avatar: "Photo"
+        custom_color: "Custom color"
+

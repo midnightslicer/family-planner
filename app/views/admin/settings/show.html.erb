@@ -58,5 +58,5 @@
 
 <div class="form-card">
   <p>Check the email settings by sending a message to <strong><%= current_user.email %></strong>. Save first.</p>
-  <%= button_to "Send test email", test_email_admin_settings_path, method: :post, class: "btn" %>
+  <%= button_to test_email_admin_settings_path, method: :post, class: "btn" do %><%= icon_label(:send, "Send test email") %><% end %>
 </div>

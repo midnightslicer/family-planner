@@ -4,7 +4,7 @@
 
 <div class="page-header">
   <h1><%= @household.name %></h1>
-  <%= link_to "Add a task", new_task_path, class: "btn btn-primary" %>
+  <%= link_to new_task_path, class: "btn btn-primary" do %><%= icon_label(:plus, "Add a task") %><% end %>
 </div>
 
 <%= render "dashboards/checklist", checklist: @checklist if @checklist.visible? %>
@@ -17,5 +17,5 @@
 </div>
 
 <% if @members.size == 1 && current_user.admin? %>
-  <p class="empty-hint">It's just you so far. <%= link_to "Invite your family", new_admin_invitation_path %> to fill the board.</p>
+  <p class="empty-hint"><%= icon(:user_plus) %>It's just you so far. <%= link_to "Invite your family", new_admin_invitation_path %> to fill the board.</p>
 <% end %>

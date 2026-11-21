@@ -2,7 +2,7 @@
 <%= render "admin/tabs" %>
 <div class="page-header">
   <h1>People</h1>
-  <%= link_to "Invite someone", new_admin_invitation_path, class: "btn btn-primary" %>
+  <%= link_to new_admin_invitation_path, class: "btn btn-primary" do %><%= icon_label(:user_plus, "Invite someone") %><% end %>
 </div>
 
 <div class="table-wrap">

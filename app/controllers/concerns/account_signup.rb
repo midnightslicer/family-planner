@@ -40,6 +40,6 @@ module AccountSignup
   end
 
   def signup_params
-    params.require(:user).permit(:display_name, :email, :password, :color)
+    params.require(:user).permit(:display_name, :email, :password, :color, :custom_color)
   end
 end

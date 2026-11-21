@@ -48,6 +48,8 @@
   --notice-fg: #14532d;
 
   --placeholder: #9aa5b4;
+  --backdrop: rgba(15, 23, 42, 0.45);
+  --crop-shade: rgba(255, 255, 255, 0.6);
   --swatch-ring: rgba(15, 23, 42, 0.08);
   /* Mixed into a user's colour to keep @handles legible on the card. Dark
      mode needs more of the contrast colour, not less, so both are tokens. */
@@ -69,6 +71,12 @@
 
   --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
     Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  /* Motion. A springy ease for things that pop, a calm one for the rest. */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --fast: 140ms;
+  --medium: 260ms;
+
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }
 
@@ -122,6 +130,8 @@
     --notice-fg: #86efac;
 
     --placeholder: #64748b;
+    --backdrop: rgba(0, 0, 0, 0.6);
+    --crop-shade: rgba(15, 20, 27, 0.65);
     --swatch-ring: rgba(255, 255, 255, 0.16);
     --handle-contrast: #ffffff;
     --handle-mix: 55%;
@@ -192,16 +202,20 @@ blockquote {
 .nav-user form,
 .form-actions form,
 .task-actions form,
+.task-actions-end form,
 .invite-actions form,
 .checklist-header form,
 .checklist-step form,
 .table-actions form { display: contents; }
 
 /* ---------- Nav ---------- */
-nav, .nav {
+/* Only the top bar: a bare `nav` selector also caught the admin tabs (also
+   a <nav>), making them sticky on the same layer and drawn over the
+   account menu. Above everything on the page except dialogs. */
+.nav {
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 50;
   background: color-mix(in srgb, var(--surface) 88%, transparent);
   backdrop-filter: saturate(180%) blur(12px);
   border-bottom: 1px solid var(--border);
@@ -218,6 +232,9 @@ nav, .nav {
 }
 
 .nav-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   font-size: 1rem;
   font-weight: 650;
   letter-spacing: -0.01em;
@@ -238,6 +255,7 @@ nav, .nav {
 .nav-links a {
   display: inline-flex;
   align-items: center;
+  gap: 0.4375rem;
   min-height: 36px;
   padding: 0 0.75rem;
   border-radius: var(--radius-pill);
@@ -245,6 +263,7 @@ nav, .nav {
   font-size: 0.9375rem;
   font-weight: 550;
   white-space: nowrap;
+  transition: color var(--fast) ease, background var(--fast) ease;
 }
 .nav-links a:hover {
   color: var(--text);
@@ -263,21 +282,82 @@ nav, .nav {
   margin-left: auto;
 }
 
-.nav-user-name {
-  display: inline-flex;
+/* Account menu: your avatar opens it. */
+.user-menu { position: relative; }
+.user-menu-button {
+  display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9375rem;
-  font-weight: 550;
-  white-space: nowrap;
-}
-.nav-user-name::before {
-  content: "";
-  width: 0.625rem;
-  height: 0.625rem;
+  gap: 0.25rem;
+  padding: 0.1875rem 0.375rem 0.1875rem 0.1875rem;
   border-radius: var(--radius-pill);
-  background: var(--user-color, var(--accent));
-  flex: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  list-style: none;
+  transition: background var(--fast) ease, color var(--fast) ease;
+}
+.user-menu-button::-webkit-details-marker { display: none; }
+.user-menu-button:hover,
+.user-menu[open] .user-menu-button { background: var(--surface-sunken); color: var(--text); }
+.user-menu-button .icon { width: 1rem; height: 1rem; }
+.user-menu[open] .user-menu-button .icon-chevron-down { transform: rotate(180deg); }
+.user-menu-button:hover .nav-avatar { transform: scale(1.08) rotate(-6deg); }
+.user-menu-button[aria-current="page"] .nav-avatar { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent); }
+
+.nav-avatar { width: 2.125rem; height: 2.125rem; font-size: 0.75rem; }
+/* Photos in the nav skip the card's colour ring; the button is ring enough. */
+.nav-avatar:has(img) { box-shadow: none; }
+
+.user-menu-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.5rem);
+  z-index: 30;
+  min-width: 14rem;
+  padding: 0.375rem;
+  display: grid;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  transform-origin: top right;
+  animation: menu-in 200ms var(--ease-spring);
+}
+.user-menu-header {
+  display: grid;
+  padding: 0.5rem 0.625rem 0.625rem;
+  margin-bottom: 0.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.user-menu-header strong { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-menu-panel a,
+.user-menu-panel button {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 0.625rem;
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--text);
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--fast) ease;
+}
+.user-menu-panel a:hover,
+.user-menu-panel button:hover { background: var(--surface-sunken); text-decoration: none; }
+.user-menu-panel a:hover .icon,
+.user-menu-panel button:hover .icon { transform: translateX(2px); }
+.user-menu-panel .icon { color: var(--text-muted); }
+.user-menu-panel form { display: contents; }
+.user-menu-panel form button { margin-top: 0.25rem; }
+
+@keyframes menu-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.96); }
 }
 
 /* ---------- Page shell ---------- */
@@ -324,7 +404,13 @@ nav, .nav {
   font-size: 0.9375rem;
   font-weight: 550;
   box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  animation: slide-down 420ms var(--ease-spring) both;
 }
+.flash-notice > .icon,
+.flash-alert > .icon { flex: none; width: 1.25rem; height: 1.25rem; }
 .flash-notice { background: var(--status-completed-bg); border-color: var(--status-completed-border); color: var(--notice-fg); }
 .flash-alert  { background: var(--danger-bg);           border-color: var(--danger-border);           color: var(--danger-fg); }
 
@@ -381,6 +467,9 @@ fieldset.form-field {
   background: var(--surface-sunken);
 }
 details.form-field > summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   cursor: pointer;
   font-size: 0.875rem;
   font-weight: 600;
@@ -495,17 +584,48 @@ input[type="checkbox"], input[type="radio"] {
   cursor: pointer;
   text-decoration: none;
   white-space: nowrap;
-  transition: background 120ms ease, border-color 120ms ease, transform 80ms ease;
+  transition:
+    background var(--fast) ease,
+    border-color var(--fast) ease,
+    color var(--fast) ease,
+    box-shadow var(--fast) ease,
+    transform var(--medium) var(--ease-spring);
+  -webkit-tap-highlight-color: transparent;
 }
-.btn:hover { background: var(--surface-sunken); text-decoration: none; }
-.btn:active { transform: translateY(1px); }
+.btn:hover {
+  background: var(--surface-sunken);
+  text-decoration: none;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
+}
+.btn:active {
+  transform: translateY(0) scale(0.96);
+  box-shadow: var(--shadow-sm);
+  transition-duration: 60ms;
+}
 
 .btn-primary {
   color: var(--accent-fg);
   background: var(--accent);
   border-color: var(--accent);
 }
-.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn-primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+/* Finishing a task: the one green button in the app. */
+.btn-success {
+  color: var(--surface);
+  background: var(--status-completed);
+  border-color: var(--status-completed);
+}
+.btn-success:hover {
+  background: color-mix(in srgb, var(--status-completed) 88%, var(--text));
+  border-color: transparent;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--status-completed) 35%, transparent);
+}
 
 .btn-danger {
   color: var(--danger);
@@ -520,7 +640,11 @@ input[type="checkbox"], input[type="radio"] {
   border-color: transparent;
   box-shadow: none;
 }
-.btn-quiet:hover { color: var(--text); background: var(--surface-sunken); }
+.btn-quiet:hover { color: var(--text); background: var(--surface-sunken); box-shadow: none; }
+
+/* Square icon-only button (Edit / Delete on task cards). */
+.btn-icon { padding: 0; width: 36px; min-height: 36px; }
+.btn-icon-danger:hover { color: var(--danger); background: var(--danger-bg); }
 
 .btn-small {
   min-height: 34px;
@@ -606,7 +730,9 @@ tbody tr:hover { background: var(--surface-sunken); }
   box-shadow: var(--shadow);
   padding: 1.25rem;
   overflow: hidden;
+  transition: transform var(--medium) var(--ease-out), box-shadow var(--medium) ease;
 }
+.person-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
 /* Colour band drawn as a pseudo-element so it can't shift the box model. */
 .person-card::before {
   content: "";
@@ -614,7 +740,9 @@ tbody tr:hover { background: var(--surface-sunken); }
   inset: 0 auto 0 0;
   width: 5px;
   background: var(--user-color);
+  transition: width var(--medium) var(--ease-out);
 }
+.person-card:hover::before { width: 8px; }
 
 .person-identity {
   display: flex;
@@ -635,7 +763,20 @@ tbody tr:hover { background: var(--surface-sunken); }
   font-size: 0.875rem;
   font-weight: 700;
   letter-spacing: 0.02em;
+  transition: transform var(--medium) var(--ease-spring);
 }
+/* A profile photo fills the disc; the user's colour shows as a thin ring. */
+.person-avatar:has(img) { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--user-color); }
+.person-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+  display: block;
+}
+.person-card:hover .person-avatar { transform: scale(1.08) rotate(-6deg); }
+/* Someone who's busy gets a soft ring pulsing out of their avatar. */
+.person-card.is-busy .person-avatar { animation: ring-pulse 2.4s ease-out infinite; }
 
 .person-meta { min-width: 0; display: flex; flex-direction: column; gap: 0.125rem; }
 
@@ -683,14 +824,18 @@ tbody tr:hover { background: var(--surface-sunken); }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.status-chip::before {
+.status-chip .icon { width: 1em; height: 1em; }
+/* "Doing" has no icon: a live dot that breathes instead. */
+.status-chip.status-in_progress::before {
   content: "";
   flex: none;
   width: 0.5rem;
   height: 0.5rem;
   border-radius: var(--radius-pill);
   background: currentColor;
+  animation: live-dot 1.8s ease-in-out infinite;
 }
+.person-card:hover .status-completed .icon-sun { animation: spin 6s linear infinite; }
 
 .status-planned     { color: var(--status-planned);     background: var(--status-planned-bg);     border-color: var(--status-planned-border); }
 .status-in_progress { color: var(--status-in_progress); background: var(--status-in_progress-bg); border-color: var(--status-in_progress-border); }
@@ -706,9 +851,12 @@ tbody tr:hover { background: var(--surface-sunken); }
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   padding: 1.125rem 1.25rem;
-  transition: box-shadow 120ms ease, border-color 120ms ease;
+  transition: box-shadow var(--fast) ease, border-color var(--fast) ease, transform var(--medium) var(--ease-out);
 }
-.task-card:hover { box-shadow: var(--shadow); border-color: var(--border-strong); }
+.task-card:hover { box-shadow: var(--shadow); border-color: var(--border-strong); transform: translateY(-1px); }
+.task-card-in_progress { border-color: var(--status-in_progress-border); }
+.task-card-completed .task-title,
+.task-card-undone .task-title { color: var(--text-muted); }
 
 .task-title { font-size: 1rem; font-weight: 600; margin: 0 0 0.25rem; }
 
@@ -722,8 +870,13 @@ tbody tr:hover { background: var(--surface-sunken); }
   margin: 0 0 0.75rem;
 }
 
+.task-meta > span:not(.status-chip) { display: inline-flex; align-items: center; gap: 0.3125rem; }
+.task-meta .icon { width: 0.9375rem; height: 0.9375rem; }
+
 .task-recurrence {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--accent);
@@ -742,6 +895,8 @@ tbody tr:hover { background: var(--surface-sunken); }
   border-top: 1px solid var(--border);
 }
 .task-actions .btn { min-height: 36px; padding: 0.25rem 0.875rem; font-size: 0.875rem; }
+.task-actions .btn-icon { padding: 0; }
+.task-actions-end { display: flex; gap: 0.25rem; margin-left: auto; }
 
 /* ---------- Banners ---------- */
 .invite-banner {
@@ -757,6 +912,17 @@ tbody tr:hover { background: var(--surface-sunken); }
   margin-bottom: 1.5rem;
 }
 .invite-banner p { margin: 0; flex: 1 1 16rem; color: var(--text-muted); }
+.banner-icon {
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-pill);
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.banner-icon .icon { animation: bell-ring 3.2s ease-in-out 0.6s infinite; transform-origin: 50% 10%; }
 
 .invite-actions {
   display: flex;
@@ -783,9 +949,10 @@ tbody tr:hover { background: var(--surface-sunken); }
   border: 2px solid transparent;
   box-shadow: inset 0 0 0 1px var(--swatch-ring);
   cursor: pointer;
-  transition: transform 100ms ease, box-shadow 100ms ease;
+  transition: transform var(--medium) var(--ease-spring), box-shadow var(--fast) ease;
 }
-.swatch:hover { transform: scale(1.08); }
+.swatch:hover { transform: scale(1.1); }
+.swatch:has(input:checked) { animation: pop var(--medium) var(--ease-spring); }
 
 /* The radio is the accessible control; the label is the visible swatch. */
 .swatch input[type="radio"] {
@@ -804,6 +971,82 @@ tbody tr:hover { background: var(--surface-sunken); }
 .swatch:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .custom-color { max-width: 220px; }
+
+/* ---------- Profile photo ---------- */
+.avatar-picker { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; }
+.avatar-preview {
+  width: 5rem;
+  height: 5rem;
+  font-size: 1.5rem;
+  transition: background var(--medium) ease, color var(--medium) ease, box-shadow var(--medium) ease;
+}
+.avatar-preview.is-new { animation: pop 420ms var(--ease-spring); }
+.avatar-controls { flex: 1 1 14rem; min-width: 0; display: grid; gap: 0.5rem; }
+.avatar-controls small { margin: 0; }
+.avatar-controls .inline-check { margin: 0; }
+.avatar-controls .btn { justify-self: start; }
+
+/* Crop dialog: the photo on a canvas under a round window. */
+.crop-dialog {
+  width: min(22rem, calc(100vw - 2rem));
+  padding: 1.5rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+.crop-dialog[open] { animation: pop 320ms var(--ease-spring); }
+.crop-dialog::backdrop { background: var(--backdrop); backdrop-filter: blur(3px); }
+.crop-dialog h2 { margin-bottom: 0.25rem; }
+.crop-hint { font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem; }
+.crop-stage {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+  /* The shade outside the circle is drawn on the canvas, in --crop-shade. */
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.crop-stage:active { cursor: grabbing; }
+.crop-stage:focus { outline: none; }
+.crop-stage:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.crop-dialog .crop-stage { box-shadow: 0 0 0 1px var(--border); }
+.crop-zoom {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-top: 1rem;
+  color: var(--text-muted);
+}
+.crop-zoom input[type="range"] { flex: 1; accent-color: var(--accent); }
+.crop-dialog .form-actions { margin-top: 1.25rem; }
+
+input[type="file"] {
+  max-width: 100%;
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+input[type="file"]::file-selector-button {
+  margin-right: 0.75rem;
+  min-height: 36px;
+  padding: 0.25rem 0.875rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: background var(--fast) ease, transform var(--medium) var(--ease-spring);
+}
+input[type="file"]::file-selector-button:hover { background: var(--surface-sunken); transform: translateY(-1px); }
+input[type="file"]::file-selector-button:active { transform: scale(0.96); }
 .custom-color summary {
   cursor: pointer;
   font-size: 0.8125rem;
@@ -848,8 +1091,16 @@ a.nav-brand { color: var(--text); text-decoration: none; }
 
 .btn-block { width: 100%; }
 
-.empty-hint { color: var(--text-muted); margin-top: 1.5rem; }
-.section-title { margin-top: 2.5rem; }
+.empty-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  color: var(--text-muted);
+  margin-top: 1.5rem;
+}
+.empty-hint .icon { flex: none; color: var(--accent); width: 1.25rem; height: 1.25rem; }
+.section-title { margin-top: 2.5rem; display: flex; align-items: center; gap: 0.5rem; }
+.section-title .icon { color: var(--status-completed); }
 
 /* ---------- Passkeys & sign-in ---------- */
 .passkey-signin { display: grid; gap: 0.75rem; }
@@ -885,7 +1136,8 @@ a.nav-brand { color: var(--text); text-decoration: none; }
 
 /* ---------- Account & admin pages ---------- */
 .account-section { margin-bottom: 2.75rem; }
-.account-section > h2 { margin-bottom: 0.75rem; }
+.account-section > h2 { margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+.account-section > h2 .icon { color: var(--accent); }
 .account-section .page-intro { display: block; }
 .account-section .table-wrap { margin-bottom: 1rem; }
 
@@ -897,12 +1149,16 @@ a.nav-brand { color: var(--text); text-decoration: none; }
   border-bottom: 1px solid var(--border);
 }
 .admin-tabs a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
   padding: 0.5rem 0.875rem;
   color: var(--text-muted);
   font-weight: 600;
   font-size: 0.9375rem;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
+  transition: color var(--fast) ease, border-color var(--medium) var(--ease-out);
 }
 .admin-tabs a:hover { color: var(--text); text-decoration: none; }
 .admin-tabs a[aria-current="page"] { color: var(--text); border-bottom-color: var(--accent); }
@@ -941,7 +1197,25 @@ a.nav-brand { color: var(--text); text-decoration: none; }
   margin-bottom: 1.5rem;
 }
 .checklist-header { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
-.checklist-header h2 { margin: 0; font-size: 1.0625rem; }
+.checklist-header h2 { margin: 0; font-size: 1.0625rem; display: flex; align-items: center; gap: 0.5rem; }
+.checklist-header h2 .icon { color: var(--accent); animation: twinkle 2.8s ease-in-out infinite; }
+.checklist-progress {
+  height: 6px;
+  margin-bottom: 0.875rem;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+.checklist-progress::after {
+  content: "";
+  display: block;
+  height: 100%;
+  width: var(--progress, 0%);
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), var(--status-completed));
+  animation: grow-x 900ms var(--ease-out) both;
+  transform-origin: left;
+}
 .checklist-header .task-meta { margin: 0; }
 .checklist-header .btn { margin-left: auto; }
 .checklist-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.25rem; }
@@ -963,6 +1237,7 @@ a.nav-brand { color: var(--text); text-decoration: none; }
   font-size: 0.8125rem;
   font-weight: 700;
 }
+.checklist-mark .icon { width: 0.875rem; height: 0.875rem; stroke-width: 3; animation: pop 400ms var(--ease-spring) both; }
 .checklist-step.is-done .checklist-mark {
   border-color: var(--status-completed);
   background: var(--status-completed-bg);
@@ -970,6 +1245,121 @@ a.nav-brand { color: var(--text); text-decoration: none; }
 }
 .checklist-step.is-done strong { color: var(--text-muted); font-weight: 500; }
 .checklist-body { flex: 1; min-width: 0; display: grid; }
+
+/* ---------- Icons & motion ----------
+ * Icons come from IconsHelper as inline SVG stroked in currentColor, so they
+ * take the colour of whatever text they sit in. Sized in em so they scale
+ * with the text (the kiosk's bigger chips get bigger icons for free).
+ */
+.icon {
+  flex: none;
+  width: 1.125em;
+  height: 1.125em;
+  vertical-align: -0.2em;
+  transition: transform var(--medium) var(--ease-spring);
+}
+
+.nav-brand .icon { color: var(--accent); width: 1.375rem; height: 1.375rem; }
+.nav-brand:hover .icon { transform: rotate(-10deg) scale(1.12); }
+.nav-links a:hover .icon { transform: translateY(-1px) scale(1.12); }
+
+/* Each button icon has its own little gesture on hover. */
+.btn:hover .icon-plus       { transform: rotate(90deg); }
+.btn:hover .icon-play,
+.btn:hover .icon-arrow-right,
+.btn:hover .icon-log-in     { transform: translateX(3px); }
+.btn:hover .icon-log-out    { transform: translateX(2px); }
+.btn:hover .icon-check      { transform: scale(1.25); }
+.btn:hover .icon-pause      { transform: scaleY(0.8); }
+.btn:hover .icon-skip       { transform: translateX(2px); }
+.btn:hover .icon-pencil     { transform: rotate(-14deg) translateY(-1px); }
+.btn:hover .icon-trash      { animation: wiggle 400ms ease-in-out; }
+.btn:hover .icon-zap        { animation: wiggle 400ms ease-in-out; color: var(--status-in_progress-border); }
+.btn:hover .icon-bookmark   { transform: translateY(-2px); }
+.btn:hover .icon-bell       { animation: bell-ring 700ms ease-in-out; }
+.btn:hover .icon-user-plus,
+.btn:hover .icon-key,
+.btn:hover .icon-save       { transform: scale(1.15); }
+.btn:hover .icon-send,
+.btn:hover .icon-external   { transform: translate(2px, -2px); }
+
+/* While Turbo submits a form it marks it aria-busy: dim the button and
+   let it breathe so a slow tap still feels acknowledged. */
+form[aria-busy="true"] .btn {
+  cursor: progress;
+  animation: busy 900ms ease-in-out infinite;
+}
+
+/* Cards rise in, one after another. A card replaced by a live broadcast
+   (someone started a task) rises in again, which reads as "this changed". */
+.dashboard-grid > *,
+.task-list > *,
+.checklist,
+.invite-banner {
+  animation: rise-in 480ms var(--ease-out) backwards; /* not "both": a held end frame would block the hover lift */
+}
+.dashboard-grid > :nth-child(2), .task-list > :nth-child(2) { animation-delay: 50ms; }
+.dashboard-grid > :nth-child(3), .task-list > :nth-child(3) { animation-delay: 100ms; }
+.dashboard-grid > :nth-child(4), .task-list > :nth-child(4) { animation-delay: 150ms; }
+.dashboard-grid > :nth-child(5), .task-list > :nth-child(5) { animation-delay: 200ms; }
+.dashboard-grid > :nth-child(n+6), .task-list > :nth-child(n+6) { animation-delay: 250ms; }
+
+/* Confetti from the Done button (celebrate_controller.js). */
+.confetti {
+  position: fixed;
+  z-index: 100;
+  width: 7px;
+  height: 10px;
+  margin: -5px 0 0 -3px;
+  border-radius: 2px;
+  pointer-events: none;
+  animation: confetti 800ms var(--ease-out) forwards;
+}
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes pop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes live-dot {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 55%, transparent); }
+  50%      { box-shadow: 0 0 0 4px transparent; transform: scale(1.15); }
+}
+@keyframes ring-pulse {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--user-color) 55%, transparent); }
+  70%  { box-shadow: 0 0 0 10px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0); }
+  25%      { transform: rotate(-12deg); }
+  75%      { transform: rotate(12deg); }
+}
+@keyframes bell-ring {
+  0%, 20%, 100% { transform: rotate(0); }
+  4%  { transform: rotate(14deg); }
+  8%  { transform: rotate(-12deg); }
+  12% { transform: rotate(8deg); }
+  16% { transform: rotate(-4deg); }
+}
+@keyframes twinkle {
+  0%, 100% { transform: scale(1) rotate(0); }
+  50%      { transform: scale(1.15) rotate(12deg); }
+}
+@keyframes grow-x { from { transform: scaleX(0); } }
+@keyframes busy { 50% { opacity: 0.65; } }
+@keyframes confetti {
+  0%   { transform: translate(0, 0) rotate(0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--dx), calc(var(--dy) + 40px)) rotate(var(--spin)) scale(0.6); opacity: 0; }
+}
 
 /* ---------- Responsive ---------- */
 @media (max-width: 719px) {
@@ -981,7 +1371,6 @@ a.nav-brand { color: var(--text); text-decoration: none; }
   }
   .nav-links { order: 3; width: 100%; }
   .nav-user { gap: 0.25rem; }
-  .nav-user-name { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; }
   .household-switch { order: 4; width: 100%; }
   .household-switch select { width: 100%; }
 
@@ -998,5 +1387,7 @@ a.nav-brand { color: var(--text); text-decoration: none; }
   *, *::before, *::after {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
+  .btn:hover, .person-card:hover, .task-card:hover { transform: none; }
 }

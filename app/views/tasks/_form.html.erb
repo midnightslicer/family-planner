@@ -19,7 +19,7 @@
     <%# Most tasks have no schedule: you start them and mark them done when
         you're done. Times and repeats are tucked away for the few that do. %>
     <details class="form-field" <%= "open" if @task.starts_at || @task.ends_at || !@task.recurs_no_recurrence? %>>
-      <summary>Schedule (optional)</summary>
+      <summary><%= icon(:calendar) %>Schedule (optional)</summary>
       <div class="form-field">
         <%= f.label :starts_at, "Start time" %>
         <%= f.datetime_local_field :starts_at %>
@@ -35,10 +35,10 @@
     </details>
     <div class="form-actions">
       <% if @task.persisted? %>
-        <%= f.submit "Save changes", class: "btn btn-primary" %>
+        <%= f.button type: "submit", class: "btn btn-primary" do %><%= icon_label(:save, "Save changes") %><% end %>
       <% else %>
-        <%= f.submit "I'm doing this now", name: "start_now", class: "btn btn-primary" %>
-        <%= f.submit "Save for later", class: "btn btn-quiet" %>
+        <%= f.button type: "submit", name: "start_now", value: "1", class: "btn btn-primary" do %><%= icon_label(:zap, "I'm doing this now") %><% end %>
+        <%= f.button type: "submit", class: "btn btn-quiet" do %><%= icon_label(:bookmark, "Save for later") %><% end %>
       <% end %>
       <%= link_to "Never mind", tasks_path, class: "btn btn-quiet" %>
     </div>

@@ -9,6 +9,7 @@ module Account
 
     def update
       if @user.update(profile_params)
+        @user.broadcast_card
         redirect_to account_root_path, notice: "Profile saved."
       else
         render :show, status: :unprocessable_content
@@ -18,7 +19,7 @@ module Account
     private
 
     def profile_params
-      params.require(:user).permit(:display_name, :handle, :color)
+      params.require(:user).permit(:display_name, :handle, :color, :custom_color, :avatar, :remove_avatar)
     end
   end
 end

@@ -4,25 +4,7 @@
 
 <%= render "shared/form_errors", object: @household %>
 
-<section class="account-section">
-  <h2>Wall display</h2>
-  <p class="page-intro">
-    Open this link on a tablet or spare screen and add it to the home screen. It needs no sign-in and
-    updates live, so treat it like a key: anyone with the link can see the board.
-  </p>
-  <div class="form-card" data-controller="clipboard">
-    <div class="copy-field">
-      <input type="text" value="<%= wall_url(@household.dashboard_token, **AppSettings.url_options) %>" readonly
-             aria-label="Wall link" data-clipboard-target="source">
-      <button type="button" class="btn" data-clipboard-target="button" data-action="clipboard#copy">Copy</button>
-      <%= link_to "Open", wall_path(@household.dashboard_token), class: "btn btn-quiet", target: "_blank", rel: "noopener" %>
-    </div>
-    <div class="form-actions">
-      <%= button_to "Make a new link", regenerate_wall_link_admin_household_path(@household), class: "btn btn-quiet btn-small",
-                    form: { data: { turbo_confirm: "The current wall link will stop working. Continue?" } } %>
-    </div>
-  </div>
-</section>
+<%= render "shared/wall_link", household: @household %>
 
 <section class="account-section">
   <h2>Members</h2>

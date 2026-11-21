@@ -1,16 +1,25 @@
 <%# Shared color picker: curated palette grid plus custom hex input.
-    Locals: form (a FormBuilder with a `color` field). %>
-<div class="color-picker">
+    Locals: form (a FormBuilder with a `color` field).
+    Only the swatches post user[color]; the custom box posts
+    user[custom_color] and wins when it's filled in (see User#custom_color).
+    The color-picker controller keeps the two in step and recolours any
+    [data-color-preview] in the same form. %>
+<% current = form.object.color.presence || ApplicationHelper::PALETTE.first
+   in_palette = ApplicationHelper::PALETTE.include?(current) %>
+<div class="color-picker" data-controller="color-picker">
   <div class="palette" role="radiogroup" aria-label="Color">
     <% ApplicationHelper::PALETTE.each do |hex| %>
       <label class="swatch" style="background: <%= hex %>" title="<%= hex %>">
-        <%= form.radio_button :color, hex, checked: (form.object.color || ApplicationHelper::PALETTE.first) == hex, "aria-label": hex %>
+        <%= form.radio_button :color, hex, checked: current == hex, "aria-label": hex,
+                              data: { color_picker_target: "swatch", action: "color-picker#pick" } %>
       </label>
     <% end %>
   </div>
-  <details class="custom-color">
+  <details class="custom-color" <%= "open" unless in_palette %>>
     <summary>Custom color</summary>
-    <%= form.label :color, "Hex value", value: nil %>
-    <%= form.text_field :color, placeholder: "#6366f1", pattern: "#[0-9a-fA-F]{6}", id: "#{form.object_name}_color_custom" %>
+    <%= form.label :custom_color, "Hex value" %>
+    <%= form.text_field :custom_color, value: (current unless in_palette), placeholder: "#6366f1",
+                        pattern: "#?[0-9a-fA-F]{6}", autocomplete: "off", spellcheck: false,
+                        data: { color_picker_target: "custom", action: "input->color-picker#type" } %>
   </details>
 </div>

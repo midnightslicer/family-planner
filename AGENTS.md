@@ -69,7 +69,9 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   Both are served by Propshaft; `stylesheet_link_tag :app` in the layouts
   picks up every file in the directory. The class vocabulary is the contract
   with the views — reuse it, don't invent new classes:
-  - shell: `nav`/`nav-inner`/`nav-brand`/`nav-links`/`nav-user`/`nav-user-name`,
+  - shell: `nav`/`nav-inner`/`nav-brand`/`nav-links`/`nav-user`, the account
+    menu `user-menu` > `user-menu-button` (> `nav-avatar`) + `user-menu-panel`
+    (> `user-menu-header`), closed by the `menu` Stimulus controller,
     `container`, `page-header`, `page-intro`, `household-switch`
   - messages: `flash-stack` (the always-present `#flash` container that
     `TasksController` prepends into), `flash-notice`, `flash-alert`
@@ -81,13 +83,23 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
     `person-status`; `status-chip status-*`; `task-list`, `task-card`,
     `task-title`, `task-meta`, `task-recurrence`, `task-actions`;
     `invite-banner` + `invite-actions`; `color-picker` > `palette` > `swatch`
-    and `custom-color`; `checklist` > `checklist-header` + `checklist-steps`
+    and `custom-color`; `avatar-picker` > `avatar-preview` + `avatar-controls`, and the
+    `crop-dialog` (`crop-hint`, `crop-stage` canvas, `crop-zoom`); `checklist` > `checklist-header` + `checklist-steps`
     > `checklist-step` (`is-done`) > `checklist-mark` + `checklist-body`.
   - account & auth: `account-section`, `admin-tabs`, `copy-field`,
     `inline-form`, `inline-check`, `code-input`, `help-details`,
     `passkey-signin`, `passkey-choice`, `passkey-hint`, `passkey-add`,
     `setup-steps`, `qr-frame` > `qr-code` (`qr-light`/`qr-dark`, coloured by
     the `--qr-*` tokens), `secret-key`, `recovery-codes`.
+  - icons & motion: `icon(:name)` / `icon_label(:name, "Text")` from
+    `IconsHelper` render inline SVG with `icon icon-<name>` (add new icons to
+    `IconsHelper::ICONS`); `flash_message` renders a flash with its icon.
+    `btn-success` (Done), `btn-icon` (+ `btn-icon-danger`), `task-actions-end`,
+    `task-card-<status>`, `person-card.is-busy` (pulsing avatar),
+    `banner-icon`, `checklist-progress` (`--progress`), and `.confetti` from
+    the `celebrate` Stimulus controller. Motion uses the `--ease-*`, `--fast`,
+    `--medium` tokens; entrance animations use fill-mode `backwards`, never
+    `both`, or the held end frame blocks hover transforms.
   - utilities: `visually-hidden`, `btn-block`, `empty-hint`, `section-title`.
     `[hidden]` is forced to `display: none` because `.btn` sets a display.
   `button_to` renders a `<form>`; inside a flex row the wrapping form is set
@@ -130,6 +142,20 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   `.person-card`; accents use `color-mix(...)`, so don't hardcode hexes.
 
 ## Gotchas
+
+- The colour picker's swatches post `user[color]`; the custom hex box posts
+  `user[custom_color]`, which wins when filled. Never give the box the name
+  `color` again: as the later field it overrode the swatch, so picked
+  colours silently didn't save.
+- Profile photos (`User#avatar`, Active Storage on the `:local` disk
+  service under `storage/`) are cropped by the person in a `<dialog>`
+  (drag, zoom, arrow keys), rendered at 256px and re-encoded in the browser
+  by `avatar_upload_controller.js`, which also strips EXIF/GPS, then the
+  form saves itself. Previews must be `data:` URLs: the CSP's img-src
+  allows `data:` but not `blob:` (a blob preview silently shows nothing). There
+  is no server-side image library, so no variants and analyzers are off;
+  the model only accepts JPEG/PNG/WebP (sniffed, not trusted) up to 2 MB.
+  Photo URLs are signed blob links, so the public wall can show them.
 
 - Active Record encryption keys come from credentials if present, otherwise
   they're derived from `SECRET_KEY_BASE` (see `config/application.rb`). So

@@ -5,24 +5,26 @@
 <% status = local_assigns[:status] || household.member_statuses[user.id]
    current_task = status[:current]
    next_planned = status[:next] %>
-<div class="person-card"
+<div class="person-card<%= ' is-busy' if current_task %>"
      id="<%= dom_id(user, :person_card) %>"
      data-user-id="<%= user.id %>"
      style="--user-color: <%= user.color %>; --user-fg: <%= contrast_color(user.color) %>">
   <div class="person-identity">
-    <span class="person-avatar" aria-hidden="true"><%= initials(user.display_name) %></span>
+    <span class="person-avatar" aria-hidden="true"><%= avatar_content(user) %></span>
     <span class="person-meta">
       <span class="person-name"><%= user.display_name %></span>
       <span class="person-handle">@<%= user.handle %></span>
     </span>
   </div>
   <div class="person-status">
+    <%# The live dot comes from CSS (.status-in_progress::before); the other
+        states carry an icon instead. %>
     <% if current_task %>
       <span class="status-chip status-in_progress">Busy: <%= current_task.title %></span>
     <% elsif next_planned %>
-      <span class="status-chip status-planned">Up next: <%= next_planned.title %></span>
+      <span class="status-chip status-planned"><%= icon(:clock) %>Up next: <%= next_planned.title %></span>
     <% else %>
-      <span class="status-chip status-completed">Free</span>
+      <span class="status-chip status-completed"><%= icon(:sun) %>Free</span>
     <% end %>
   </div>
 </div>
