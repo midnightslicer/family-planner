@@ -14,6 +14,7 @@
     <%= f.button type: "submit", class: "btn btn-primary" do %><%= icon_label(:plus, "Add") %><% end %>
   </div>
   <%= render "tasks/who", form: f, selected: selected %>
+  <%= render "tasks/status_fields", form: f %>
   <details class="quick-add-more" data-quick-add-target="more">
     <summary><%= icon(:clock) %>Add a time or day</summary>
     <%= render "tasks/when_fields", form: f %>

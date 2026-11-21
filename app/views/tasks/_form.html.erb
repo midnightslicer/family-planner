@@ -12,6 +12,7 @@
       <%= render "tasks/who", form: f, selected: @assignee_ids %>
       <small>Pick nobody and it's for anyone. Others get it straight away, unless it clashes with their schedule: then it waits for their OK.</small>
     </div>
+    <div class="form-field"><%= render "tasks/status_fields", form: f %></div>
     <%= render "tasks/when_fields", form: f %>
     <div class="form-field">
       <%= f.label :description, "Notes (optional)" %>

@@ -24,21 +24,6 @@
   </datalist>
   <small>Pick one of your locations and, while it's on, you show as there.</small>
 </div>
-<fieldset class="form-field">
-  <legend>While it's on</legend>
-  <div class="kind-options avail-options" role="radiogroup">
-    <% ScheduleHelper::AVAILABILITY.each do |value, (label, icon_name, css)| %>
-      <label class="kind-option <%= css %>" title="<%= ScheduleHelper::AVAILABILITY_HINTS[value] %>">
-        <%= form.radio_button :availability, value %>
-        <%= icon(icon_name) %><span><%= label %></span>
-      </label>
-    <% end %>
-  </div>
-</fieldset>
-<label class="inline-check private-check">
-  <%= form.check_box :private %>
-  <span><%= icon(:lock) %>Private: others just see that you're busy</span>
-</label>
 <div class="form-field">
   <%= form.label :recurrence_interval, "Repeats" %>
   <%= form.select :recurrence_interval, [["Does not repeat", ""], ["Daily", "daily"], ["Weekly", "weekly"], ["Every 2 weeks", "biweekly"], ["Monthly", "monthly"]],

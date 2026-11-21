@@ -1,0 +1,17 @@
+<%# How reachable you are while it's on, and whether it's private: right
+    under "For", never tucked away. Locals: form. %>
+<div class="status-row">
+  <span class="who-label">While it's on</span>
+  <div class="kind-options avail-options" role="radiogroup" aria-label="While it's on">
+    <% ScheduleHelper::AVAILABILITY.each do |value, (label, icon_name, css)| %>
+      <label class="kind-option <%= css %>" title="<%= ScheduleHelper::AVAILABILITY_HINTS[value] %>">
+        <%= form.radio_button :availability, value %>
+        <%= icon(icon_name) %><span><%= label %></span>
+      </label>
+    <% end %>
+  </div>
+  <label class="private-chip" title="Others just see that you're busy">
+    <%= form.check_box :private %>
+    <span><%= icon(:lock) %>Private</span>
+  </label>
+</div>
