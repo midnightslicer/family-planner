@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_22_020000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_22_030000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -168,8 +168,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_020000) do
     t.index ["key"], name: "index_settings_on_key", unique: true
   end
 
+  create_table "task_assignments", force: :cascade do |t|
+    t.integer "task_id", null: false
+    t.integer "user_id", null: false
+    t.string "status", default: "accepted", null: false
+    t.string "conflict_note"
+    t.datetime "responded_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["task_id", "user_id"], name: "index_task_assignments_on_task_id_and_user_id", unique: true
+    t.index ["user_id", "status"], name: "index_task_assignments_on_user_id_and_status"
+  end
+
   create_table "tasks", force: :cascade do |t|
-    t.integer "assigned_to_id"
     t.datetime "created_at", null: false
     t.integer "created_by_id"
     t.text "description"
@@ -187,10 +198,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_020000) do
     t.datetime "started_at"
     t.boolean "private", default: false, null: false
     t.integer "location_id"
-    t.index ["assigned_to_id"], name: "index_tasks_on_assigned_to_id"
+    t.boolean "follow_up", default: false, null: false
     t.index ["created_by_id"], name: "index_tasks_on_created_by_id"
-    t.index ["household_id", "assigned_to_id", "due_on"], name: "index_tasks_on_household_id_and_assigned_to_id_and_due_on"
-    t.index ["household_id", "assigned_to_id", "status", "starts_at"], name: "index_tasks_on_household_assignee_status"
+    t.index ["household_id", "status", "due_on"], name: "index_tasks_on_household_id_and_status_and_due_on"
     t.index ["household_id", "status", "starts_at"], name: "index_tasks_on_household_id_and_status_and_starts_at"
     t.index ["location_id"], name: "index_tasks_on_location_id"
   end
@@ -254,9 +264,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_020000) do
   add_foreign_key "pets", "households"
   add_foreign_key "pets", "locations", column: "home_id"
   add_foreign_key "pets", "users", column: "created_by_id"
+  add_foreign_key "task_assignments", "tasks"
+  add_foreign_key "task_assignments", "users"
   add_foreign_key "tasks", "households"
   add_foreign_key "tasks", "locations"
-  add_foreign_key "tasks", "users", column: "assigned_to_id"
   add_foreign_key "tasks", "users", column: "created_by_id"
   add_foreign_key "work_shifts", "users"
 end

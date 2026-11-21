@@ -38,6 +38,8 @@ Rails.application.routes.draw do
       post :pause
       post :complete
       post :cancel
+      post :accept
+      post :decline
     end
   end
 

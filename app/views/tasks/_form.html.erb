@@ -9,9 +9,8 @@
       <%= f.text_field :title, required: true, maxlength: 120, placeholder: "e.g. Call the doctor, Church, Grocery run" %>
     </div>
     <div class="form-field">
-      <%= f.label :assigned_to_id, "For" %>
-      <%= f.collection_select :assigned_to_id, current_household.users.order(:display_name), :id, :display_name,
-                              { selected: @task.assigned_to_id, include_blank: "Anyone" } %>
+      <%= render "tasks/who", form: f, selected: @assignee_ids %>
+      <small>Pick nobody and it's for anyone. Others get it straight away, unless it clashes with their schedule: then it waits for their OK.</small>
     </div>
     <%= render "tasks/when_fields", form: f %>
     <div class="form-field">

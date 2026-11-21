@@ -1,16 +1,19 @@
-<%# The fast way in: type, Enter, type, Enter. "Add a time or day" opens the
-    event fields. quick_add_controller.js clears and refocuses the box after
-    each add. Locals: task (new, assigned to the person whose page this is). %>
-<% mine = task.assigned_to == current_user %>
+<%# The fast way in: type, Enter, type, Enter. The "For" chips say whose
+    list it goes on (whoever's day this is, by default); "Add a time or
+    day" opens the event fields. quick_add_controller.js clears and
+    refocuses the box after each add. Locals: task (new), person (whose day
+    this is), selected (assignee ids). %>
+<% mine = person == current_user %>
 <%= form_with model: task, url: tasks_path, class: "quick-add", data: { controller: "quick-add", action: "turbo:submit-end->quick-add#added" } do |f| %>
-  <%= f.hidden_field :assigned_to_id %>
+  <%= hidden_field_tag :stay, 1, id: nil %>
   <div class="quick-add-row">
-    <%= f.label :title, mine ? "Add to your list" : "Add to #{task.assigned_to.display_name}'s list", class: "visually-hidden" %>
+    <%= f.label :title, mine ? "Add to your list" : "Add to #{person.display_name}'s list", class: "visually-hidden" %>
     <%= f.text_field :title, required: true, maxlength: 120, autocomplete: "off", enterkeyhint: "done",
-                     placeholder: mine ? "Add something… (call the doctor, research flights)" : "Add something for #{task.assigned_to.display_name}…",
+                     placeholder: mine ? "Add something… (call the doctor, research flights)" : "Add something for #{person.display_name}…",
                      data: { quick_add_target: "title" } %>
     <%= f.button type: "submit", class: "btn btn-primary" do %><%= icon_label(:plus, "Add") %><% end %>
   </div>
+  <%= render "tasks/who", form: f, selected: selected %>
   <details class="quick-add-more" data-quick-add-target="more">
     <summary><%= icon(:clock) %>Add a time or day</summary>
     <%= render "tasks/when_fields", form: f %>

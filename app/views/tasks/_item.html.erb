@@ -1,6 +1,7 @@
 <%# One row on a schedule. To-dos have a tick-off circle; events show their
-    time. Locals: task, show_day (events not today show their day). %>
-<% editable = !task.work? && ([task.created_by_id, task.assigned_to_id].include?(current_user.id) || current_user.admin?)
+    time. Locals: task, show_day (events not today show their day),
+    schedule_person (whose day this is, so "with" lists the others). %>
+<% editable = !task.work? && task.editable_by?(current_user)
    past = task.past? %>
 <% if task.work? %>
   <%# Work hours, from the person's work schedule. %>
@@ -30,6 +31,10 @@
     </div>
   </li>
 <% else %>
+<% mine = task.assignment_for(current_user)
+   invited = mine&.pending?
+   creator = task.created_by_id == current_user.id || current_user.admin?
+   others = task.active_assignments.reject { |a| a.user_id == local_assigns[:schedule_person]&.id || (local_assigns[:schedule_person].nil? && a.user_id == current_user.id) } %>
 <li class="sched-item <%= task.timed? ? 'sched-event' : 'sched-todo' %> is-<%= task.status %><%= ' is-past' if past && task.open? %><%= ' is-now' if task.happening_at? %>"
     id="<%= dom_id(task) %>">
   <% if task.timed? %>
@@ -50,11 +55,27 @@
       <% if task.place_name %><span><%= task.location ? location_icon(task.location) : icon(:map_pin) %><%= task.place_name %></span><% end %>
       <% if task.due_on && !task.timed? %><span><%= icon(:calendar) %><%= day_name(task.due_on) %></span><% end %>
       <% unless task.recurs_no_recurrence? %><span class="task-recurrence"><%= icon(:repeat) %><%= task.recurrence_interval.humanize.downcase %></span><% end %>
-      <% if task.created_by && task.created_by != task.assigned_to %><span><%= icon(:user) %>from <%= task.created_by.display_name %></span><% end %>
+      <% if task.created_by && !task.assignment_for(task.created_by) %><span><%= icon(:user) %>from <%= task.created_by.display_name %></span><% end %>
+      <% if others.any? %>
+        <span class="who-list" title="<%= others.map { |a| "#{a.user.display_name}#{' (waiting)' if a.pending?}" }.join(', ') %>">
+          <%= task.active_assignments.size > others.size ? "with" : "for" %>
+          <% others.each do |a| %>
+            <span class="person-avatar<%= ' is-waiting' if a.pending? %>" style="--user-color: <%= a.user.color %>; --user-fg: <%= contrast_color(a.user.color) %>" aria-hidden="true"><%= avatar_content(a.user) %></span>
+          <% end %>
+          <span class="visually-hidden"><%= others.map { |a| "#{a.user.display_name}#{' (waiting for their OK)' if a.pending?}" }.to_sentence %></span>
+        </span>
+      <% end %>
     </span>
+    <% if mine&.conflict_note && invited %><span class="sched-conflict"><%= icon(:alert_circle) %><%= mine.conflict_note %></span><% end %>
     <% if task.description.present? %><span class="sched-notes"><%= task.description %></span><% end %>
   </div>
 
+  <% if invited %>
+    <div class="sched-actions invite-actions">
+      <%= button_to accept_task_path(task), method: :post, class: "btn btn-small btn-primary" do %><%= icon_label(:check, "Accept") %><% end %>
+      <%= button_to decline_task_path(task), method: :post, class: "btn btn-small btn-quiet" do %><%= icon_label(:x, "Decline") %><% end %>
+    </div>
+  <% else %>
   <div class="sched-actions">
     <% if task.open? && !task.timed? %>
       <% if task.in_progress? %>
@@ -70,12 +91,16 @@
     <% if editable %>
       <%= link_to edit_task_path(task), class: "btn btn-quiet btn-icon", title: "Edit", "aria-label": "Edit #{task.title}" do %><%= icon(:pencil) %><% end %>
     <% end %>
-    <% if task.open? %>
+    <% if task.open? && mine && task.created_by_id != current_user.id %>
+      <%# Someone else put it on your list: you can say no (it stays on theirs). %>
+      <%= button_to decline_task_path(task), method: :post, class: "btn btn-quiet btn-icon btn-icon-danger", title: "Decline", "aria-label": "Decline #{task.title}" do %><%= icon(:x) %><% end %>
+    <% elsif task.open? && (creator || mine || task.active_assignments.empty?) %>
       <%= button_to cancel_task_path(task), method: :post, class: "btn btn-quiet btn-icon btn-icon-danger", title: "Skip", "aria-label": "Skip #{task.title}" do %><%= icon(:x) %><% end %>
     <% elsif editable %>
       <%= button_to task_path(task), method: :delete, class: "btn btn-quiet btn-icon btn-icon-danger", title: "Delete", "aria-label": "Delete #{task.title}",
                     form: { data: { turbo_confirm: "Delete this for good?" } } do %><%= icon(:trash) %><% end %>
     <% end %>
   </div>
+  <% end %>
 </li>
 <% end %>

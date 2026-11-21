@@ -53,7 +53,7 @@ class PrivateAndLinkedEventsTest < ActionDispatch::IntegrationTest
 
   test "the private box saves from the form" do
     sign_in @member
-    post tasks_path, params: { task: { title: "Doctor", assigned_to_id: @member.id, private: "1" } }
+    post tasks_path, params: { task: { title: "Doctor", assignee_ids: [@member.id], private: "1" } }
     assert Task.find_by!(title: "Doctor").private?
   end
 

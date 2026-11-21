@@ -1,4 +1,4 @@
 <% content_for :title, @task.title %>
 <h1><%= @task.title %></h1>
 <ul class="sched-list panel"><%= render "tasks/item", task: @task, show_day: true %></ul>
-<p><%= link_to icon_label(:arrow_right, "Back to the schedule"), tasks_path(person: @task.assigned_to_id) %></p>
+<p><%= link_to icon_label(:arrow_right, "Back to the schedule"), tasks_path(person: @task.active_assignments.first&.user_id) %></p>

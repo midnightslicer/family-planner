@@ -12,7 +12,9 @@ class Task < ApplicationRecord
   DEFAULT_LENGTH = 1.hour
 
   belongs_to :household
-  belongs_to :assigned_to, class_name: "User", optional: true
+  # Who it's for (TaskAssignment): accepted, pending (it clashed with their
+  # schedule) or declined. No one at all means it's for anyone.
+  has_many :assignments, -> { order(:id) }, class_name: "TaskAssignment", inverse_of: :task, dependent: :delete_all
   belongs_to :created_by, class_name: "User", optional: true
   # Set from `place` when it names one of the household's locations: while
   # the event is on, that's where the person is (see #whereabouts).
@@ -26,7 +28,6 @@ class Task < ApplicationRecord
   validates :title, presence: true, length: { maximum: 120 }
   validates :description, length: { maximum: 2_000 }
   validates :place, length: { maximum: 60 }
-  validate :assignee_must_be_household_member
   validate :ends_after_start
   validates :recurrence_interval, inclusion: { in: recurrence_intervals.keys }
 
@@ -34,7 +35,7 @@ class Task < ApplicationRecord
   # household's dashboards and wall, and pings the assignee's browser when
   # someone else touched their task.
   after_commit :broadcast_member_cards
-  after_commit :notify_assignee, on: [:create, :update]
+  after_commit :notify_people, on: :update
 
   # The planned copy a recurring task spawns; its assignee already heard
   # about the task being finished, so it doesn't notify again.
@@ -52,6 +53,12 @@ class Task < ApplicationRecord
   STATUS_VERBS = { "in_progress" => "started", "planned" => "paused", "completed" => "finished", "undone" => "skipped" }.freeze
 
   scope :for_household, ->(household) { where(household_id: household.id) }
+  # Items on `user`'s schedule (or, with status "pending", waiting for their OK).
+  scope :for_person, ->(user, status = "accepted") {
+    where(id: TaskAssignment.where(user_id: user.id, status: status).select(:task_id))
+  }
+  # Items nobody has taken: for anyone.
+  scope :for_anyone, -> { where.not(id: TaskAssignment.active.select(:task_id)) }
   scope :open, -> { where(status: [:planned, :in_progress]) }
   scope :timed, -> { where.not(starts_at: nil) }
   scope :untimed, -> { where(starts_at: nil) }
@@ -66,7 +73,38 @@ class Task < ApplicationRecord
   # whoever added them; everyone else sees "Busy". A nil viewer (the public
   # wall, live broadcasts) never sees them.
   def visible_to?(user)
-    !private? || (user.present? && [assigned_to_id, created_by_id].include?(user.id))
+    !private? || (user.present? && (created_by_id == user.id || assignment_for(user)&.then { |a| !a.declined? }))
+  end
+
+  def assignment_for(user)
+    user && assignments.find { |assignment| assignment.user_id == user.id }
+  end
+
+  # The people it's on the schedule of.
+  def people
+    assignments.select(&:accepted?).map(&:user)
+  end
+
+  # Everyone it's for who hasn't declined (accepted and waiting).
+  def active_assignments
+    assignments.reject(&:declined?)
+  end
+
+  # Shorthand for one person who has it on their schedule, as when adding
+  # something for yourself: `Task.create!(assigned_to: user, ...)`.
+  def assigned_to=(user)
+    assignments.build(user: user, status: "accepted") if user
+  end
+
+  def assigned_to
+    people.first
+  end
+
+  # Whoever added it, anyone it's for, or an admin.
+  def editable_by?(user)
+    return false if user.nil?
+
+    created_by_id == user.id || assignment_for(user)&.then { |a| !a.declined? } || user.admin?
   end
 
   def title_for(user)
@@ -165,14 +203,6 @@ class Task < ApplicationRecord
 
   private
 
-  def assignee_must_be_household_member
-    return if assigned_to_id.blank? || household.blank?
-
-    unless assigned_to && household.users.exists?(assigned_to_id)
-      errors.add(:assigned_to_id, "must be a member of the task's household")
-    end
-  end
-
   # On finishing/skipping a recurring item, create its next planned copy,
   # then clear next_occurrence on this finished instance. Events move their
   # time along; to-dos come back on the next day/week/month (due_on).
@@ -181,7 +211,7 @@ class Task < ApplicationRecord
     return unless recurs?
 
     attributes = { recurrence_copy: true, household: household, title: title, description: description, private: private?,
-                   assigned_to: assigned_to, created_by: created_by, recurrence_interval: recurrence_interval,
+                   created_by: created_by, recurrence_interval: recurrence_interval, follow_up: follow_up,
                    availability: availability, place: place }
     if timed?
       new_starts_at = next_start_from(starts_at) or return
@@ -191,7 +221,10 @@ class Task < ApplicationRecord
       attributes[:due_on] = next_start_from(base.in_time_zone).to_date
     end
 
-    copy = Task.create!(attributes)
+    # Whoever had agreed to it has the next one too.
+    copy = Task.new(attributes)
+    people.each { |person| copy.assignments.build(user: person, status: "accepted") }
+    copy.save!
     update_column(:next_occurrence, nil)
     copy
   end
@@ -253,30 +286,27 @@ class Task < ApplicationRecord
   def broadcast_member_cards
     return if destroyed_by_association
 
-    user_ids = [assigned_to_id]
-    user_ids << assigned_to_id_before_last_save if saved_change_to_assigned_to_id?
-    household&.broadcast_member_cards(user_ids.compact.uniq)
+    household&.broadcast_member_cards(assignments.map(&:user_id).uniq)
   rescue StandardError => error
     Rails.logger.warn("Live update failed for task #{id}: #{error.class}: #{error.message}")
   end
 
-  def notify_assignee
+  # When someone starts, finishes or skips an item, the others it's for
+  # (and its creator, if they asked to follow up) hear about it.
+  def notify_people
     actor = Current.user
-    return if recurrence_copy || actor.nil? || assigned_to.nil? || assigned_to == actor
+    return if recurrence_copy || actor.nil? || !saved_change_to_status?
 
-    message =
-      if previously_new_record? || saved_change_to_assigned_to_id?
-        "#{actor.display_name} assigned you: #{title}"
-      elsif saved_change_to_status?
-        "#{actor.display_name} #{STATUS_VERBS.fetch(status, 'updated')} #{title}"
-      end
-    return unless message
-
-    Turbo::StreamsChannel.broadcast_append_to(
-      assigned_to, :notifications,
-      target: "notifications", partial: "shared/notification",
-      locals: { title: household.name, body: message, tag: "task-#{id}" }
-    )
+    recipients = people
+    recipients += [created_by] if follow_up? && created_by
+    message = "#{actor.display_name} #{STATUS_VERBS.fetch(status, 'updated')} #{title}"
+    recipients.compact.uniq.reject { |person| person == actor }.each do |person|
+      Turbo::StreamsChannel.broadcast_append_to(
+        person, :notifications,
+        target: "notifications", partial: "shared/notification",
+        locals: { title: household.name, body: message, tag: "task-#{id}" }
+      )
+    end
   rescue StandardError => error
     Rails.logger.warn("Notification failed for task #{id}: #{error.class}: #{error.message}")
   end

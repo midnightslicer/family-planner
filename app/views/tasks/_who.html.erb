@@ -1,0 +1,23 @@
+<%# Who it's for: a chip per person (several for things done together), and
+    "Follow up", shown once someone else is picked, which keeps it on your
+    list and tells you how it goes. Off by default. Ticking nobody means
+    it's for anyone. Locals: form, selected (user ids). %>
+<% members = current_household.members_by_name.with_attached_avatar.to_a.sort_by { |m| m == current_user ? 0 : 1 } %>
+<div class="who-row">
+  <span class="who-label">For</span>
+  <%= hidden_field_tag "task[assignee_ids][]", "", id: nil %>
+  <div class="who-chips" role="group" aria-label="Who it's for">
+    <% members.each do |member| %>
+      <label class="who-chip<%= ' who-other' unless member == current_user %>"
+             style="--user-color: <%= member.color %>; --user-fg: <%= contrast_color(member.color) %>">
+        <input type="checkbox" name="task[assignee_ids][]" value="<%= member.id %>" <%= "checked" if selected.include?(member.id) %>>
+        <span class="person-avatar" aria-hidden="true"><%= avatar_content(member) %></span>
+        <span><%= member == current_user ? "Me" : member.display_name.split.first %></span>
+      </label>
+    <% end %>
+  </div>
+  <label class="follow-up-check">
+    <%= form.check_box :follow_up %>
+    <span><%= icon(:bell) %>Follow up</span>
+  </label>
+</div>

@@ -26,11 +26,14 @@ class Household < ApplicationRecord
   # DayOff. Returns { user_id => { current:, next:, at:, off:, location: } }.
   def member_statuses(now = Time.current)
     statuses = Hash.new { |hash, key| hash[key] = {} }
-    open_tasks = tasks.open.where.not(assigned_to_id: nil).includes(:location)
-                      .where("status = :doing OR (starts_at < :horizon AND COALESCE(ends_at, starts_at) >= :earliest)",
+    # One row per (item, person who accepted it): shared items count for
+    # everyone on them.
+    open_tasks = tasks.open.joins(:assignments).merge(TaskAssignment.accepted).includes(:location)
+                      .select("tasks.*, task_assignments.user_id AS person_id")
+                      .where("tasks.status = :doing OR (tasks.starts_at < :horizon AND COALESCE(tasks.ends_at, tasks.starts_at) >= :earliest)",
                              doing: Task.statuses[:in_progress], horizon: now + 7.days, earliest: now - Task::DEFAULT_LENGTH)
                       .order(:starts_at, :id).to_a
-    by_user = open_tasks.group_by(&:assigned_to_id)
+    by_user = open_tasks.group_by(&:person_id)
     places = locations.to_a
     users.includes(:work_shifts, :days_off).each do |user|
       items = by_user.fetch(user.id, [])

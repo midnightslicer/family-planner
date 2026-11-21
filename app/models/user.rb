@@ -28,7 +28,7 @@ class User < ApplicationRecord
   has_many :household_memberships, dependent: :destroy
   has_many :households, through: :household_memberships
   has_many :passkeys, dependent: :destroy
-  has_many :assigned_tasks, class_name: "Task", foreign_key: :assigned_to_id, dependent: :nullify
+  has_many :task_assignments, dependent: :delete_all
   has_many :created_tasks, class_name: "Task", foreign_key: :created_by_id, dependent: :nullify
   has_many :invitations_sent, class_name: "Invitation", foreign_key: :invited_by_id, dependent: :nullify
   has_many :location_reports, as: :subject, dependent: :delete_all

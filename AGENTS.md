@@ -49,8 +49,13 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   person shows as being (`whereabouts`, the `:at` in member statuses); status enum `planned`, `in_progress`, `undone`, `completed`;
   `started_at` stamps "doing it now"; recurrence, with `roll_forward!`
   moving ended recurring events on; broadcasts cards and assignee
-  notifications after commit), `PersonSchedule` (one person's now / to-dos
-  / today / later / done, in one query), `Setting` (encrypted key/value, cached per request in `Current`),
+  notifications after commit), `TaskAssignment` (who an item is for: `accepted`,
+  `pending` when it clashed with their schedule, or `declined`; several
+  people can share one item, and none means "for anyone";
+  `conflicts_for` checks their events and work hours), `TaskAssigner`
+  (places people on save, notifies them, and writes the flash that says
+  what happened), `PersonSchedule` (one person's now / to-dos / today /
+  later / done / waiting for their OK / following up), `Setting` (encrypted key/value, cached per request in `Current`),
   `AppSettings` (app name/URL, SMTP and setup code, Setting then ENV),
   `GettingStarted` (the dashboard checklist), and the pets feature:
   `Location` (a place: house/yard/pasture/pool/other, with a photo),
@@ -174,6 +179,12 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
 
 ## Conventions
 
+- Items belong to people through `task_assignments`, never a column on
+  `tasks`. Only accepted assignments put an item on someone's day, card
+  and availability. `Task.for_person(user)` / `for_anyone` are the scopes;
+  `Task.create!(assigned_to: user)` is shorthand for one accepted person.
+  `follow_up` keeps an item on its creator's list ("Following up") and
+  sends them its status changes.
 - **Household scoping is mandatory** on every task query: filter by
   `Current.household.id` (or the token household on the wall). Non-members get
   404, not 403.

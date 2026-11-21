@@ -60,13 +60,20 @@
     </div>
   <% end %>
 
-  <%= render "tasks/quick_add", task: @task %>
+  <% if s.waiting.any? %>
+    <section class="panel waiting-panel">
+      <h2><%= icon(:bell) %><%= me ? "Needs your OK" : "Waiting for #{@person.display_name.split.first}'s OK" %> <span class="count"><%= s.waiting.size %></span></h2>
+      <ul class="sched-list"><%= render partial: "tasks/item", collection: s.waiting, as: :task, locals: { show_day: true, schedule_person: @person } %></ul>
+    </section>
+  <% end %>
+
+  <%= render "tasks/quick_add", task: @task, person: @person, selected: @assignee_ids %>
 
   <div class="schedule-columns" data-controller="auto-refresh" data-auto-refresh-interval-value="60">
     <section class="panel">
       <h2><%= icon(:list) %><%= me ? "To do" : "On their list" %> <span class="count"><%= s.todos.size %></span></h2>
       <% if s.todos.any? %>
-        <ul class="sched-list"><%= render partial: "tasks/item", collection: s.todos, as: :task %></ul>
+        <ul class="sched-list"><%= render partial: "tasks/item", collection: s.todos, as: :task, locals: { schedule_person: @person } %></ul>
       <% else %>
         <p class="empty-hint"><%= icon(:sparkles) %><%= me ? "Nothing on your list. Add anything above, as it comes to you." : "Their list is clear." %></p>
       <% end %>
@@ -75,7 +82,7 @@
     <section class="panel">
       <h2><%= icon(:calendar) %>Today</h2>
       <% if s.today.any? %>
-        <ul class="sched-list"><%= render partial: "tasks/item", collection: s.today, as: :task %></ul>
+        <ul class="sched-list"><%= render partial: "tasks/item", collection: s.today, as: :task, locals: { schedule_person: @person } %></ul>
       <% else %>
         <p class="empty-hint">Nothing at a set time today.</p>
       <% end %>
@@ -91,15 +98,20 @@
           <div class="sched-body"><span class="sched-title"><%= icon(:sun) %>Day off<%= " · #{off.note}" if off.note %></span></div>
         </li>
       <% end %>
-      <%= render partial: "tasks/item", collection: s.later, as: :task, locals: { show_day: true } %>
+      <%= render partial: "tasks/item", collection: s.later, as: :task, locals: { show_day: true, schedule_person: @person } %>
     </ul>
+  <% end %>
+
+  <% if s.following.any? %>
+    <h2 class="section-title"><%= icon(:bell) %>Following up</h2>
+    <ul class="sched-list panel"><%= render partial: "tasks/item", collection: s.following, as: :task, locals: { show_day: true } %></ul>
   <% end %>
 
   <% done = s.done.reject { |task| s.today.include?(task) } %>
   <% if done.any? %>
     <details class="done-today">
       <summary><%= icon(:check_circle) %>Done today (<%= done.size %>)</summary>
-      <ul class="sched-list"><%= render partial: "tasks/item", collection: done, as: :task %></ul>
+      <ul class="sched-list"><%= render partial: "tasks/item", collection: done, as: :task, locals: { schedule_person: @person } %></ul>
     </details>
   <% end %>
 <% end %>
