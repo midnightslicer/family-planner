@@ -16,6 +16,8 @@ class Task < ApplicationRecord
   # schedule) or declined. No one at all means it's for anyone.
   has_many :assignments, -> { order(:id) }, class_name: "TaskAssignment", inverse_of: :task, dependent: :delete_all
   belongs_to :created_by, class_name: "User", optional: true
+  # Who ticked it off or skipped it (Current.user at the time).
+  belongs_to :finished_by, class_name: "User", optional: true
   # Set from `place` when it names one of the household's locations: while
   # the event is on, that's where the person is (see #whereabouts).
   belongs_to :location, optional: true
@@ -167,7 +169,7 @@ class Task < ApplicationRecord
   def start!
     return false unless planned? || restartable?
 
-    update!(status: :in_progress, started_at: Time.current, finished_at: nil)
+    update!(status: :in_progress, started_at: Time.current, finished_at: nil, finished_by: nil)
     true
   end
 
@@ -182,7 +184,7 @@ class Task < ApplicationRecord
   def complete!
     return false unless open?
 
-    update!(status: :completed, finished_at: Time.current)
+    update!(status: :completed, finished_at: Time.current, finished_by: Current.user)
     schedule_next_occurrence
     true
   end
@@ -190,7 +192,7 @@ class Task < ApplicationRecord
   def cancel!
     return false unless open?
 
-    update!(status: :undone, finished_at: Time.current)
+    update!(status: :undone, finished_at: Time.current, finished_by: Current.user)
     schedule_next_occurrence
     true
   end

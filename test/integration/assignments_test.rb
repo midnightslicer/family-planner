@@ -127,6 +127,17 @@ class AssignmentsTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "whoever ticks off a shared item gets the credit" do
+    task = Task.create!(household: @smiths, title: "Clean the garage", created_by: @me)
+    task.assignments.create!(user: @me)
+    task.assignments.create!(user: @mom)
+    sign_in @mom
+    post complete_task_path(task)
+    assert_equal @mom, task.reload.finished_by
+    assert_equal 1, @mom.finished_tasks.completed.count
+    assert_equal 0, @me.finished_tasks.count
+  end
+
   test "without follow up it's off my list" do
     post tasks_path, params: { task: { title: "Call the chiropractor", assignee_ids: [@mom.id] } }
     get tasks_path
