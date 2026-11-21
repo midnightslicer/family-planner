@@ -6,7 +6,7 @@ class ApplicationController < ActionController::Base
 
   before_action :require_setup
   before_action :set_current_context
-  around_action :use_browser_time_zone
+  around_action :use_household_time_zone
 
   helper_method :current_household, :app_name
 
@@ -37,11 +37,18 @@ class ApplicationController < ActionController::Base
     Current.household
   end
 
-  # "Fed today" and the times on screen follow the viewer's own clock: the
-  # browser stores its IANA zone in a `tz` cookie (application.js). Unknown
-  # or missing zones fall back to the app default.
-  def use_browser_time_zone(&)
-    Time.use_zone(browser_time_zone || Time.zone_default, &)
+  # Every request runs on the household's clock (set by an admin): work
+  # hours, "today", "fed today", and every time shown, so the whole family
+  # sees the same thing wherever their phones are. Until one is set, the
+  # browser's own zone (a `tz` cookie from application.js), then the app
+  # default.
+  def use_household_time_zone(&)
+    Time.use_zone(time_zone_household&.zone || browser_time_zone || Time.zone_default, &)
+  end
+
+  # Whose clock this request runs on. The wall overrides it (no sign-in).
+  def time_zone_household
+    current_household
   end
 
   def browser_time_zone

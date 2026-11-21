@@ -38,12 +38,24 @@
 </section>
 
 <section class="account-section">
-  <h2>Rename</h2>
+  <h2>Name & time zone</h2>
   <div class="form-card">
     <%= form_with model: @household, url: admin_household_path(@household), method: :patch do |f| %>
       <div class="form-field">
         <%= f.label :name, "Name" %>
         <%= f.text_field :name, required: true, maxlength: 80 %>
+      </div>
+      <%# Preselect the admin's own zone (from their browser) when none is set
+          yet, so saving it is one click. %>
+      <% suggested = @household.time_zone ||
+           ActiveSupport::TimeZone::MAPPING.key(cookies[:tz].to_s) || cookies[:tz].presence %>
+      <div class="form-field">
+        <%= f.label :time_zone, "Time zone" %>
+        <%= f.time_zone_select :time_zone, ActiveSupport::TimeZone.us_zones, { default: suggested, include_blank: "Not set (each phone uses its own)" } %>
+        <small>
+          Work hours, "today" and every time shown follow this clock, for everyone, wherever their phone is.
+          <% unless @household.time_zone %><strong>Not set yet:</strong> save to use the one picked here.<% end %>
+        </small>
       </div>
       <div class="form-actions">
         <%= f.submit "Save", class: "btn btn-primary" %>

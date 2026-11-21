@@ -259,9 +259,12 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   (a debounced Turbo refresh on `[household, :members]`); pages that show
   them render `shared/_live`, which subscribes and morphs. Person cards still
   get targeted replaces.
-- "Fed today" uses the viewer's time zone: `application.js` stores the
-  browser's IANA zone in a `tz` cookie and `ApplicationController` wraps
-  each request in `Time.use_zone`. No cookie means the app default (UTC).
+- Every request runs on the household's clock: `households.time_zone`
+  (Rails zone name, set by an admin on the household page), applied by
+  `ApplicationController#use_household_time_zone` with `Time.use_zone`;
+  the wall uses its token's household. Work hours, "today", "fed today"
+  and every time shown follow it. Until it's set, the browser's own zone
+  (the `tz` cookie from `application.js`) is used, then UTC.
 - Pet-follow notifications ride the same `[user, :notifications]` stream as
   task notifications, so they only arrive while the app is open somewhere
   (there's no Web Push).

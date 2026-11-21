@@ -15,6 +15,7 @@ class GettingStarted
   def steps
     @steps ||= [
       invite_step,
+      time_zone_step,
       Step.new(key: :task, title: "Put something on your schedule",
                detail: "A to-do, or something at a time like a call or a trip to town. Your card shows it while it's on.",
                done: @household.tasks.exists?, link_label: "Your day", path: routes.tasks_path),
@@ -38,6 +39,14 @@ class GettingStarted
              detail: "Each person gets a single-use link. Email it, or copy it into a text message.",
              done: @household.users.count > 1 || @household.invitations.exists?,
              link_label: "Invite someone", path: routes.new_admin_invitation_path)
+  end
+
+  def time_zone_step
+    return unless @user.admin?
+
+    Step.new(key: :time_zone, title: "Set your household's time zone",
+             detail: "So work hours, \"today\" and every time shown match home for everyone, wherever their phone is.",
+             done: @household.time_zone.present?, link_label: "Set it", path: routes.edit_admin_household_path(@household))
   end
 
   def wall_step

@@ -8,7 +8,7 @@ class WallsController < ApplicationController
   after_action { response.headers.delete("X-Frame-Options") }
 
   def show
-    @household = Household.find_by(dashboard_token: params[:dashboard_token].to_s)
+    @household = wall_household
     raise ActionController::RoutingError, "Not Found" unless @household
 
     @members = @household.members_by_name
@@ -17,6 +17,17 @@ class WallsController < ApplicationController
   end
 
   private
+
+  def wall_household
+    return @wall_household if defined?(@wall_household)
+
+    @wall_household = Household.find_by(dashboard_token: params[:dashboard_token].to_s)
+  end
+
+  # The wall runs on its household's clock too.
+  def time_zone_household
+    wall_household
+  end
 
   def kiosk?
     true

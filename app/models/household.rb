@@ -10,6 +10,9 @@ class Household < ApplicationRecord
   has_many :locations, dependent: :destroy
 
   validates :name, presence: true, length: { maximum: 80 }
+  validate :time_zone_is_known
+
+  normalizes :time_zone, with: ->(zone) { zone.strip.presence }
 
   before_validation :generate_dashboard_token, on: :create
 
@@ -98,12 +101,22 @@ class Household < ApplicationRecord
     end
   end
 
+  # The household's clock (an ActiveSupport::TimeZone), or nil if no admin
+  # has set one yet.
+  def zone
+    ActiveSupport::TimeZone[time_zone] if time_zone
+  end
+
   # Invalidates the old public wall link (e.g. if it was shared too widely).
   def regenerate_dashboard_token!
     update!(dashboard_token: SecureRandom.hex(16))
   end
 
   private
+
+  def time_zone_is_known
+    errors.add(:time_zone, "isn't a time zone we know") if time_zone && zone.nil?
+  end
 
   def generate_dashboard_token
     self.dashboard_token ||= SecureRandom.hex(16)
