@@ -3,6 +3,7 @@
   <div class="nav-links">
     <%= link_to icon_label(:grid, "Dashboard"), dashboard_path, "aria-current": ("page" if current_page?(dashboard_path) || current_page?(dashboard_root_path)) %>
     <%= link_to icon_label(:list, "Tasks"), tasks_path, "aria-current": ("page" if request.path.start_with?("/tasks")) %>
+    <%= link_to icon_label(:paw, "Pets"), pets_path, "aria-current": ("page" if request.path.start_with?("/pets", "/locations")) %>
   </div>
   <% households = current_user.households.order(:name).to_a %>
   <% if households.size > 1 %>

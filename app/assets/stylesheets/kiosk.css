@@ -100,3 +100,7 @@ body.kiosk .task-card {
 body.kiosk .task-card,
 body.kiosk .task-title,
 body.kiosk .task-meta { font-size: 1.125rem; }
+
+/* Names link to profiles in the app; the wall has no sign-in, so they're inert here. */
+body.kiosk .person-card a { pointer-events: none; color: inherit; }
+body.kiosk .person-where { font-size: 1.125rem; }

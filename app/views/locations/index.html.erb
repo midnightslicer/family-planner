@@ -1,0 +1,49 @@
+<% content_for :title, "Locations" %>
+<%= render "pets/live" %>
+<%= render "pets/tabs" %>
+
+<div class="page-header">
+  <h1>Locations</h1>
+  <%= link_to new_location_path, class: "btn btn-primary" do %><%= icon_label(:plus, "Add a location") %><% end %>
+</div>
+<p class="page-intro">The places pets and people can be: the house, the yard, a pasture, the pool. Anyone can add one.</p>
+
+<% if @locations.empty? %>
+  <div class="empty-state">
+    <span class="banner-icon"><%= icon(:map_pin) %></span>
+    <h2>No locations yet</h2>
+    <p>Start with your house: it's where pets sleep.</p>
+    <%= link_to new_location_path(kind: "house"), class: "btn btn-primary" do %><%= icon_label(:house, "Add your house") %><% end %>
+  </div>
+<% else %>
+  <div class="place-grid">
+    <% @locations.each do |location| %>
+      <% here = @here[location.id] %>
+      <article class="place-card" id="<%= dom_id(location) %>">
+        <%= location_picture(location) %>
+        <div class="place-body">
+          <div class="place-title">
+            <h2><%= location.name %></h2>
+            <%= link_to edit_location_path(location), class: "btn btn-quiet btn-icon", title: "Edit", "aria-label": "Edit #{location.name}" do %><%= icon(:pencil) %><% end %>
+          </div>
+          <p class="task-meta"><span><%= location_icon(location) %><%= location_kind_label(location.kind) %></span></p>
+          <% if here.any? %>
+            <ul class="here-now" aria-label="Here now">
+              <% here.each do |who| %>
+                <li>
+                  <% if who.is_a?(Pet) %>
+                    <%= link_to pet_path(who) do %><span class="person-avatar" style="<%= PetsHelper::PET_DISC_STYLE %>" aria-hidden="true"><%= pet_avatar_content(who) %></span><%= who.name %><% end %>
+                  <% else %>
+                    <%= link_to person_path(who) do %><span class="person-avatar" style="--user-color: <%= who.color %>; --user-fg: <%= contrast_color(who.color) %>" aria-hidden="true"><%= avatar_content(who) %></span><%= who.display_name %><% end %>
+                  <% end %>
+                </li>
+              <% end %>
+            </ul>
+          <% else %>
+            <p><small>Nobody here right now.</small></p>
+          <% end %>
+        </div>
+      </article>
+    <% end %>
+  </div>
+<% end %>

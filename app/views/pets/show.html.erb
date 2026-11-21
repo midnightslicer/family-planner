@@ -1,0 +1,74 @@
+<% content_for :title, @pet.name %>
+<%= render "pets/live" %>
+<%= render "pets/tabs" %>
+<% report = @status.report
+   following = @pet.followed_by?(current_user) %>
+
+<header class="profile-header">
+  <span class="person-avatar profile-avatar" style="<%= PetsHelper::PET_DISC_STYLE %>" aria-hidden="true"><%= pet_avatar_content(@pet) %></span>
+  <div class="profile-heading">
+    <h1><%= @pet.name %><%= icon(:cake, label: "Birthday today", class: "birthday-cake") if birthday_today?(@pet.birthday) %></h1>
+    <p class="task-meta">
+      <% if @pet.species %><span><%= icon(:paw) %><%= @pet.species %></span><% end %>
+      <% if @pet.birthday %><span><%= icon(:cake) %><%= age_in_words(@pet.birthday) %> · born <%= birthday_label(@pet.birthday) %></span><% end %>
+      <% if @pet.home %><span><%= icon(:house) %>Sleeps at <%= @pet.home.name %></span><% end %>
+    </p>
+  </div>
+  <div class="header-actions">
+    <% if following %>
+      <%= button_to pet_subscription_path(@pet), method: :delete, class: "btn btn-quiet", title: "You get a notification when #{@pet.name} is moved or fed" do %><%= icon_label(:bell_off, "Unfollow") %><% end %>
+    <% else %>
+      <%= button_to pet_subscription_path(@pet), method: :post, class: "btn", title: "Get a notification when #{@pet.name} is moved or fed" do %><%= icon_label(:bell, "Follow") %><% end %>
+    <% end %>
+    <%= link_to edit_pet_path(@pet), class: "btn btn-quiet btn-icon", title: "Edit", "aria-label": "Edit #{@pet.name}" do %><%= icon(:pencil) %><% end %>
+  </div>
+</header>
+
+<% if following %>
+  <%= render "shared/notifications_banner", message: "Turn on notifications to hear when #{@pet.name} is moved or fed while this app is open." %>
+<% end %>
+
+<div class="profile-panels">
+  <section class="panel">
+    <h2><%= icon(:map_pin) %>Where</h2>
+    <% if report %>
+      <div class="place-now">
+        <%= location_picture(report.location) if report.location %>
+        <div>
+          <strong><%= report.location&.name || "Somewhere else" %></strong>
+          <small><%= time_tag_ago(report.created_at) %><%= " · reported by #{report.reported_by.display_name}" if report.reported_by %></small>
+          <% if report.comment %><p class="report-comment"><%= icon(:message) %><span><%= report.comment %></span></p><% end %>
+        </div>
+      </div>
+    <% else %>
+      <p class="empty-hint">Nobody has said where <%= @pet.name %> is yet.</p>
+    <% end %>
+    <div class="form-actions">
+      <%= link_to new_pet_location_path(pet_ids: [@pet.id]), class: "btn btn-primary" do %><%= icon_label(:map_pin, "Report where #{@pet.name} is") %><% end %>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2><%= icon(:utensils) %>Feeding</h2>
+    <% if @status.tracks_meals? %>
+      <p class="pet-fed"><%= fed_chip(@status) %></p>
+    <% end %>
+    <% if @pet.feeding_notes.present? %>
+      <div class="feeding-notes"><%= simple_format(@pet.feeding_notes) %></div>
+    <% else %>
+      <p class="empty-hint">No feeding notes. <%= link_to "Add some", edit_pet_path(@pet) %> so whoever feeds <%= @pet.name %> knows what to do.</p>
+    <% end %>
+    <% if @status.tracks_meals? %>
+      <div class="form-actions">
+        <%= link_to new_feeding_path(pet_ids: [@pet.id]), class: "btn btn-primary btn-success" do %><%= icon_label(:utensils, "Feed #{@pet.name}") %><% end %>
+      </div>
+    <% end %>
+  </section>
+</div>
+
+<h2 class="section-title"><%= icon(:clock) %>Recently</h2>
+<% if @history.empty? %>
+  <p class="empty-hint">Nothing yet. Reports and meals show up here.</p>
+<% else %>
+  <%= render "shared/history", entries: @history %>
+<% end %>

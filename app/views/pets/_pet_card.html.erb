@@ -1,0 +1,45 @@
+<%# A pet's card: who, where, fed today, and the two things people do with
+    it, one tap away. Used on the pets page and the dashboard. Locals: pet,
+    status (a PetStatus from Pet.statuses). %>
+<% report = status.report %>
+<article class="pet-card" id="<%= dom_id(pet, :pet_card) %>">
+  <%= link_to pet_path(pet), class: "pet-identity" do %>
+    <span class="person-avatar" style="<%= PetsHelper::PET_DISC_STYLE %>" aria-hidden="true"><%= pet_avatar_content(pet) %></span>
+    <span class="person-meta">
+      <span class="person-name"><%= pet.name %><%= icon(:cake, label: "Birthday today", class: "birthday-cake") if birthday_today?(pet.birthday) %></span>
+      <span class="pet-sub"><%= [pet.species, age_in_words(pet.birthday)].compact_blank.join(" · ").presence || "Pet" %></span>
+    </span>
+  <% end %>
+
+  <div class="pet-facts">
+    <p class="pet-where">
+      <%= location_icon(report&.location) %>
+      <% if report.nil? %>
+        <span class="pet-where-name is-unknown">Not reported yet</span>
+      <% else %>
+        <span class="pet-where-name"><%= report.location&.name || "Somewhere else" %></span>
+        <small><%= time_tag_ago(report.created_at) %><%= " · #{report.reported_by.display_name}" if report.reported_by %></small>
+      <% end %>
+    </p>
+    <% if report&.comment %>
+      <p class="report-comment"><%= icon(:message) %><span><%= report.comment %></span></p>
+    <% end %>
+    <% if status.tracks_meals? %>
+      <p class="pet-fed">
+        <%= fed_chip(status) %>
+        <% if status.last_feeding %>
+          <small>last fed <%= time_tag_ago(status.last_feeding.created_at) %></small>
+        <% end %>
+      </p>
+    <% end %>
+  </div>
+
+  <div class="task-actions">
+    <% if status.tracks_meals? %>
+      <%= button_to feedings_path, params: { "check_in[pet_ids][]" => pet.id, quick: 1 }, method: :post,
+                    class: "btn #{status.fed_state == :fed ? 'btn-quiet' : 'btn-primary btn-success'}",
+                    data: { controller: "celebrate", action: "click->celebrate#burst" } do %><%= icon_label(:utensils, "Fed") %><% end %>
+    <% end %>
+    <%= link_to new_pet_location_path(pet_ids: [pet.id]), class: "btn" do %><%= icon_label(:map_pin, "Where") %><% end %>
+  </div>
+</article>

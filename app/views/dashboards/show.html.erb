@@ -16,6 +16,21 @@
   <% end %>
 </div>
 
+<% if @pets.any? %>
+  <div class="section-header">
+    <h2 class="section-title"><%= icon(:paw) %>Pets</h2>
+    <div class="header-actions">
+      <%= link_to new_feeding_path, class: "btn btn-small" do %><%= icon_label(:utensils, "Feed") %><% end %>
+      <%= link_to new_pet_location_path, class: "btn btn-small" do %><%= icon_label(:map_pin, "Report where") %><% end %>
+    </div>
+  </div>
+  <div class="pet-grid">
+    <% @pets.each do |pet| %>
+      <%= render "pets/pet_card", pet: pet, status: @pet_statuses.fetch(pet.id) %>
+    <% end %>
+  </div>
+<% end %>
+
 <% if @members.size == 1 && current_user.admin? %>
   <p class="empty-hint"><%= icon(:user_plus) %>It's just you so far. <%= link_to "Invite your family", new_admin_invitation_path %> to fill the board.</p>
 <% end %>

@@ -1,0 +1,29 @@
+<%= render "shared/form_errors", object: @location %>
+
+<div class="form-card">
+  <%= form_with model: @location do |f| %>
+    <%= render "shared/photo_picker", form: f, attribute: :photo, preview: location_picture_content(@location),
+               shape: :square, hint: "A photo makes it quick to pick out. Without one, an icon shows." %>
+    <div class="form-field">
+      <%= f.label :name, "Name" %>
+      <%= f.text_field :name, required: true, maxlength: 40, placeholder: "e.g. Grandma's house, Back yard", autocomplete: "off" %>
+    </div>
+    <fieldset class="form-field">
+      <legend>What kind of place?</legend>
+      <div class="kind-options" role="radiogroup">
+        <% Location::KINDS.each do |kind| %>
+          <label class="kind-option">
+            <%= f.radio_button :kind, kind %>
+            <%= icon(PetsHelper::LOCATION_ICONS.fetch(kind)) %>
+            <span><%= location_kind_label(kind) %></span>
+          </label>
+        <% end %>
+      </div>
+      <small>Houses are where pets can sleep.</small>
+    </fieldset>
+    <div class="form-actions">
+      <%= f.button type: "submit", class: "btn btn-primary" do %><%= icon_label(:save, @location.persisted? ? "Save changes" : "Add location") %><% end %>
+      <%= link_to "Never mind", locations_path, class: "btn btn-quiet" %>
+    </div>
+  <% end %>
+</div>

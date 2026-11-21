@@ -6,6 +6,7 @@ class ApplicationController < ActionController::Base
 
   before_action :require_setup
   before_action :set_current_context
+  around_action :use_browser_time_zone
 
   helper_method :current_household, :app_name
 
@@ -34,6 +35,19 @@ class ApplicationController < ActionController::Base
 
   def current_household
     Current.household
+  end
+
+  # "Fed today" and the times on screen follow the viewer's own clock: the
+  # browser stores its IANA zone in a `tz` cookie (application.js). Unknown
+  # or missing zones fall back to the app default.
+  def use_browser_time_zone(&)
+    Time.use_zone(browser_time_zone || Time.zone_default, &)
+  end
+
+  def browser_time_zone
+    ActiveSupport::TimeZone[cookies[:tz].to_s] if cookies[:tz].present?
+  rescue ArgumentError, TZInfo::InvalidTimezoneIdentifier
+    nil
   end
 
   def app_name

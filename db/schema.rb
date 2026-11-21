@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_21_205527) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_21_230100) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -37,6 +37,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_205527) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "feedings", force: :cascade do |t|
+    t.integer "household_id", null: false
+    t.integer "pet_id", null: false
+    t.integer "fed_by_id"
+    t.string "comment"
+    t.datetime "created_at", null: false
+    t.index ["fed_by_id"], name: "index_feedings_on_fed_by_id"
+    t.index ["household_id"], name: "index_feedings_on_household_id"
+    t.index ["pet_id", "created_at"], name: "index_feedings_on_pet_id_and_created_at"
   end
 
   create_table "household_memberships", force: :cascade do |t|
@@ -73,6 +84,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_205527) do
     t.index ["token"], name: "index_invitations_on_token", unique: true
   end
 
+  create_table "location_reports", force: :cascade do |t|
+    t.integer "household_id", null: false
+    t.string "subject_type", null: false
+    t.integer "subject_id", null: false
+    t.integer "location_id"
+    t.integer "reported_by_id"
+    t.string "comment"
+    t.datetime "created_at", null: false
+    t.index ["household_id", "subject_type", "id"], name: "index_location_reports_on_household_id_and_subject_type_and_id"
+    t.index ["household_id"], name: "index_location_reports_on_household_id"
+    t.index ["location_id"], name: "index_location_reports_on_location_id"
+    t.index ["reported_by_id"], name: "index_location_reports_on_reported_by_id"
+    t.index ["subject_type", "subject_id", "id"], name: "index_location_reports_on_subject_type_and_subject_id_and_id"
+  end
+
+  create_table "locations", force: :cascade do |t|
+    t.integer "household_id", null: false
+    t.integer "created_by_id"
+    t.string "name", null: false
+    t.string "kind", default: "other", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_locations_on_created_by_id"
+    t.index ["household_id"], name: "index_locations_on_household_id"
+  end
+
   create_table "passkeys", force: :cascade do |t|
     t.integer "algorithm", null: false
     t.boolean "backed_up", default: false, null: false
@@ -87,6 +124,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_205527) do
     t.integer "user_id", null: false
     t.index ["external_id"], name: "index_passkeys_on_external_id", unique: true
     t.index ["user_id"], name: "index_passkeys_on_user_id"
+  end
+
+  create_table "pet_subscriptions", force: :cascade do |t|
+    t.integer "pet_id", null: false
+    t.integer "user_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["pet_id", "user_id"], name: "index_pet_subscriptions_on_pet_id_and_user_id", unique: true
+    t.index ["user_id"], name: "index_pet_subscriptions_on_user_id"
+  end
+
+  create_table "pets", force: :cascade do |t|
+    t.integer "household_id", null: false
+    t.integer "created_by_id"
+    t.integer "home_id"
+    t.string "name", null: false
+    t.string "species"
+    t.date "birthday"
+    t.integer "meals_per_day", default: 2, null: false
+    t.text "feeding_notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_pets_on_created_by_id"
+    t.index ["home_id"], name: "index_pets_on_home_id"
+    t.index ["household_id"], name: "index_pets_on_household_id"
   end
 
   create_table "settings", force: :cascade do |t|
@@ -134,6 +195,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_205527) do
     t.string "reset_password_token"
     t.datetime "updated_at", null: false
     t.string "webauthn_id"
+    t.date "birthday"
     t.index ["admin"], name: "index_users_on_admin"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["handle"], name: "index_users_on_handle", unique: true
@@ -143,11 +205,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_205527) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "feedings", "households"
+  add_foreign_key "feedings", "pets"
+  add_foreign_key "feedings", "users", column: "fed_by_id"
   add_foreign_key "household_memberships", "households"
   add_foreign_key "household_memberships", "users"
   add_foreign_key "invitations", "households"
   add_foreign_key "invitations", "users", column: "invited_by_id"
+  add_foreign_key "location_reports", "households"
+  add_foreign_key "location_reports", "locations"
+  add_foreign_key "location_reports", "users", column: "reported_by_id"
+  add_foreign_key "locations", "households"
+  add_foreign_key "locations", "users", column: "created_by_id"
   add_foreign_key "passkeys", "users"
+  add_foreign_key "pet_subscriptions", "pets"
+  add_foreign_key "pet_subscriptions", "users"
+  add_foreign_key "pets", "households"
+  add_foreign_key "pets", "locations", column: "home_id"
+  add_foreign_key "pets", "users", column: "created_by_id"
   add_foreign_key "tasks", "households"
   add_foreign_key "tasks", "users", column: "assigned_to_id"
   add_foreign_key "tasks", "users", column: "created_by_id"

@@ -42,8 +42,17 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   `accept!`), `Task` (status enum: `planned`, `in_progress`, `undone`,
   `completed`; recurrence; broadcasts cards and assignee notifications after
   commit), `Setting` (encrypted key/value, cached per request in `Current`),
-  `AppSettings` (app name/URL, SMTP and setup code, Setting then ENV), and
-  `GettingStarted` (the dashboard checklist).
+  `AppSettings` (app name/URL, SMTP and setup code, Setting then ENV),
+  `GettingStarted` (the dashboard checklist), and the pets feature:
+  `Location` (a place: house/yard/pasture/pool/other, with a photo),
+  `Pet` (species, birthday, `meals_per_day`, `feeding_notes`, `home` =
+  where it sleeps; `Pet.statuses` loads every card's state in a few
+  queries into `PetStatus`), `LocationReport` (polymorphic `subject`: Pet or
+  User; the newest per subject is where they are; `latest_for`), `Feeding`,
+  `PetSubscription` (follow a pet), and `PetCheckIn`, the form object behind
+  both batch flows ("Report where" and "Feed": pick pets, maybe a place,
+  comment) which also notifies followers. `concerns/small_photo.rb`
+  (`small_photo :avatar`) is the one way to give a model a photo.
 - `lib/`: dependency-free security code with its own tests in `test/lib`:
   `Totp` (RFC 6238), `QrCode` (inline SVG for the 2FA setup page), and
   `WebAuthn::RelyingParty`/`Cbor`/`CoseKey` (passkey ceremonies on OpenSSL).
@@ -58,6 +67,14 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   `app/controllers/account/`: every member's profile, password, passkeys,
   2FA and recovery codes. `concerns/account_signup.rb`: passkey-or-password
   sign-up shared by setup and invitations.
+- Pets & people: `PetsController`, `PetLocationsController` (GET/POST
+  `/pets/where`), `FeedingsController` (`/pets/feed`; a card's one-tap Fed
+  button posts `quick=1` and stays on the page), `LocationsController`,
+  `PeopleController` (profiles; `locate` sets *your own* location only: it
+  never reads a person from params), `PetSubscriptionsController`. They
+  include `concerns/household_scoped.rb` (sign-in, household, creator-or-admin
+  deletes, whitelisted `return_to`). Anyone in the household can add and edit
+  pets and locations; deleting is for whoever added it or an admin.
 - `app/controllers/admin/`: admin-only area (households + wall link and
   members, invitations, people, settings). `walls_controller.rb`: public wall.
 - `config/initializers/mailer.rb` + `app/mailers/app_mail_delivery.rb`: SMTP
@@ -86,6 +103,23 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
     and `custom-color`; `avatar-picker` > `avatar-preview` + `avatar-controls`, and the
     `crop-dialog` (`crop-hint`, `crop-stage` canvas, `crop-zoom`); `checklist` > `checklist-header` + `checklist-steps`
     > `checklist-step` (`is-done`) > `checklist-mark` + `checklist-body`.
+  - pets & profiles (the pattern for new features: a card says what's true
+    now and puts the next action one tap away; batch actions are "pick
+    tiles, then a button that says what will happen"): `header-actions`,
+    `section-header`, `empty-state`, `pet-grid` > `pet-card` > `pet-identity`
+    + `pet-facts` (`pet-where`, `report-comment`, `pet-fed` > `meal-pips`);
+    `person-where`, `birthday-cake`; `profile-header` > `profile-avatar` +
+    `profile-heading`; `profile-panels` > `panel` (`panel-wide`);
+    `place-now`, `place-photo` (rounded square; discs are for faces),
+    `place-grid` > `place-card` > `place-body` + `here-now`; `history` >
+    `history-item` > `history-mark` + `history-body`; tile pickers
+    `picker-field` > `picker-shortcuts` + `pick-grid` > `pick-tile`
+    (`pick-check`, `pick-name`, `pick-meta`, `pick-place`, `pick-add`) driven
+    by the `picker` Stimulus controller; `kind-options` > `kind-option`;
+    `feeding-notes`, `form-row`, `form-card-wide`, `sticky-actions`,
+    `btn-wide`, `danger-zone`. Partials: `shared/_photo_picker`,
+    `shared/_pet_picker`, `shared/_location_picker`, `shared/_history`,
+    `pets/_pet_card`, `pets/_live`.
   - account & auth: `account-section`, `admin-tabs`, `copy-field`,
     `inline-form`, `inline-check`, `code-input`, `help-details`,
     `passkey-signin`, `passkey-choice`, `passkey-hint`, `passkey-add`,
@@ -147,14 +181,16 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   `user[custom_color]`, which wins when filled. Never give the box the name
   `color` again: as the later field it overrode the swatch, so picked
   colours silently didn't save.
-- Profile photos (`User#avatar`, Active Storage on the `:local` disk
-  service under `storage/`) are cropped by the person in a `<dialog>`
-  (drag, zoom, arrow keys), rendered at 256px and re-encoded in the browser
-  by `avatar_upload_controller.js`, which also strips EXIF/GPS, then the
-  form saves itself. Previews must be `data:` URLs: the CSP's img-src
+- Photos (`User#avatar`, `Pet#photo`, `Location#photo`, Active Storage on
+  the `:local` disk service under `storage/`) all go through
+  `shared/_photo_picker`: cropped in a `<dialog>` (drag, zoom, arrow keys;
+  round mask for faces, square for places), rendered at 256px (480 for
+  places) and re-encoded in the browser by `photo_upload_controller.js`,
+  which also strips EXIF/GPS. The profile form saves itself after a crop
+  (`autosave`); the pet and location forms upload with the rest. Previews must be `data:` URLs: the CSP's img-src
   allows `data:` but not `blob:` (a blob preview silently shows nothing). There
   is no server-side image library, so no variants and analyzers are off;
-  the model only accepts JPEG/PNG/WebP (sniffed, not trusted) up to 2 MB.
+  `SmallPhoto` only accepts JPEG/PNG/WebP (sniffed, not trusted) up to 2 MB.
   Photo URLs are signed blob links, so the public wall can show them.
 
 - Active Record encryption keys come from credentials if present, otherwise
@@ -168,6 +204,16 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   `turbo_stream_from current_user, :notifications`. Stream names are signed,
   which is what authorises the anonymous wall. Broadcasts render
   synchronously in `after_commit` and never raise into the request.
+- Pet, location and feeding changes call `Household#broadcast_refresh`
+  (a debounced Turbo refresh on `[household, :members]`); pages that show
+  them render `pets/_live`, which subscribes and morphs. Person cards still
+  get targeted replaces.
+- "Fed today" uses the viewer's time zone: `application.js` stores the
+  browser's IANA zone in a `tz` cookie and `ApplicationController` wraps
+  each request in `Time.use_zone`. No cookie means the app default (UTC).
+- Pet-follow notifications ride the same `[user, :notifications]` stream as
+  task notifications, so they only arrive while the app is open somewhere
+  (there's no Web Push).
 - Passkeys, clipboard and notifications require a secure context; on LAN
   http the UI hides passkeys and falls back to passwords. Passkeys are bound
   to the hostname they were created on.

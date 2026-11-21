@@ -11,15 +11,10 @@ class User < ApplicationRecord
     #a8a29e #d97706 #9333ea #0f766e
   ].freeze
 
-  # Profile photos are square-cropped and shrunk in the browser before upload
-  # (avatar_upload_controller.js), so the server never processes images: it
-  # only checks that what arrived is a small raster image. No SVG: it can
-  # carry script.
-  AVATAR_TYPES = %w[image/jpeg image/png image/webp].freeze
-  AVATAR_MAX_BYTES = 2.megabytes
+  include SmallPhoto
 
   encrypts :otp_secret
-  has_one_attached :avatar
+  small_photo :avatar
   serialize :otp_recovery_codes, coder: JSON
 
   validates :handle, presence: true,
@@ -27,7 +22,7 @@ class User < ApplicationRecord
                      format: { with: HANDLE_FORMAT, message: "may only contain lowercase letters, numbers, and underscores" }
   validates :display_name, presence: true, length: { maximum: 60 }
   validates :color, format: { with: /\A#[0-9a-fA-F]{6}\z/, message: "must be a 6-digit hex color" }
-  validate :avatar_is_a_small_image
+  validate :birthday_not_in_future
 
   has_many :household_memberships, dependent: :destroy
   has_many :households, through: :household_memberships
@@ -35,6 +30,12 @@ class User < ApplicationRecord
   has_many :assigned_tasks, class_name: "Task", foreign_key: :assigned_to_id, dependent: :nullify
   has_many :created_tasks, class_name: "Task", foreign_key: :created_by_id, dependent: :nullify
   has_many :invitations_sent, class_name: "Invitation", foreign_key: :invited_by_id, dependent: :nullify
+  has_many :location_reports, as: :subject, dependent: :delete_all
+  has_many :location_reports_made, class_name: "LocationReport", foreign_key: :reported_by_id, dependent: :nullify
+  has_many :feedings_given, class_name: "Feeding", foreign_key: :fed_by_id, dependent: :nullify
+  has_many :pet_subscriptions, dependent: :delete_all
+  has_many :pets_added, class_name: "Pet", foreign_key: :created_by_id, dependent: :nullify
+  has_many :locations_added, class_name: "Location", foreign_key: :created_by_id, dependent: :nullify
 
   # Set when an account is created with a passkey instead of a password.
   attr_accessor :signing_up_with_passkey
@@ -44,14 +45,7 @@ class User < ApplicationRecord
   # prefilled with the old colour, came last and won). Filled in, it wins.
   attr_accessor :custom_color
 
-  # "Remove photo" on the profile form. A newly chosen photo takes precedence.
-  attr_reader :remove_avatar
-  def remove_avatar=(value)
-    @remove_avatar = ActiveModel::Type::Boolean.new.cast(value)
-  end
-
   before_validation :apply_custom_color
-  before_validation :apply_remove_avatar
   before_validation :normalize_color
   before_validation :normalize_handle
   before_validation :ensure_handle, if: -> { handle.blank? }
@@ -67,11 +61,6 @@ class User < ApplicationRecord
   # (after a name, colour or photo change).
   def broadcast_card
     households.each { |household| household.broadcast_member_cards([id]) }
-  end
-
-  # A stored photo, ignoring one that's attached but failed validation.
-  def avatar_saved?
-    avatar.attached? && avatar.blob.persisted?
   end
 
   def member_of?(household)
@@ -199,19 +188,8 @@ class User < ApplicationRecord
     self.color = custom_color if custom_color.present?
   end
 
-  def apply_remove_avatar
-    self.avatar = nil if remove_avatar && !attachment_changes["avatar"]
-  end
-
-  def avatar_is_a_small_image
-    return unless attachment_changes["avatar"] && avatar.attached?
-
-    unless AVATAR_TYPES.include?(avatar.blob.content_type)
-      errors.add(:avatar, "must be a JPEG, PNG or WebP image")
-    end
-    if avatar.blob.byte_size > AVATAR_MAX_BYTES
-      errors.add(:avatar, "must be smaller than #{AVATAR_MAX_BYTES / 1.megabyte} MB")
-    end
+  def birthday_not_in_future
+    errors.add(:birthday, "can't be in the future") if birthday && birthday > Date.current
   end
 
   def normalize_color

@@ -1,0 +1,39 @@
+<% content_for :title, "Feed" %>
+<%= render "pets/tabs" %>
+<h1>Feed the pets</h1>
+<p class="page-intro">Pick who you fed. Read their notes first.</p>
+
+<% feedable = @pets.select { |pet| @statuses.fetch(pet.id).tracks_meals? } %>
+<% if feedable.empty? %>
+  <p class="empty-hint"><%= icon(:paw) %>No pets to feed. <%= link_to "Add a pet", new_pet_path %> and set how many meals they get.</p>
+<% else %>
+  <%= render "shared/form_errors", object: @check_in %>
+  <%= form_with url: feedings_path, method: :post, class: "form-card form-card-wide",
+                data: { controller: "picker", picker_verb_value: "Feed" } do |f| %>
+    <%= render "shared/pet_picker", pets: feedable, statuses: @statuses, chosen: @check_in.pet_ids, meta: :fed %>
+
+    <% with_notes = feedable.select { |pet| pet.feeding_notes.present? } %>
+    <% if with_notes.any? %>
+      <section class="form-field feeding-notes-list" aria-label="Feeding notes">
+        <h2 class="form-subtitle"><%= icon(:utensils) %>Feeding notes</h2>
+        <% with_notes.each do |pet| %>
+          <div class="feeding-notes" data-picker-target="detail" data-pet-id="<%= pet.id %>">
+            <strong><%= pet.name %></strong>
+            <%= simple_format(pet.feeding_notes) %>
+          </div>
+        <% end %>
+      </section>
+    <% end %>
+
+    <div class="form-field">
+      <%= label_tag "check_in_comment", "Comment (optional)" %>
+      <%= text_field_tag "check_in[comment]", @check_in.comment, id: "check_in_comment", maxlength: LocationReport::COMMENT_MAX,
+                         placeholder: "e.g. Only ate half", autocomplete: "off" %>
+    </div>
+    <div class="form-actions sticky-actions">
+      <%= button_tag type: "submit", class: "btn btn-primary btn-success btn-wide",
+                     data: { picker_target: "submit", controller: "celebrate", action: "click->celebrate#burst" } do %><%= icon_label(:utensils, "Feed") %><% end %>
+      <%= link_to "Never mind", pets_path, class: "btn btn-quiet" %>
+    </div>
+  <% end %>
+<% end %>

@@ -9,9 +9,6 @@ application.register("auto-refresh", AutoRefreshController)
 import AutosubmitController from "./autosubmit_controller"
 application.register("autosubmit", AutosubmitController)
 
-import AvatarUploadController from "./avatar_upload_controller"
-application.register("avatar-upload", AvatarUploadController)
-
 import ColorPickerController from "./color_picker_controller"
 application.register("color-picker", ColorPickerController)
 
@@ -29,6 +26,12 @@ application.register("notification", NotificationController)
 
 import NotificationsController from "./notifications_controller"
 application.register("notifications", NotificationsController)
+
+import PhotoUploadController from "./photo_upload_controller"
+application.register("photo-upload", PhotoUploadController)
+
+import PickerController from "./picker_controller"
+application.register("picker", PickerController)
 
 import PasskeyLoginController from "./passkey_login_controller"
 application.register("passkey-login", PasskeyLoginController)

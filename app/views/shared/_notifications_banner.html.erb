@@ -1,7 +1,7 @@
-<%# Web notifications opt-in banner. Never auto-prompts. %>
+<%# Web notifications opt-in banner. Never auto-prompts. Locals: message (optional). %>
 <div class="invite-banner" data-controller="notifications">
   <span class="banner-icon"><%= icon(:bell) %></span>
-  <p>Want a nudge when someone assigns you a task or a status changes?</p>
+  <p><%= local_assigns[:message] || "Want a nudge when someone assigns you a task or a status changes?" %></p>
   <div class="invite-actions">
     <button type="button" class="btn btn-primary" data-action="notifications#enable"><%= icon_label(:bell, "Enable notifications") %></button>
     <button type="button" class="btn btn-quiet" data-action="notifications#dismiss">No thanks</button>

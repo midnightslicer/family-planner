@@ -1,0 +1,4 @@
+<%# Pages that show pets or places: morph in place when anyone in the
+    household changes something (Household#broadcast_refresh). %>
+<% content_for :head, turbo_refreshes_with(method: :morph, scroll: :preserve) %>
+<%= turbo_stream_from current_household, :members %>

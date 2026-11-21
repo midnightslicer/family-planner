@@ -1,7 +1,7 @@
 require "test_helper"
 
 class HouseholdTest < ActiveSupport::TestCase
-  test "member_statuses finds each member's current and next task in one query" do
+  test "member_statuses finds each member's current and next task in a fixed number of queries" do
     household = households(:smiths)
     member = users(:member)
     Task.create!(household: household, title: "Later", assigned_to: member, starts_at: 2.hours.from_now)
@@ -13,10 +13,23 @@ class HouseholdTest < ActiveSupport::TestCase
     counter = ->(*, payload) { queries += 1 unless payload[:name] == "SCHEMA" }
     statuses = ActiveSupport::Notifications.subscribed(counter, "sql.active_record") { household.member_statuses }
 
-    assert_equal 1, queries
+    assert_equal 2, queries # tasks, then where everyone last said they were
     assert_equal "Now", statuses[member.id][:current].title
     assert_equal "Sooner", statuses[member.id][:next].title
     assert_equal({}, statuses[users(:admin).id])
+  end
+
+  test "member_statuses includes where each member last said they were" do
+    household = households(:smiths)
+    member = users(:member)
+    yard = household.locations.create!(name: "Yard", kind: "yard")
+    house = household.locations.create!(name: "House", kind: "house")
+    LocationReport.create!(household: household, subject: member, location: yard, reported_by: member)
+    LocationReport.create!(household: household, subject: member, location: house, reported_by: member, comment: "Inside")
+
+    status = household.member_statuses[member.id]
+    assert_equal "House", status[:location].location.name
+    assert_equal "Inside", status[:location].comment
   end
 
   test "tasks can't end before they start" do

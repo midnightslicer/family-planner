@@ -1,8 +1,11 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Profile photo picker with a crop step. Choosing a file opens a dialog where
-// the photo can be dragged and zoomed under a round mask; "Use photo" renders
-// that square at 256px, puts it back into the file input and saves the form.
+// Photo picker with a crop step, for people, pets and locations (rendered by
+// shared/_photo_picker). Choosing a file opens a dialog where the photo can be
+// dragged and zoomed under a mask (round for faces, square for places); "Use
+// photo" renders that square at `size` px and puts it back into the file
+// input. With `autosave` (the profile) it then saves the form; otherwise the
+// photo goes up with the rest of the form.
 //
 // Doing it in the browser means a 6 MB phone photo uploads as ~20 KB, the
 // server needs no image library, and re-encoding through a canvas drops the
@@ -10,11 +13,15 @@ import { Controller } from "@hotwired/stimulus"
 // the CSP allows those for images and not blob: URLs.
 //
 // Without JavaScript the plain file input stays visible and uploads as-is.
-const OUTPUT = 256
 const MAX_ZOOM = 4
 
 export default class extends Controller {
   static targets = ["input", "choose", "preview", "error", "remove", "dialog", "canvas", "zoom"]
+  static values = {
+    shape: { type: String, default: "round" },
+    size: { type: Number, default: 256 },
+    autosave: { type: Boolean, default: true }
+  }
 
   connect() {
     this.inputTarget.hidden = true
@@ -62,16 +69,22 @@ export default class extends Controller {
     this.dialogTarget.close()
   }
 
-  // The dialog's own Escape/close: same as Cancel unless we're saving.
+  // The dialog's own Escape/close: same as Cancel unless "Use photo" closed
+  // it. The close event arrives after close() returns, so the flag is
+  // cleared here, not in apply(): clearing it there made this handler wipe
+  // the cropped photo out of the input before forms without autosave were
+  // submitted.
   closed() {
     if (!this.saving) this.inputTarget.value = ""
+    this.saving = false
   }
 
   async apply() {
     this.saving = true
     const canvas = document.createElement("canvas")
-    canvas.width = canvas.height = OUTPUT
-    this.paint(canvas.getContext("2d"), OUTPUT / this.stage)
+    const output = this.sizeValue
+    canvas.width = canvas.height = output
+    this.paint(canvas.getContext("2d"), output / this.stage)
 
     // WebP where the browser can encode it (Safari can't), JPEG otherwise.
     let blob = await toBlob(canvas, "image/webp")
@@ -85,8 +98,7 @@ export default class extends Controller {
 
     this.showPreview(canvas.toDataURL("image/png"))
     this.dialogTarget.close()
-    this.saving = false
-    this.element.closest("form").requestSubmit()
+    if (this.autosaveValue) this.element.closest("form").requestSubmit()
   }
 
   // ---- Dragging, zooming, nudging ----
@@ -151,10 +163,14 @@ export default class extends Controller {
     this.draw()
   }
 
+  // The canvas's layout width, not getBoundingClientRect(): the dialog opens
+  // with a scale-up animation, and the transformed (~40%) size gave the
+  // canvas too few pixels, so the crop preview looked blurry. (The upload is
+  // rendered separately at full size and was always sharp.)
   sizeStage() {
     const canvas = this.canvasTarget
     const dpr = window.devicePixelRatio || 1
-    this.stage = canvas.getBoundingClientRect().width || 280
+    this.stage = canvas.clientWidth || 280
     canvas.width = canvas.height = Math.round(this.stage * dpr)
     this.dpr = dpr
   }
@@ -174,20 +190,24 @@ export default class extends Controller {
     this.shade(ctx)
   }
 
-  // Dim everything outside the circle (on screen only, not in the upload)
-  // and outline it. Colours come from the theme tokens.
+  // Dim everything outside the mask (on screen only, not in the upload) and
+  // outline it. Colours come from the theme tokens.
   shade(ctx) {
     const styles = getComputedStyle(this.canvasTarget)
     const size = this.stage * this.dpr
     const r = size / 2
+    const outline = (inset) => {
+      if (this.shapeValue === "square") ctx.roundRect(inset, inset, size - inset * 2, size - inset * 2, size * 0.08)
+      else ctx.arc(r, r, r - inset, 0, Math.PI * 2)
+    }
     ctx.save()
     ctx.beginPath()
     ctx.rect(0, 0, size, size)
-    ctx.arc(r, r, r - 1, 0, Math.PI * 2)
+    outline(1)
     ctx.fillStyle = styles.getPropertyValue("--crop-shade").trim()
     ctx.fill("evenodd")
     ctx.beginPath()
-    ctx.arc(r, r, r - this.dpr, 0, Math.PI * 2)
+    outline(this.dpr)
     ctx.lineWidth = 2 * this.dpr
     ctx.strokeStyle = styles.getPropertyValue("--accent").trim()
     ctx.stroke()

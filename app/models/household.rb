@@ -3,6 +3,11 @@ class Household < ApplicationRecord
   has_many :users, through: :household_memberships
   has_many :tasks, dependent: :destroy
   has_many :invitations, dependent: :destroy
+  # Reports and feedings go first: they point at pets and locations.
+  has_many :location_reports, dependent: :delete_all
+  has_many :feedings, dependent: :delete_all
+  has_many :pets, dependent: :destroy
+  has_many :locations, dependent: :destroy
 
   validates :name, presence: true, length: { maximum: 80 }
 
@@ -13,16 +18,29 @@ class Household < ApplicationRecord
     users.order(:display_name)
   end
 
-  # For every member, their current (in-progress) and next (planned) task, in
-  # one query instead of two per person card.
-  # Returns { user_id => { current: Task, next: Task } }.
+  # For every member, their current (in-progress) and next (planned) task and
+  # where they last said they were, in two queries instead of a few per card.
+  # Returns { user_id => { current: Task, next: Task, location: LocationReport } }.
   def member_statuses
+    statuses = Hash.new { |hash, key| hash[key] = {} }
     tasks.where(status: [:in_progress, :planned]).where.not(assigned_to_id: nil)
-         .order(:starts_at, :id)
-         .each_with_object(Hash.new { |hash, key| hash[key] = {} }) do |task, statuses|
+         .order(:starts_at, :id).each do |task|
       slot = task.in_progress? ? :current : :next
       statuses[task.assigned_to_id][slot] ||= task
     end
+    LocationReport.latest_for(self, "User", users.select(:id)).each do |user_id, report|
+      statuses[user_id][:location] = report
+    end
+    statuses
+  end
+
+  # Asks every open page subscribed to `turbo_stream_from household, :members`
+  # (dashboard, wall, pets, locations, people) to re-fetch itself; they morph
+  # in place. Debounced, so a batch of feedings is one refresh.
+  def broadcast_refresh
+    Turbo::StreamsChannel.broadcast_refresh_later_to(self, :members)
+  rescue StandardError => error
+    Rails.logger.warn("Live refresh failed for household #{id}: #{error.class}: #{error.message}")
   end
 
   # Re-renders the given members' cards on every open dashboard and wall for

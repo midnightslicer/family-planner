@@ -1,55 +1,17 @@
 <% content_for :title, "Your account" %>
-<h1>Your account</h1>
+<div class="page-header">
+  <h1>Your account</h1>
+  <%= link_to person_path(@user), class: "btn" do %><%= icon_label(:map_pin, "Your profile & location") %><% end if current_household %>
+</div>
 
 <section class="account-section">
   <h2>Profile</h2>
   <%= render "shared/form_errors", object: @user if @user.errors.any? && !@user.errors.include?(:password) && !@user.errors.include?(:current_password) %>
   <div class="form-card">
     <%= form_with model: @user, url: account_profile_path, method: :patch do |f| %>
-      <div class="form-field" data-controller="avatar-upload">
-        <%= f.label :avatar, "Photo" %>
-        <div class="avatar-picker">
-          <span class="person-avatar avatar-preview" aria-hidden="true" data-color-preview data-avatar-upload-target="preview"
-                style="--user-color: <%= @user.color %>; --user-fg: <%= contrast_color(@user.color) %>"><%= avatar_content(@user) %></span>
-          <div class="avatar-controls">
-            <%= f.file_field :avatar, accept: User::AVATAR_TYPES.join(","),
-                             data: { avatar_upload_target: "input", action: "change->avatar-upload#open" } %>
-            <%# Shown by the controller; without JS the plain file input stays. %>
-            <button type="button" class="btn btn-small" hidden
-                    data-avatar-upload-target="choose" data-action="avatar-upload#choose">
-              <%= icon_label(:camera, @user.avatar_saved? ? "Change photo" : "Choose a photo") %>
-            </button>
-            <% if @user.avatar_saved? %>
-              <label class="inline-check">
-                <%= f.check_box :remove_avatar, data: { avatar_upload_target: "remove" } %>
-                Remove photo
-              </label>
-            <% end %>
-            <small>You can crop it before it saves. It's shrunk on your device first, so big photos are fine. Without one, your initials show.</small>
-            <p class="flash-alert" data-avatar-upload-target="error" role="alert" hidden></p>
-          </div>
-        </div>
-
-        <dialog class="crop-dialog" aria-labelledby="crop-title"
-                data-avatar-upload-target="dialog" data-action="close->avatar-upload#closed">
-          <h2 id="crop-title">Crop your photo</h2>
-          <p class="crop-hint">Drag to move it, zoom to fit. The circle is what everyone sees.</p>
-          <canvas class="crop-stage" tabindex="0" role="img" aria-label="Photo crop area. Arrow keys move it, plus and minus zoom."
-                  data-avatar-upload-target="canvas"
-                  data-action="pointerdown->avatar-upload#grab pointermove->avatar-upload#move pointerup->avatar-upload#release pointercancel->avatar-upload#release wheel->avatar-upload#wheel keydown->avatar-upload#nudge"></canvas>
-          <div class="crop-zoom">
-            <%= icon(:zoom_out) %>
-            <label class="visually-hidden" for="crop-zoom">Zoom</label>
-            <input type="range" id="crop-zoom" min="1" max="4" step="0.01" value="1"
-                   data-avatar-upload-target="zoom" data-action="input->avatar-upload#zoomed">
-            <%= icon(:zoom_in) %>
-          </div>
-          <div class="form-actions">
-            <button type="button" class="btn btn-primary" data-action="avatar-upload#apply"><%= icon_label(:check, "Use photo") %></button>
-            <button type="button" class="btn btn-quiet" data-action="avatar-upload#cancel">Cancel</button>
-          </div>
-        </dialog>
-      </div>
+      <%= render "shared/photo_picker", form: f, attribute: :avatar, preview: avatar_content(@user), autosave: true,
+                 style: "--user-color: #{@user.color}; --user-fg: #{contrast_color(@user.color)}",
+                 hint: "You can crop it before it saves. It's shrunk on your device first, so big photos are fine. Without one, your initials show." %>
       <div class="form-field">
         <%= f.label :display_name, "Name" %>
         <%= f.text_field :display_name, required: true, maxlength: 60, autocomplete: "name" %>
@@ -58,6 +20,11 @@
         <%= f.label :handle, "Handle" %>
         <%= f.text_field :handle, required: true, pattern: "[a-z0-9_]+", autocapitalize: "none", spellcheck: false %>
         <small>Shown as @<%= @user.handle_was.presence || @user.handle %> on the board. Lowercase letters, numbers and underscores.</small>
+      </div>
+      <div class="form-field">
+        <%= f.label :birthday, "Birthday (optional)" %>
+        <%= f.date_field :birthday, max: Date.current %>
+        <small>Your age shows on your profile, and the board celebrates the day.</small>
       </div>
       <fieldset class="form-field">
         <legend>Color</legend>

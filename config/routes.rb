@@ -41,6 +41,22 @@ Rails.application.routes.draw do
     end
   end
 
+  # Pets and the places they (and people) can be. The two batch flows come
+  # before `resources :pets` so "where" and "feed" aren't read as pet ids.
+  get  "pets/where", to: "pet_locations#new",    as: :new_pet_location
+  post "pets/where", to: "pet_locations#create", as: :pet_locations
+  get  "pets/feed",  to: "feedings#new",         as: :new_feeding
+  post "pets/feed",  to: "feedings#create",      as: :feedings
+  resources :feedings, only: :destroy
+  resources :location_reports, only: :destroy
+  resources :pets do
+    # Follow / unfollow: notifications when it's moved or fed.
+    resource :subscription, only: [:create, :destroy], controller: "pet_subscriptions"
+  end
+  resources :locations, except: :show
+  resources :people, only: :show
+  post "people/me/location", to: "people#locate", as: :locate_me
+
   # Everyone's own account: profile, password, passkeys, two-step verification
   namespace :account do
     root to: "profiles#show"

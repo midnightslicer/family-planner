@@ -206,6 +206,8 @@ blockquote {
 .invite-actions form,
 .checklist-header form,
 .checklist-step form,
+.header-actions form,
+.history-item form,
 .table-actions form { display: contents; }
 
 /* ---------- Nav ---------- */
@@ -1246,6 +1248,365 @@ a.nav-brand { color: var(--text); text-decoration: none; }
 .checklist-step.is-done strong { color: var(--text-muted); font-weight: 500; }
 .checklist-body { flex: 1; min-width: 0; display: grid; }
 
+
+/* ---------- Pets, locations & profiles ----------
+ * The pets feature is the pattern for the rest of the app: every card says
+ * what's true now and puts the next action one tap away; anything done to
+ * several things at once is "pick tiles, then confirm" (pick-grid), and the
+ * confirm button says exactly what will happen ("Feed 2 pets").
+ */
+.header-actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin: 2.5rem 0 1rem;
+}
+.section-header .section-title { margin: 0; }
+.section-header .section-title .icon,
+.section-title .icon-paw,
+.section-title .icon-clock { color: var(--accent); }
+
+.empty-state {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  background: var(--surface);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+}
+.empty-state h2 { margin: 0.5rem 0 0; }
+.empty-state p { color: var(--text-muted); max-width: 32rem; margin-bottom: 0.75rem; }
+.empty-state .banner-icon .icon { animation: none; }
+
+/* Pet cards */
+.pet-grid,
+.place-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 1rem;
+}
+
+.pet-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 1.125rem 1.25rem;
+  transition: transform var(--medium) var(--ease-out), box-shadow var(--medium) ease;
+}
+.pet-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.pet-card .task-actions { padding-top: 0.75rem; margin-top: auto; }
+.pet-card .task-actions .btn { flex: 1; }
+
+.pet-identity { display: flex; align-items: center; gap: 0.75rem; color: var(--text); min-width: 0; }
+.pet-identity:hover { text-decoration: none; }
+.pet-identity:hover .person-name { color: var(--accent); }
+.pet-identity:hover .person-avatar { transform: scale(1.08) rotate(-6deg); }
+.pet-identity .person-avatar { width: 3rem; height: 3rem; }
+.person-avatar .icon-paw { width: 55%; height: 55%; }
+.pet-sub { font-size: 0.8125rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.pet-facts { display: grid; gap: 0.5rem; }
+.pet-where,
+.person-where {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem 0.5rem;
+  flex-wrap: wrap;
+  margin: 0;
+  font-weight: 600;
+}
+.pet-where > .icon,
+.person-where > .icon { color: var(--accent); }
+.pet-where small,
+.person-where small { font-weight: 500; }
+.pet-where-name.is-unknown { color: var(--text-muted); font-weight: 500; }
+.person-where { margin-top: 0.75rem; font-size: 0.9375rem; }
+
+.report-comment {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4375rem;
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+.report-comment .icon { margin-top: 0.15em; width: 0.9375rem; height: 0.9375rem; }
+.person-card .report-comment { margin-top: 0.375rem; }
+
+.pet-fed { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 0; }
+
+/* One pip per meal of the day, filled as they're eaten. */
+.meal-pips { display: inline-flex; gap: 3px; margin-left: 0.125rem; }
+.meal-pips span {
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid currentColor;
+  opacity: 0.6;
+}
+.meal-pips span.is-fed { background: currentColor; opacity: 1; animation: pop 320ms var(--ease-spring) backwards; }
+
+.birthday-cake { color: var(--status-in_progress); margin-left: 0.375rem; animation: twinkle 2.8s ease-in-out infinite; }
+.person-identity .birthday-cake { margin-left: auto; }
+
+/* Person names on cards link to profiles. */
+a.person-name { color: inherit; }
+a.person-name:hover { color: var(--accent); text-decoration: none; }
+
+/* Profiles (pets and people) */
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.75rem;
+}
+.profile-avatar { width: 5.5rem; height: 5.5rem; font-size: 1.75rem; animation: pop 420ms var(--ease-spring) backwards; }
+.profile-heading { flex: 1 1 14rem; min-width: 0; }
+.profile-heading h1 { margin-bottom: 0.375rem; display: flex; align-items: center; }
+.profile-heading .task-meta { margin: 0; }
+
+.profile-panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: clamp(1.125rem, 3vw, 1.5rem);
+  animation: rise-in 480ms var(--ease-out) backwards;
+}
+.panel + .panel { animation-delay: 60ms; }
+.panel-wide { grid-column: 1 / -1; }
+.panel > h2 { display: flex; align-items: center; gap: 0.5rem; font-size: 1.0625rem; margin-bottom: 1rem; }
+.panel > h2 .icon { color: var(--accent); }
+.panel .form-actions { margin-top: 1.25rem; }
+.panel .empty-hint { margin-top: 0; }
+
+.place-now { display: flex; align-items: center; gap: 1rem; }
+.place-now > div { display: grid; gap: 0.125rem; min-width: 0; }
+.place-now strong { font-size: 1.125rem; }
+.place-now .place-photo { width: 4.5rem; }
+
+.feeding-notes {
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--status-completed);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  font-size: 0.9375rem;
+}
+.feeding-notes p { margin-bottom: 0.375rem; }
+.feeding-notes strong { display: block; margin-bottom: 0.25rem; }
+.pet-fed + .feeding-notes { margin-top: 0.875rem; }
+.feeding-notes-list { display: grid; gap: 0.5rem; }
+.form-subtitle { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; margin: 0 0 0.25rem; }
+.form-subtitle .icon { color: var(--status-completed); }
+
+/* History timeline */
+.history { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; }
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--border);
+}
+.history-item:first-child { border-top: 0; }
+.history-mark {
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-pill);
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.history-body { flex: 1; min-width: 0; display: grid; gap: 0.125rem; }
+.history-body small { margin-left: 0.375rem; }
+.history-item .btn-icon { opacity: 0.55; }
+.history-item:hover .btn-icon,
+.history-item .btn-icon:focus-visible { opacity: 1; }
+.btn:hover .icon-undo { transform: rotate(-30deg); }
+
+/* Place pictures: rounded squares (round discs are for faces). */
+.place-photo {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--radius);
+  overflow: hidden;
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.place-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.place-photo > .icon { width: 40%; height: 40%; }
+.place-photo.avatar-preview { width: 6rem; height: 6rem; }
+
+.place-card {
+  display: flex;
+  gap: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 1rem;
+  transition: transform var(--medium) var(--ease-out), box-shadow var(--medium) ease;
+}
+.place-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.place-card > .place-photo { width: 5.5rem; }
+.place-body { flex: 1; min-width: 0; }
+.place-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; }
+.place-title h2 { font-size: 1.0625rem; margin: 0.25rem 0 0.25rem; }
+.place-body .task-meta { margin-bottom: 0.5rem; }
+.here-now { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.375rem; }
+.here-now a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.1875rem 0.625rem 0.1875rem 0.1875rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+}
+.here-now a:hover { border-color: var(--accent); text-decoration: none; }
+.here-now .person-avatar { width: 1.5rem; height: 1.5rem; font-size: 0.5625rem; box-shadow: none; }
+
+/* Tile pickers: big tap targets, the input covers the tile (like .swatch). */
+.form-card-wide { max-width: 760px; }
+.picker-field { position: relative; }
+fieldset.picker-field { margin-top: 0; margin-bottom: 1.25rem; }
+.picker-shortcuts { position: absolute; top: 0.5rem; right: 0.75rem; display: flex; gap: 0.25rem; }
+.pick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 7.5rem), 1fr));
+  gap: 0.625rem;
+  margin-top: 0.5rem;
+}
+.pick-tile {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 0.375rem;
+  padding: 0.875rem 0.5rem 0.75rem;
+  text-align: center;
+  color: var(--text);
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color var(--fast) ease, background var(--fast) ease, transform var(--medium) var(--ease-spring);
+}
+.pick-tile:hover { border-color: var(--border-strong); text-decoration: none; transform: translateY(-1px); }
+.pick-tile:active { transform: scale(0.97); }
+.pick-tile input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.pick-tile:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.pick-tile:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pick-tile .person-avatar { width: 3.25rem; height: 3.25rem; }
+.pick-name { font-weight: 600; font-size: 0.9375rem; line-height: 1.25; overflow-wrap: anywhere; }
+.pick-meta { font-size: 0.75rem; color: var(--text-muted); line-height: 1.3; }
+.pick-check {
+  position: absolute;
+  top: 0.375rem;
+  right: 0.375rem;
+  width: 1.375rem;
+  height: 1.375rem;
+  border-radius: var(--radius-pill);
+  display: grid;
+  place-items: center;
+  color: var(--accent-fg);
+  background: var(--accent);
+  opacity: 0;
+  transform: scale(0.4);
+  transition: opacity var(--fast) ease, transform var(--medium) var(--ease-spring);
+}
+.pick-check .icon { width: 0.875rem; height: 0.875rem; stroke-width: 3; }
+.pick-tile:has(input:checked) .pick-check { opacity: 1; transform: none; }
+.pick-place .place-photo { width: 100%; max-width: 6rem; }
+.pick-add { border-style: dashed; color: var(--text-muted); }
+
+/* "New place" in a picker or select reveals its name box, no JS needed. */
+.new-place-field { display: none; margin-top: 0.875rem; }
+.new-place-host:has(input[value="new"]:checked) .new-place-field,
+.new-place-host:has(option[value="new"]:checked) .new-place-field { display: block; animation: slide-down 320ms var(--ease-out); }
+.new-place-field > label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.375rem; }
+.pick-add .place-photo { background: var(--surface-sunken); color: var(--text-muted); }
+.pick-add:hover .icon-plus { transform: rotate(90deg); }
+
+/* The confirm button stays in reach while scrolling a long picker. */
+.sticky-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  margin-inline: calc(-1 * clamp(1.25rem, 3vw, 1.75rem));
+  margin-bottom: calc(-1 * clamp(1.25rem, 3vw, 1.75rem));
+  padding: 0.875rem clamp(1.25rem, 3vw, 1.75rem);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+.btn-wide { min-width: 12rem; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* Location kind: icon chips as radios */
+.kind-options { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.kind-option {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  min-height: 40px;
+  padding: 0 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: color var(--fast) ease, border-color var(--fast) ease, background var(--fast) ease;
+}
+.kind-option input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.kind-option:has(input:checked) { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.kind-option:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: 0 1rem; }
+.form-row .form-field:last-of-type { margin-bottom: 1.125rem; }
+.number-input { max-width: 7rem; }
+.danger-zone { margin-top: 2rem; }
+
 /* ---------- Icons & motion ----------
  * Icons come from IconsHelper as inline SVG stroked in currentColor, so they
  * take the colour of whatever text they sit in. Sized in em so they scale
@@ -1280,6 +1641,8 @@ a.nav-brand { color: var(--text); text-decoration: none; }
 .btn:hover .icon-user-plus,
 .btn:hover .icon-key,
 .btn:hover .icon-save       { transform: scale(1.15); }
+.btn:hover .icon-map-pin    { animation: hop 500ms var(--ease-spring); }
+.btn:hover .icon-utensils   { animation: wiggle 400ms ease-in-out; }
 .btn:hover .icon-send,
 .btn:hover .icon-external   { transform: translate(2px, -2px); }
 
@@ -1294,6 +1657,9 @@ form[aria-busy="true"] .btn {
    (someone started a task) rises in again, which reads as "this changed". */
 .dashboard-grid > *,
 .task-list > *,
+.pet-grid > *,
+.place-grid > *,
+.pick-grid > *,
 .checklist,
 .invite-banner {
   animation: rise-in 480ms var(--ease-out) backwards; /* not "both": a held end frame would block the hover lift */
@@ -1338,6 +1704,10 @@ form[aria-busy="true"] .btn {
   100% { box-shadow: 0 0 0 0 transparent; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+@keyframes hop {
+  0%, 100% { transform: translateY(0); }
+  40%      { transform: translateY(-4px); }
+}
 @keyframes wiggle {
   0%, 100% { transform: rotate(0); }
   25%      { transform: rotate(-12deg); }
@@ -1380,6 +1750,11 @@ form[aria-busy="true"] .btn {
 
   .invite-actions { margin-left: 0; width: 100%; }
   .invite-actions .btn { flex: 1; }
+
+  .page-header .header-actions { width: 100%; }
+  .page-header .header-actions .btn { flex: 1; }
+  .sticky-actions .btn-wide { flex: 1; min-width: 0; }
+  .pick-grid { grid-template-columns: repeat(auto-fill, minmax(6.25rem, 1fr)); }
 }
 
 /* ---------- Reduced motion ---------- */
@@ -1389,5 +1764,5 @@ form[aria-busy="true"] .btn {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
-  .btn:hover, .person-card:hover, .task-card:hover { transform: none; }
+  .btn:hover, .person-card:hover, .task-card:hover, .pet-card:hover, .place-card:hover, .pick-tile:hover { transform: none; }
 }

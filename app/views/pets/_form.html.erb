@@ -1,0 +1,62 @@
+<%# Add / edit a pet. The few fields everyone needs come first; feeding has
+    its own group because the notes are what the next person reads. %>
+<% homes = current_household.locations.in_display_order %>
+<%= render "shared/form_errors", object: @pet %>
+
+<div class="form-card">
+  <%= form_with model: @pet do |f| %>
+    <%= render "shared/photo_picker", form: f, attribute: :photo, preview: pet_avatar_content(@pet),
+               style: PetsHelper::PET_DISC_STYLE %>
+    <div class="form-field">
+      <%= f.label :name, "Name" %>
+      <%= f.text_field :name, required: true, maxlength: 40, placeholder: "e.g. Biscuit", autocomplete: "off" %>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <%= f.label :species, "What kind of pet?" %>
+        <%= f.text_field :species, maxlength: 30, placeholder: "Dog, cat, horse…", list: "pet-species" %>
+        <datalist id="pet-species">
+          <% %w[Dog Cat Horse Rabbit Bird Chicken Goat Fish].each do |kind| %><option value="<%= kind %>"><% end %>
+        </datalist>
+      </div>
+      <div class="form-field">
+        <%= f.label :birthday, "Birthday (optional)" %>
+        <%= f.date_field :birthday, max: Date.current %>
+      </div>
+    </div>
+    <%# "New place…" reveals a name box (CSS, no page change), so adding the
+        house never loses what's typed above. %>
+    <% new_home = @pet.home&.new_record?
+       selected = new_home || homes.empty? ? Location::NEW : @pet.home_id %>
+    <div class="form-field new-place-host">
+      <%= f.label :home_id, "Sleeps at" %>
+      <%= f.select :home_id, options_for_select([["Not set", ""]] + homes.map { |l| [l.name, l.id] } + [["New place…", Location::NEW]], selected) %>
+      <div class="new-place-field">
+        <%= label_tag "pet_new_home_name", "Name of the new place" %>
+        <%= text_field_tag "pet[new_home_name]", @new_home_name || (@pet.home.name if new_home), id: "pet_new_home_name",
+                           maxlength: 40, placeholder: "e.g. Farmhouse, Grandma's", autocomplete: "off" %>
+        <small>It's added to your locations as a house.</small>
+      </div>
+    </div>
+
+    <fieldset class="form-field">
+      <legend>Feeding</legend>
+      <div class="form-field">
+        <%= f.label :meals_per_day, "Meals a day" %>
+        <%= f.number_field :meals_per_day, min: 0, max: Pet::MAX_MEALS, required: true, inputmode: "numeric", class: "number-input" %>
+        <small>The board shows how many it's had today. 0 if nobody here feeds it.</small>
+      </div>
+      <div class="form-field">
+        <%= f.label :feeding_notes, "Feeding notes" %>
+        <%= f.text_area :feeding_notes, rows: 4, maxlength: 1000,
+                        placeholder: "e.g. 1 cup dry food at 7am and 6pm. Pill hidden in cheese with dinner. No table scraps." %>
+        <small>Shown to whoever is feeding: amounts, times of day, medicine, anything to watch for.</small>
+      </div>
+    </fieldset>
+
+    <div class="form-actions">
+      <%= f.button type: "submit", class: "btn btn-primary" do %><%= icon_label(:save, @pet.persisted? ? "Save changes" : "Add #{@pet.name.presence || 'pet'}") %><% end %>
+      <%= link_to "Never mind", @pet.persisted? ? pet_path(@pet) : pets_path, class: "btn btn-quiet" %>
+    </div>
+  <% end %>
+</div>

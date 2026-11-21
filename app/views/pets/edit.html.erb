@@ -1,0 +1,10 @@
+<% content_for :title, "Edit #{@pet.name}" %>
+<h1>Edit <%= @pet.name %></h1>
+<%= render "form" %>
+
+<% if @pet.created_by_id == current_user.id || current_user.admin? %>
+  <section class="account-section danger-zone">
+    <%= button_to pet_path(@pet), method: :delete, class: "btn btn-danger",
+                  form: { data: { turbo_confirm: "Remove #{@pet.name} and all their history? This can't be undone." } } do %><%= icon_label(:trash, "Remove #{@pet.name}") %><% end %>
+  </section>
+<% end %>

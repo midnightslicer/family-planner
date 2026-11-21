@@ -19,7 +19,7 @@ module Account
     private
 
     def profile_params
-      params.require(:user).permit(:display_name, :handle, :color, :custom_color, :avatar, :remove_avatar)
+      params.require(:user).permit(:display_name, :handle, :color, :custom_color, :avatar, :remove_avatar, :birthday)
     end
   end
 end

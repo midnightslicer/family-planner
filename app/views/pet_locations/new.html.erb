@@ -1,0 +1,26 @@
+<% content_for :title, "Report where" %>
+<%= render "pets/tabs" %>
+<h1>Where are they?</h1>
+<p class="page-intro">Pick the pets, pick the place. They stay there on the board until someone reports them somewhere else.</p>
+
+<% if @pets.empty? %>
+  <p class="empty-hint"><%= icon(:paw) %>No pets yet. <%= link_to "Add a pet", new_pet_path %> first.</p>
+<% else %>
+  <%= render "shared/form_errors", object: @check_in %>
+  <%= form_with url: pet_locations_path, method: :post, class: "form-card form-card-wide",
+                data: { controller: "picker", picker_verb_value: "Report" } do |f| %>
+    <%= render "shared/pet_picker", pets: @pets, statuses: @statuses, chosen: @check_in.pet_ids, meta: :where %>
+    <%= render "shared/location_picker", locations: @locations, field_name: "check_in[location_id]",
+               new_name_field: "check_in[new_location_name]", new_name: @check_in.new_location_name,
+               selected: @check_in.location_id, legend: "Where are they?" %>
+    <div class="form-field">
+      <%= label_tag "check_in_comment", "Comment (optional)" %>
+      <%= text_field_tag "check_in[comment]", @check_in.comment, id: "check_in_comment", maxlength: LocationReport::COMMENT_MAX,
+                         placeholder: "e.g. Gate's shut, water bowl filled", autocomplete: "off" %>
+    </div>
+    <div class="form-actions sticky-actions">
+      <%= button_tag type: "submit", class: "btn btn-primary btn-wide", data: { picker_target: "submit" } do %><%= icon_label(:map_pin, "Report") %><% end %>
+      <%= link_to "Never mind", pets_path, class: "btn btn-quiet" %>
+    </div>
+  <% end %>
+<% end %>

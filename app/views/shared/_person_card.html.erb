@@ -1,10 +1,12 @@
 <%# Shared person card: identical on the authenticated dashboard, the public
     kiosk wall and live broadcasts. Locals: user, household, and optionally
-    status ({ current:, next: } from Household#member_statuses, which pages
-    compute once for every card). %>
+    status ({ current:, next:, location: } from Household#member_statuses,
+    which pages compute once for every card). The name links to their
+    profile; the wall makes links inert. %>
 <% status = local_assigns[:status] || household.member_statuses[user.id]
    current_task = status[:current]
-   next_planned = status[:next] %>
+   next_planned = status[:next]
+   here = status[:location] %>
 <div class="person-card<%= ' is-busy' if current_task %>"
      id="<%= dom_id(user, :person_card) %>"
      data-user-id="<%= user.id %>"
@@ -12,9 +14,10 @@
   <div class="person-identity">
     <span class="person-avatar" aria-hidden="true"><%= avatar_content(user) %></span>
     <span class="person-meta">
-      <span class="person-name"><%= user.display_name %></span>
+      <%= link_to user.display_name, person_path(user), class: "person-name" %>
       <span class="person-handle">@<%= user.handle %></span>
     </span>
+    <%= icon(:cake, label: "Birthday today", class: "birthday-cake") if birthday_today?(user.birthday) %>
   </div>
   <div class="person-status">
     <%# The live dot comes from CSS (.status-in_progress::before); the other
@@ -27,4 +30,12 @@
       <span class="status-chip status-completed"><%= icon(:sun) %>Free</span>
     <% end %>
   </div>
+  <% if here %>
+    <p class="person-where">
+      <%= location_icon(here.location) %>
+      <span><%= here.location&.name || "Somewhere else" %></span>
+      <small><%= time_tag_ago(here.created_at) %></small>
+    </p>
+    <% if here.comment %><p class="report-comment"><%= icon(:message) %><span><%= here.comment %></span></p><% end %>
+  <% end %>
 </div>
