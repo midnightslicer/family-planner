@@ -14,7 +14,8 @@ class Location < ApplicationRecord
 
   small_photo :photo
 
-  validates :name, presence: true, length: { maximum: 40 }, uniqueness: { scope: :household_id, case_sensitive: false }
+  validates :name, presence: true, length: { maximum: 40 },
+                   uniqueness: { scope: :household_id, case_sensitive: false, conditions: -> { where(archived_at: nil) } }
   validates :kind, inclusion: { in: KINDS }
 
   normalizes :name, with: ->(name) { name.squish }
@@ -45,6 +46,20 @@ class Location < ApplicationRecord
     return [] if location.valid?
 
     location.errors.map { |error| "New location #{error.message}" }
+  end
+
+  def archived?
+    archived_at.present?
+  end
+
+  # "Remove": gone from the app, kept for history. Nobody lives or sleeps
+  # there any more (the history of that is in Residence).
+  def archive!
+    transaction do
+      update!(archived_at: Time.current)
+      pets_living_here.update_all(home_id: nil)
+      residents.each { |membership| membership.update!(home: nil) }
+    end
   end
 
   def house?

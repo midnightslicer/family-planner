@@ -192,6 +192,12 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   `Task.create!(assigned_to: user)` is shorthand for one accepted person.
   `follow_up` keeps an item on its creator's list ("Following up") and
   sends them its status changes.
+- **Pets and locations are archived, never deleted, from the app**
+  (`archive!`, `archived_at`): `household.pets` / `household.locations`
+  are the active ones; `all_pets` / `all_locations` include archived ones,
+  and reports, feedings and events keep pointing at them, so history
+  survives. Keep data that charts will need (who, what, when) rather than
+  overwriting or deleting it.
 - **Household scoping is mandatory** on every task query: filter by
   `Current.household.id` (or the token household on the wall). Non-members get
   404, not 403.

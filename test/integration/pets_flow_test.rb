@@ -143,7 +143,32 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     assert_response :forbidden
     sign_in @admin
     delete pet_path(@rex)
-    assert_not Pet.exists?(@rex.id)
+    assert @rex.reload.archived?
+  end
+
+  test "removing a pet or a place archives it: gone from the app, history kept" do
+    LocationReport.create!(household: @smiths, subject: @rex, location: @yard, reported_by: @admin)
+    feeding = Feeding.create!(household: @smiths, pet: @rex, fed_by: @admin)
+    sign_in @admin
+    delete pet_path(@rex)
+    delete location_path(@yard)
+
+    get pets_path
+    assert_select ".pet-card .person-name", text: "Rex", count: 0
+    get pet_path(@rex)
+    assert_response :not_found
+    get locations_path
+    assert_select ".place-card h2", text: "Yard", count: 0
+    get new_pet_location_path
+    assert_select ".pick-place .pick-name", text: "Yard", count: 0
+
+    assert Feeding.exists?(feeding.id)
+    report = LocationReport.where(subject: @rex).sole
+    assert_equal "Yard", report.location.name, "the report still knows the place"
+
+    # The name is free for a new place.
+    post locations_path, params: { location: { name: "Yard", kind: "yard" } }
+    assert_equal 2, Location.where(name: "Yard").count
   end
 
   test "another household's pets and locations are not found" do

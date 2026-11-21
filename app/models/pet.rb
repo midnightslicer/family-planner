@@ -50,6 +50,16 @@ class Pet < ApplicationRecord
     end
   end
 
+  # "Remove": gone from the app, kept (with its reports and feedings) for
+  # history.
+  def archive!
+    update!(archived_at: Time.current)
+  end
+
+  def archived?
+    archived_at.present?
+  end
+
   def away?
     away_since.present?
   end

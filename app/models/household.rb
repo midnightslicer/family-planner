@@ -6,8 +6,12 @@ class Household < ApplicationRecord
   # Reports and feedings go first: they point at pets and locations.
   has_many :location_reports, dependent: :delete_all
   has_many :feedings, dependent: :delete_all
-  has_many :pets, dependent: :destroy
-  has_many :locations, dependent: :destroy
+  # `pets` and `locations` are the ones in use; removing one archives it, so
+  # history that mentions it keeps it. `all_*` include the archived ones.
+  has_many :all_pets, class_name: "Pet", dependent: :destroy
+  has_many :all_locations, class_name: "Location", dependent: :destroy
+  has_many :pets, -> { where(archived_at: nil) }, inverse_of: :household
+  has_many :locations, -> { where(archived_at: nil) }, inverse_of: :household
 
   validates :name, presence: true, length: { maximum: 80 }
   validate :time_zone_is_known

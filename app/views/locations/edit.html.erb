@@ -5,6 +5,6 @@
 <% if @location.created_by_id == current_user.id || current_user.admin? %>
   <section class="account-section danger-zone">
     <%= button_to location_path(@location), method: :delete, class: "btn btn-danger",
-                  form: { data: { turbo_confirm: "Remove #{@location.name}? Anyone last seen there will show as \"somewhere else\"." } } do %><%= icon_label(:trash, "Remove #{@location.name}") %><% end %>
+                  form: { data: { turbo_confirm: "Remove #{@location.name}? It disappears from the app; past reports that mention it keep it." } } do %><%= icon_label(:trash, "Remove #{@location.name}") %><% end %>
   </section>
 <% end %>

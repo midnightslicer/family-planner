@@ -49,8 +49,8 @@ class LocationsController < ApplicationController
   end
 
   def destroy
-    @location.destroy
-    redirect_to locations_path, notice: "Removed #{@location.name}.", status: :see_other
+    @location.archive!
+    redirect_to locations_path, notice: "Removed #{@location.name}. Reports that mention it keep it.", status: :see_other
   end
 
   private

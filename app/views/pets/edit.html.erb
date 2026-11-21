@@ -5,6 +5,6 @@
 <% if @pet.created_by_id == current_user.id || current_user.admin? %>
   <section class="account-section danger-zone">
     <%= button_to pet_path(@pet), method: :delete, class: "btn btn-danger",
-                  form: { data: { turbo_confirm: "Remove #{@pet.name} and all their history? This can't be undone." } } do %><%= icon_label(:trash, "Remove #{@pet.name}") %><% end %>
+                  form: { data: { turbo_confirm: "Remove #{@pet.name}? They'll disappear from the app; their history is kept. (Just away for a while? Use \"Not here right now\" instead.)" } } do %><%= icon_label(:trash, "Remove #{@pet.name}") %><% end %>
   </section>
 <% end %>

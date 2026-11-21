@@ -61,8 +61,8 @@ class PetsController < ApplicationController
   end
 
   def destroy
-    @pet.destroy
-    redirect_to pets_path, notice: "Removed #{@pet.name}.", status: :see_other
+    @pet.archive!
+    redirect_to pets_path, notice: "Removed #{@pet.name}. Their history is kept.", status: :see_other
   end
 
   private
