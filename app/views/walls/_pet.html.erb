@@ -1,0 +1,14 @@
+<%# A pet on the wall: who, where, fed today. No actions (nobody's signed
+    in). Locals: pet, status (PetStatus). %>
+<% report = status.report %>
+<div class="wall-pet">
+  <span class="person-avatar" style="<%= PetsHelper::PET_DISC_STYLE %>" aria-hidden="true"><%= pet_avatar_content(pet) %></span>
+  <div class="wall-pet-body">
+    <span class="person-name"><%= pet.name %><%= icon(:cake, label: "Birthday today", class: "birthday-cake") if birthday_today?(pet.birthday) %></span>
+    <%# The section already says where; this says how fresh that is. %>
+    <span class="wall-pet-where">
+      <% if report %><small>seen <%= time_tag_ago(report.created_at) %><%= " · #{report.location.name}" if report.location.nil? %></small><% else %><small>Not reported yet</small><% end %>
+    </span>
+    <%= fed_chip(status) %>
+  </div>
+</div>

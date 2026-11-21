@@ -33,6 +33,9 @@ application.register("photo-upload", PhotoUploadController)
 import QuickAddController from "./quick_add_controller"
 application.register("quick-add", QuickAddController)
 
+import WallFitController from "./wall_fit_controller"
+application.register("wall-fit", WallFitController)
+
 import WorkWeekController from "./work_week_controller"
 application.register("work-week", WorkWeekController)
 

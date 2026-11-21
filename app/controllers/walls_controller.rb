@@ -13,6 +13,10 @@ class WallsController < ApplicationController
 
     @members = @household.members_by_name
     @statuses = @household.member_statuses
+    @pets = @household.pets.by_name.with_attached_photo
+    @pet_statuses = Pet.statuses(@household, @pets)
+    @sections = Whereabouts.new(@household, members: @members.with_attached_avatar, statuses: @statuses,
+                                            pets: @pets, pet_statuses: @pet_statuses).sections
     render layout: "wall"
   end
 

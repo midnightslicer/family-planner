@@ -9,7 +9,10 @@ Each person has their own Devise account; accounts join **only via email
 invitation** (no open signup). Members manage household-scoped tasks (including
 recurring ones), and everyone sees a live auto-updating dashboard of who's busy.
 A public wall view (`GET /h/:dashboard_token`, no auth) is meant for a
-wall-mounted iPad / browser home page. Sign-in: passwords, passkeys
+wall-mounted iPad / browser home page: a section per place someone (or a
+pet) is right now (`Whereabouts`), with their status cards, then
+"Somewhere else"; read-only, and `wall_fit_controller.js` shrinks it to
+fit the screen since it can't scroll. Sign-in: passwords, passkeys
 (WebAuthn), and optional TOTP two-step verification. Deploy: Docker + Kamal.
 
 Stack: Rails 8.1, propshaft (raw CSS, no CSS framework), esbuild via

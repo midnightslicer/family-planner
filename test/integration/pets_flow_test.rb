@@ -74,6 +74,17 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     assert_select ".pet-card button", text: "Fed"
   end
 
+  test "pets are on the wall, read-only, with where they are and whether they've eaten" do
+    LocationReport.create!(household: @smiths, subject: @rex, location: @yard, reported_by: @admin)
+    Feeding.create!(household: @smiths, pet: @rex, fed_by: @admin)
+    sign_out @member
+    get wall_path(@smiths.dashboard_token)
+    assert_response :success
+    assert_select ".wall-pet", 2
+    assert_select ".wall-pet", text: /Rex.*Fed 1 of 2/m
+    assert_select ".wall-pet button, .wall-pet form", count: 0
+  end
+
   test "you can take back your own feeding but not someone else's" do
     mine = Feeding.create!(household: @smiths, pet: @rex, fed_by: @member)
     theirs = Feeding.create!(household: @smiths, pet: @rex, fed_by: @admin)

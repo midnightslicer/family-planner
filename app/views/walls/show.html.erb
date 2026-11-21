@@ -1,6 +1,35 @@
 <%= turbo_stream_from @household, :members %>
-<div class="dashboard-grid" data-controller="auto-refresh" data-auto-refresh-interval-value="60">
-  <% @members.each do |member| %>
-    <%= render "shared/person_card", user: member, household: @household, status: @statuses[member.id] %>
+<%# A section per place someone is right now: the place, who's there, then
+    their status cards (people, then pets). Anyone whose place isn't known
+    goes in "Somewhere else". Read-only: no buttons, links inert
+    (kiosk.css). Any change anywhere refreshes it live. %>
+<div class="wall-board" data-controller="auto-refresh wall-fit" data-auto-refresh-interval-value="60">
+  <% @sections.each do |section| %>
+    <section class="wall-place">
+      <header class="wall-place-header">
+        <% if section.location %>
+          <%= location_picture(section.location) %>
+        <% else %>
+          <span class="place-photo"><%= icon(:map_pin) %></span>
+        <% end %>
+        <h2><%= section.location&.name || "Somewhere else" %></h2>
+        <span class="wall-here" aria-label="Here: <%= section.everyone.map { |who| who.is_a?(Pet) ? who.name : who.display_name }.to_sentence %>">
+          <% section.people.each do |member| %>
+            <span class="person-avatar" style="--user-color: <%= member.color %>; --user-fg: <%= contrast_color(member.color) %>" aria-hidden="true"><%= avatar_content(member) %></span>
+          <% end %>
+          <% section.pets.each do |pet| %>
+            <span class="person-avatar" style="<%= PetsHelper::PET_DISC_STYLE %>" aria-hidden="true"><%= pet_avatar_content(pet) %></span>
+          <% end %>
+        </span>
+      </header>
+      <div class="wall-cards">
+        <% section.people.each do |member| %>
+          <%= render "shared/person_card", user: member, household: @household, status: @statuses[member.id] %>
+        <% end %>
+        <% section.pets.each do |pet| %>
+          <%= render "walls/pet", pet: pet, status: @pet_statuses.fetch(pet.id) %>
+        <% end %>
+      </div>
+    </section>
   <% end %>
 </div>

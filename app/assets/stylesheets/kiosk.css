@@ -104,3 +104,77 @@ body.kiosk .person-where { font-size: 1.125rem; }
 body.kiosk .avail-free { color: #86efac; background: rgba(22, 163, 74, 0.16);  border-color: rgba(134, 239, 172, 0.35); }
 body.kiosk .avail-text { color: #fcd34d; background: rgba(217, 119, 6, 0.18);  border-color: rgba(252, 211, 77, 0.35); }
 body.kiosk .avail-busy { color: #fca5a5; background: rgba(220, 38, 38, 0.18);  border-color: rgba(248, 113, 113, 0.4); }
+
+/* The board: a section per place someone is, with who's there and their
+   cards. Sections flow into columns to fill the screen. */
+/* Columns pack sections of different heights without gaps; fit-screen
+   (wall_fit_controller.js) shrinks the board if a big family still
+   overflows, since the wall can't scroll. */
+body.kiosk .wall-board {
+  columns: 340px;
+  column-gap: clamp(1rem, 2vw, 1.5rem);
+  padding: clamp(1rem, 2vw, 1.5rem);
+  transform-origin: top left;
+}
+body.kiosk .wall-place {
+  break-inside: avoid;
+  margin-bottom: clamp(1rem, 2vw, 1.5rem);
+  display: grid;
+  gap: 0.875rem;
+  padding: clamp(0.875rem, 1.5vw, 1.25rem);
+  background: color-mix(in srgb, var(--surface) 45%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+}
+body.kiosk .wall-place-header { display: flex; align-items: center; gap: 0.875rem; min-width: 0; }
+body.kiosk .wall-place-header .place-photo { width: 3rem; border-radius: 12px; }
+body.kiosk .wall-place-header .place-photo > .icon { width: 50%; height: 50%; }
+body.kiosk .wall-place-header h2 {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: clamp(1.375rem, 2vw, 1.75rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+body.kiosk .wall-here { display: inline-flex; flex: none; }
+body.kiosk .wall-here .person-avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  font-size: 0.8125rem;
+  box-shadow: 0 0 0 3px var(--bg);
+}
+body.kiosk .wall-here .person-avatar + .person-avatar { margin-left: -0.625rem; }
+
+body.kiosk .wall-cards { display: grid; gap: 0.75rem; }
+/* Cards inside a place are compact so a whole family fits one screen: the
+   section names the place, so the card drops its place line (keeping any
+   note) and the @handle. */
+body.kiosk .wall-place .person-card { padding: 0.75rem 1rem 0.75rem 1.25rem; gap: 0.5rem; justify-content: flex-start; }
+body.kiosk .wall-place .person-handle,
+body.kiosk .wall-place .person-where { display: none; }
+body.kiosk .wall-place .person-status { gap: 0.375rem; }
+body.kiosk .wall-place .status-chip { font-size: 1rem; padding: 0.3125rem 0.75rem; }
+body.kiosk .wall-place .person-now { font-size: 1.0625rem; }
+body.kiosk .wall-place .person-next { margin-top: 0; font-size: 1rem; }
+body.kiosk .wall-cards .person-avatar { width: 2.75rem; height: 2.75rem; font-size: 1rem; }
+body.kiosk .wall-place .person-name { font-size: clamp(1.125rem, 1.6vw, 1.375rem); }
+
+body.kiosk .wall-pet {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+body.kiosk .wall-cards .wall-pet .person-avatar { width: 2.75rem; height: 2.75rem; }
+body.kiosk .wall-pet-body { min-width: 0; display: grid; justify-items: start; gap: 0.25rem; }
+body.kiosk .wall-pet .person-name { font-size: 1.25rem; }
+body.kiosk .wall-pet-where { display: inline-flex; align-items: center; gap: 0.4375rem; font-size: 1.0625rem; font-weight: 600; }
+body.kiosk .wall-pet-where .icon { color: var(--accent); }
+body.kiosk .wall-pet-where small { font-size: 0.9375rem; font-weight: 500; color: var(--text-muted); }
+body.kiosk .wall-pet .status-chip { font-size: 0.9375rem; padding: 0.3125rem 0.75rem; }
