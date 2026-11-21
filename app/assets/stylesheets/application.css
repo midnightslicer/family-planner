@@ -1807,12 +1807,14 @@ ul.sched-list.panel { padding: 0.25rem clamp(1.125rem, 3vw, 1.5rem); }
 .work-days { display: grid; gap: 0.5rem; margin-top: 0.5rem; }
 .work-day {
   display: grid;
-  grid-template-columns: 8.5rem minmax(6.5rem, 1fr) auto minmax(6.5rem, 1fr) minmax(9rem, 2fr);
+  grid-template-columns: 7.75rem 9rem auto 9rem minmax(8rem, 1fr);
   align-items: center;
   gap: 0.5rem;
   transition: opacity var(--fast) ease;
 }
 .work-day:not(:has(input[type="checkbox"]:checked)) > input { opacity: 0.4; }
+.work-day input[type="time"] { padding-inline: 0.625rem; }
+form:has(.work-days) { max-width: 860px; }
 .work-day-name { display: flex; align-items: center; gap: 0.25rem; font-weight: 600; cursor: pointer; }
 .work-day-to { font-size: 0.875rem; color: var(--text-muted); }
 .work-week-tools { margin-top: 0.75rem; }
