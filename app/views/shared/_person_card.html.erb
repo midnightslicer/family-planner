@@ -8,6 +8,7 @@
    current_task = status[:current]
    next_event = status[:next]
    here = status[:location]
+   at = status[:at]
    reachable = current_task.nil? || current_task.availability_free? %>
 <div class="person-card<%= ' is-busy' unless reachable %><%= " is-#{current_task.availability}" if current_task %>"
      id="<%= dom_id(user, :person_card) %>"
@@ -32,7 +33,13 @@
   <% if next_event %>
     <p class="person-next"><%= icon(:clock) %><span>Next: <%= next_line(next_event) %></span></p>
   <% end %>
-  <% if here %>
+  <% if at %>
+    <p class="person-where">
+      <%= location_icon(at) %>
+      <span><%= at.name %></span>
+      <small>until <%= clock(current_task.finishes_at) %></small>
+    </p>
+  <% elsif here %>
     <p class="person-where">
       <%= location_icon(here.location) %>
       <span><%= here.location&.name || "Somewhere else" %></span>

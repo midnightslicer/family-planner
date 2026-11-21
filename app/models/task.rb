@@ -14,6 +14,9 @@ class Task < ApplicationRecord
   belongs_to :household
   belongs_to :assigned_to, class_name: "User", optional: true
   belongs_to :created_by, class_name: "User", optional: true
+  # Set from `place` when it names one of the household's locations: while
+  # the event is on, that's where the person is (see #whereabouts).
+  belongs_to :location, optional: true
 
   enum :status, { planned: 0, in_progress: 1, undone: 2, completed: 3 }
   enum :availability, { free: "free", text: "text", busy: "busy" }, prefix: :availability
@@ -44,6 +47,7 @@ class Task < ApplicationRecord
   before_validation :apply_schedule_fields, if: :schedule_fields
 
   normalizes :place, with: ->(place) { place.squish.presence }
+  before_validation :link_location
 
   STATUS_VERBS = { "in_progress" => "started", "planned" => "paused", "completed" => "finished", "undone" => "skipped" }.freeze
 
@@ -54,6 +58,28 @@ class Task < ApplicationRecord
 
   def timed?
     starts_at.present?
+  end
+
+  # Private items show their details only to whoever they're for and
+  # whoever added them; everyone else sees "Busy". A nil viewer (the public
+  # wall, live broadcasts) never sees them.
+  def visible_to?(user)
+    !private? || (user.present? && [assigned_to_id, created_by_id].include?(user.id))
+  end
+
+  def title_for(user)
+    visible_to?(user) ? title : "Busy"
+  end
+
+  # The place to show: the linked location's current name, else what was typed.
+  def place_name
+    location&.name || place
+  end
+
+  # Where an event puts its person while it's on: its linked location, if
+  # it's on now and not private.
+  def whereabouts(time = Time.current)
+    location if location && !private? && happening_at?(time)
   end
 
   def open?
@@ -152,7 +178,7 @@ class Task < ApplicationRecord
   def schedule_next_occurrence
     return unless recurs?
 
-    attributes = { recurrence_copy: true, household: household, title: title, description: description,
+    attributes = { recurrence_copy: true, household: household, title: title, description: description, private: private?,
                    assigned_to: assigned_to, created_by: created_by, recurrence_interval: recurrence_interval,
                    availability: availability, place: place }
     if timed?
@@ -166,6 +192,12 @@ class Task < ApplicationRecord
     copy = Task.create!(attributes)
     update_column(:next_occurrence, nil)
     copy
+  end
+
+  def link_location
+    return unless will_save_change_to_place? || new_record?
+
+    self.location = place && household && household.locations.where("lower(name) = ?", place.downcase).first
   end
 
   def apply_schedule_fields

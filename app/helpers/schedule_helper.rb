@@ -43,17 +43,20 @@ module ScheduleHelper
     show_day ? "#{day_name(from.to_date)} #{range}" : range
   end
 
-  # "Meeting · until 3 PM · Town": what's on, for a person card.
-  def now_line(task)
-    parts = [task.title]
+  # "Meeting · until 3 PM · Town": what's on. A private item reads "Busy ·
+  # until 3 PM" to anyone but its people; with no viewer (person cards,
+  # which also go to the public wall) it always does.
+  def now_line(task, viewer = nil)
+    visible = task.visible_to?(viewer)
+    parts = [task.title_for(viewer)]
     parts << "until #{clock(task.finishes_at)}" if task.timed?
-    parts << task.place if task.place
+    parts << task.place_name if visible && task.place_name
     parts.join(" · ")
   end
 
   # "Church · 10 AM" or "Church · Sun 10 AM".
-  def next_line(task)
+  def next_line(task, viewer = nil)
     when_text = task.starts_at.to_date == Date.current ? clock(task.starts_at) : "#{day_name(task.starts_at.to_date)} #{clock(task.starts_at)}"
-    [task.title, when_text].join(" · ")
+    [task.title_for(viewer), when_text].join(" · ")
   end
 end

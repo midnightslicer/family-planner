@@ -5,24 +5,29 @@
 #   today   today's events, past ones included (shown dimmed)
 #   later   events after today and to-dos held for a later day
 #   done    what they finished or skipped today
+#   at      the location their current event puts them at, if any
 class PersonSchedule
   UPCOMING_DAYS = 14
 
-  attr_reader :person, :now, :todos, :today, :later, :done
+  attr_reader :person, :now, :todos, :today, :later, :done, :at
 
-  def initialize(household, person, now: Time.current)
+  # `viewer` sees others' private to-dos not at all, and their private
+  # events only as "Busy" (the views ask Task#visible_to?).
+  def initialize(household, person, viewer: person, now: Time.current)
     @person = person
     today = now.to_date
-    items = household.tasks.where(assigned_to: person).includes(:created_by)
+    items = household.tasks.where(assigned_to: person).includes(:created_by, :location)
                      .where("status IN (:open) OR updated_at >= :midnight", open: open_statuses, midnight: now.beginning_of_day)
                      .where("starts_at IS NULL OR starts_at < :horizon", horizon: now + UPCOMING_DAYS.days)
                      .to_a
+    items.reject! { |task| !task.timed? && !task.visible_to?(viewer) }
 
     open, closed = items.partition(&:open?)
     @done = closed.sort_by(&:updated_at).reverse
     @today = items.select { |task| task.timed? && task.starts_at.to_date <= today && task.finishes_at > now.beginning_of_day && !task.undone? }
                   .sort_by(&:starts_at)
     @now = open.find { |task| task.happening_at?(now) } || open.find(&:in_progress?)
+    @at = @now&.whereabouts(now)
     @todos = open.reject(&:timed?).reject { |task| task.later?(today) }
                  .sort_by { |task| [task.in_progress? ? 0 : 1, task.due_on || Date.new(9999), task.created_at] }
     @later = open.select { |task| task.timed? ? task.starts_at.to_date > today : task.later?(today) }

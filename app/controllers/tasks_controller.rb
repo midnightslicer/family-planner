@@ -13,12 +13,12 @@ class TasksController < ApplicationController
     current_household.roll_recurring_events!
     @members = current_household.members_by_name.with_attached_avatar.to_a
     if params[:person] == "family"
-      @family = @members.index_with { |member| PersonSchedule.new(current_household, member) }
+      @family = @members.index_with { |member| PersonSchedule.new(current_household, member, viewer: current_user) }
       @statuses = current_household.member_statuses
-      @anyone = current_household.tasks.open.where(assigned_to_id: nil).order(:created_at)
+      @anyone = current_household.tasks.open.where(assigned_to_id: nil).order(:created_at).select { |task| task.visible_to?(current_user) }
     else
       @person = @members.find { |member| member.id.to_s == params[:person].to_s } || current_user
-      @schedule = PersonSchedule.new(current_household, @person)
+      @schedule = PersonSchedule.new(current_household, @person, viewer: current_user)
       @task = current_household.tasks.new(assigned_to: @person)
       @where = LocationReport.latest_for(current_household, "User", [@person.id])[@person.id]
       @locations = current_household.locations.in_display_order.with_attached_photo if @person == current_user
@@ -49,6 +49,7 @@ class TasksController < ApplicationController
     @task.on_date = (@task.starts_at&.to_date || @task.due_on)&.iso8601
     @task.from_time = @task.starts_at&.strftime("%H:%M")
     @task.until_time = @task.ends_at&.strftime("%H:%M")
+    @task.place = @task.place_name
   end
 
   def update
@@ -88,7 +89,8 @@ class TasksController < ApplicationController
   private
 
   def set_task
-    @task = current_household.tasks.find_by(id: params[:id]) or head :not_found
+    @task = current_household.tasks.find_by(id: params[:id])
+    head :not_found unless @task&.visible_to?(current_user)
   end
 
   # Whoever added it, whoever it's for, or an admin. Anyone in the household
@@ -111,7 +113,7 @@ class TasksController < ApplicationController
 
   def task_params
     permitted = params.require(:task).permit(:title, :description, :assigned_to_id, :on_date, :from_time, :until_time,
-                                             :place, :availability, :recurrence_interval)
+                                             :place, :availability, :recurrence_interval, :private)
     permitted[:assigned_to_id] = nil if permitted[:assigned_to_id].blank?
     permitted
   end

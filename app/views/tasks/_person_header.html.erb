@@ -11,11 +11,13 @@
     <p class="task-meta">
       <span><%= icon(:calendar) %><%= Date.current.strftime("%A, %B %-d") %></span>
       <% if person.birthday %><span><%= icon(:cake) %><%= age_in_words(person.birthday) %></span><% end %>
-      <% if where %>
+      <% if local_assigns[:at] %>
+        <span class="day-where"><%= location_icon(at) %><%= at.name %> · until <%= clock(now_task.finishes_at) %></span>
+      <% elsif where %>
         <span class="day-where"><%= location_icon(where.location) %><%= where.location&.name || "Somewhere else" %> · <%= time_tag_ago(where.created_at) %></span>
       <% end %>
     </p>
-    <% if where&.comment %><p class="report-comment"><%= icon(:message) %><span><%= where.comment %></span></p><% end %>
+    <% if where&.comment && !local_assigns[:at] %><p class="report-comment"><%= icon(:message) %><span><%= where.comment %></span></p><% end %>
   </div>
   <% if me %>
     <div class="header-actions">

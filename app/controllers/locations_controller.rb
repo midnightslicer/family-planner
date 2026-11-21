@@ -11,15 +11,13 @@ class LocationsController < ApplicationController
     pet_reports = LocationReport.latest_for(current_household, "Pet", @pets.map(&:id))
     @members = current_household.members_by_name.with_attached_avatar
     statuses = current_household.member_statuses
-    by_name = @locations.index_by { |location| location.name.downcase }
     @here = Hash.new { |hash, key| hash[key] = [] }
     @pets.each { |pet| @here[pet_reports[pet.id]&.location_id] << pet if pet_reports[pet.id] }
     # A person is where their current event is, if it's at one of these
     # places ("Client meeting · Little house"); otherwise where they last
     # said they were.
     @members.each do |user|
-      event_place = by_name[statuses[user.id][:current]&.place.to_s.downcase]
-      location_id = event_place&.id || statuses[user.id][:location]&.location_id
+      location_id = statuses[user.id][:at]&.id || statuses[user.id][:location]&.location_id
       @here[location_id] << user if location_id
     end
   end

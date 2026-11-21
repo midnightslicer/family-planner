@@ -42,7 +42,11 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   `accept!`), `Task` (a schedule item: a *to-do* with no time, optionally
   `due_on` a day, or an *event* with `starts_at`/`ends_at` and a `place`;
   `availability` free/text/busy says how reachable the person is while it's
-  on; status enum `planned`, `in_progress`, `undone`, `completed`;
+  on; `private` items show only "Busy" to anyone but their assignee and
+  creator (`visible_to?`, `title_for`; a nil viewer, as on person cards and
+  the wall, never sees them); an event whose `place` names a household
+  location links to it (`location_id`), and while it's on that's where the
+  person shows as being (`whereabouts`, the `:at` in member statuses); status enum `planned`, `in_progress`, `undone`, `completed`;
   `started_at` stamps "doing it now"; recurrence, with `roll_forward!`
   moving ended recurring events on; broadcasts cards and assignee
   notifications after commit), `PersonSchedule` (one person's now / to-dos
@@ -75,8 +79,10 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
 - Pets & people: `PetsController`, `PetLocationsController` (GET/POST
   `/pets/where`), `FeedingsController` (`/pets/feed`; a card's one-tap Fed
   button posts `quick=1` and stays on the page), `LocationsController`,
-  `PeopleController` (profiles; `locate` sets *your own* location only: it
-  never reads a person from params), `PetSubscriptionsController`. They
+  `PeopleController` (`show` redirects to the person's day on the
+  Schedule, which is their profile; `locate` sets *your own* location only,
+  from the "I'm at" chips: it never reads a person from params),
+  `PetSubscriptionsController`. They
   include `concerns/household_scoped.rb` (sign-in, household, creator-or-admin
   deletes, whitelisted `return_to`). Anyone in the household can add and edit
   pets and locations; deleting is for whoever added it or an admin.

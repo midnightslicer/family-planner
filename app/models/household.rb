@@ -21,15 +21,17 @@ class Household < ApplicationRecord
   # For every member, what they're doing now, their next event within the
   # week, and where they last said they were, in two queries instead of a
   # few per card. "Now" is an event whose time has come, else a to-do they
-  # started. Returns { user_id => { current:, next:, location: } }.
+  # started; `at` is the location that event puts them at, which outranks
+  # their last "I'm at". Returns { user_id => { current:, next:, at:, location: } }.
   def member_statuses(now = Time.current)
     statuses = Hash.new { |hash, key| hash[key] = {} }
-    open_tasks = tasks.open.where.not(assigned_to_id: nil)
+    open_tasks = tasks.open.where.not(assigned_to_id: nil).includes(:location)
                       .where("status = :doing OR (starts_at < :horizon AND COALESCE(ends_at, starts_at) >= :earliest)",
                              doing: Task.statuses[:in_progress], horizon: now + 7.days, earliest: now - Task::DEFAULT_LENGTH)
                       .order(:starts_at, :id).to_a
     open_tasks.group_by(&:assigned_to_id).each do |user_id, items|
       statuses[user_id][:current] = items.find { |task| task.happening_at?(now) } || items.find(&:in_progress?)
+      statuses[user_id][:at] = statuses[user_id][:current]&.whereabouts(now)
       statuses[user_id][:next] = items.find { |task| task.timed? && task.planned? && task.starts_at > now }
     end
     LocationReport.latest_for(self, "User", users.select(:id)).each do |user_id, report|

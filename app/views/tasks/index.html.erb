@@ -15,7 +15,7 @@
         <div class="family-now">
           <% if status[:current] %>
             <%= availability_chip(status[:current]) %>
-            <p class="person-now"><%= now_line(status[:current]) %></p>
+            <p class="person-now"><%= now_line(status[:current], current_user) %></p>
           <% else %>
             <span class="status-chip avail-free"><%= icon(:sun) %>Free</span>
           <% end %>
@@ -25,7 +25,7 @@
             <% schedule.today.each do |task| %>
               <li class="<%= 'is-past' if task.past? %><%= ' is-now' if task.happening_at? %>">
                 <span class="sched-time"><%= time_range(task, with_day: :never) %></span>
-                <span><%= task.title %><%= " · #{task.place}" if task.place %></span>
+                <span><%= task.title_for(current_user) %><%= " · #{task.place_name}" if task.place_name && task.visible_to?(current_user) %><%= icon(:lock, label: "Private") if task.private? %></span>
               </li>
             <% end %>
           </ol>
@@ -45,14 +45,14 @@
 <% else %>
   <% me = @person == current_user
      s = @schedule %>
-  <%= render "tasks/person_header", person: @person, where: @where, locations: @locations %>
+  <%= render "tasks/person_header", person: @person, where: @where, at: @schedule.at, now_task: @schedule.now, locations: @locations %>
 
   <% if s.now %>
     <div class="now-banner <%= "is-#{s.now.availability}" %>">
       <span class="banner-icon"><%= icon(s.now.timed? ? :clock : :zap) %></span>
       <div>
-        <strong><%= me ? "You're on" : "Now" %>: <%= s.now.title %></strong>
-        <small><%= s.now.timed? ? "until #{clock(s.now.finishes_at)}" : "started #{time_tag_ago(s.now.started_at || s.now.updated_at)}" %><%= " · #{s.now.place}" if s.now.place %></small>
+        <strong><%= me ? "You're on" : "Now" %>: <%= s.now.title_for(current_user) %></strong>
+        <small><%= s.now.timed? ? "until #{clock(s.now.finishes_at)}" : "started #{time_tag_ago(s.now.started_at || s.now.updated_at)}" %><%= " · #{s.now.place_name}" if s.now.place_name && s.now.visible_to?(current_user) %></small>
       </div>
       <%= availability_chip(s.now) %>
     </div>

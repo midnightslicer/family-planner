@@ -22,6 +22,7 @@
   <datalist id="schedule-places">
     <% current_household.locations.in_display_order.each do |location| %><option value="<%= location.name %>"><% end %>
   </datalist>
+  <small>Pick one of your locations and, while it's on, you show as there.</small>
 </div>
 <fieldset class="form-field">
   <legend>While it's on</legend>
@@ -34,6 +35,10 @@
     <% end %>
   </div>
 </fieldset>
+<label class="inline-check private-check">
+  <%= form.check_box :private %>
+  <span><%= icon(:lock) %>Private: others just see that you're busy</span>
+</label>
 <div class="form-field">
   <%= form.label :recurrence_interval, "Repeats" %>
   <%= form.select :recurrence_interval, [["Does not repeat", ""], ["Daily", "daily"], ["Weekly", "weekly"], ["Every 2 weeks", "biweekly"], ["Monthly", "monthly"]],
