@@ -1,9 +1,12 @@
-<% content_for :title, "Work schedule" %>
-<h1>Work schedule</h1>
-<p class="page-intro">Optional. Tick the days you work: while you're working, your card says so, where you are and how to reach you. Meetings and other events you add still show on top.</p>
+<% them = managing_someone_else? ? managed_person.display_name.split.first : nil %>
+<% content_for :title, them ? "#{them}'s work schedule" : "Work schedule" %>
+<%= render "shared/managing_banner" if managing_someone_else? %>
+<h1><%= them ? "#{them}'s work schedule" : "Work schedule" %></h1>
+<p class="page-intro">Optional. Tick the days <%= them ? "#{them} works" : "you work" %>: while working, <%= them ? "their" : "your" %> card says so, where <%= them ? "they are" : "you are" %> and how to reach <%= them ? "them" : "you" %>. Meetings and other events still show on top.</p>
 
 <%= form_with url: work_schedule_path, method: :patch, scope: :work_schedule, class: "form-card form-card-wide",
               data: { controller: "work-week" } do |f| %>
+  <%= hidden_field_tag :person_id, managed_person.id, id: nil if managing_someone_else? %>
   <fieldset class="form-field picker-field">
     <legend>Your week</legend>
     <div class="work-days">
@@ -37,11 +40,11 @@
   </fieldset>
 
   <fieldset class="form-field">
-    <legend>While you're working</legend>
+    <legend>While <%= them ? "they're" : "you're" %> working</legend>
     <div class="kind-options avail-options" role="radiogroup">
       <% ScheduleHelper::AVAILABILITY.each do |value, (label, icon_name, css)| %>
         <label class="kind-option <%= css %>" title="<%= ScheduleHelper::AVAILABILITY_HINTS[value] %>">
-          <input type="radio" name="work_schedule[availability]" value="<%= value %>" <%= "checked" if current_user.work_availability == value %>>
+          <input type="radio" name="work_schedule[availability]" value="<%= value %>" <%= "checked" if managed_person.work_availability == value %>>
           <%= icon(icon_name) %><span><%= label %></span>
         </label>
       <% end %>
@@ -50,14 +53,15 @@
 
   <div class="form-actions">
     <%= f.button type: "submit", class: "btn btn-primary" do %><%= icon_label(:save, "Save work schedule") %><% end %>
-    <%= link_to "Back to your day", tasks_path, class: "btn btn-quiet" %>
+    <%= link_to (them ? "Back to #{them}'s day" : "Back to your day"), tasks_path(person: (managed_person.id if them)), class: "btn btn-quiet" %>
   </div>
 <% end %>
 
 <section class="account-section days-off-section" id="days-off">
   <h2 class="section-title"><%= icon(:sun) %>Days off</h2>
-  <p class="page-intro">Vacation, a sick day, a holiday: the family sees you're off, and your work hours don't show.</p>
+  <p class="page-intro">Vacation, a sick day, a holiday: the family sees <%= them ? "#{them} is" : "you're" %> off, and work hours don't show.</p>
   <%= form_with model: DayOff.new, url: days_off_path, method: :post, class: "form-card form-card-wide" do |f| %>
+    <%= hidden_field_tag :person_id, managed_person.id, id: nil if managing_someone_else? %>
     <div class="form-row form-row-3">
       <div class="form-field">
         <%= f.label :starts_on, "From" %>
@@ -84,7 +88,7 @@
           <span class="sched-time"><%= off.single_day? ? day_name(off.starts_on) : "#{day_name(off.starts_on)} – #{day_name(off.ends_on)}" %></span>
           <div class="sched-body"><span class="sched-title"><%= off.note || "Day off" %></span></div>
           <div class="sched-actions">
-            <%= button_to day_off_path(off), method: :delete, class: "btn btn-quiet btn-icon btn-icon-danger", title: "Remove", "aria-label": "Remove this day off" do %><%= icon(:trash) %><% end %>
+            <%= button_to day_off_path(off, **managed_person_param), method: :delete, class: "btn btn-quiet btn-icon btn-icon-danger", title: "Remove", "aria-label": "Remove this day off" do %><%= icon(:trash) %><% end %>
           </div>
         </li>
       <% end %>

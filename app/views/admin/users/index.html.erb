@@ -29,6 +29,9 @@
           <% end %>
         </td>
         <td class="table-actions">
+          <% if user != current_user && current_household && user.member_of?(current_household) %>
+            <%= link_to "Manage profile", edit_person_profile_path(user), class: "btn btn-quiet btn-small" %>
+          <% end %>
           <% if user != current_user %>
             <% if passkeys.positive? || user.two_factor_enabled? %>
               <%= button_to "Reset sign-in", reset_security_admin_user_path(user), method: :post, class: "btn btn-quiet btn-small",

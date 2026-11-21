@@ -1,0 +1,45 @@
+<%# The profile form: photo, name, handle, birthday, house, colour. Used on
+    your account page and, by admins, on someone else's Manage profile page
+    (ProfileUpdate saves both). Locals: user, url. %>
+<% me = user == current_user %>
+  <div class="form-card">
+    <%= form_with model: user, url: url, method: :patch do |f| %>
+      <%= render "shared/photo_picker", form: f, attribute: :avatar, preview: avatar_content(user), autosave: true,
+                 style: "--user-color: #{user.color}; --user-fg: #{contrast_color(user.color)}",
+                 hint: "You can crop it before it saves. It's shrunk on your device first, so big photos are fine. Without one, #{me ? 'your' : 'their'} initials show." %>
+      <div class="form-field">
+        <%= f.label :display_name, "Name" %>
+        <%= f.text_field :display_name, required: true, maxlength: 60, autocomplete: "name" %>
+      </div>
+      <div class="form-field">
+        <%= f.label :handle, "Handle" %>
+        <%= f.text_field :handle, required: true, pattern: "[a-z0-9_]+", autocapitalize: "none", spellcheck: false %>
+        <small>Shown as @<%= user.handle_was.presence || user.handle %> on the board. Lowercase letters, numbers and underscores.</small>
+      </div>
+      <div class="form-field">
+        <%= f.label :birthday, "Birthday (optional)" %>
+        <%= f.date_field :birthday, max: Date.current %>
+        <small><%= me ? "Your" : "Their" %> age shows on <%= me ? "your" : "their" %> day, and the board celebrates it.</small>
+      </div>
+      <% if current_household %>
+        <% houses = current_household.locations.where(kind: "house").order(:name)
+           home = user.home_in(current_household) %>
+        <div class="form-field new-place-host">
+          <%= label_tag :home_id, me ? "I live at" : "Lives at" %>
+          <%= select_tag :home_id, options_for_select([["Not set", ""]] + houses.map { |h| [h.name, h.id] } + [["New house…", Location::NEW]], home&.id) %>
+          <div class="new-place-field">
+            <%= label_tag :new_home_name, "Name of the house" %>
+            <%= text_field_tag :new_home_name, nil, maxlength: 40, placeholder: "e.g. Red Brick House", autocomplete: "off" %>
+          </div>
+          <small>The board groups people and pets by house.</small>
+        </div>
+      <% end %>
+      <fieldset class="form-field">
+        <legend>Color</legend>
+        <%= render "shared/color_picker", form: f %>
+      </fieldset>
+      <div class="form-actions">
+        <%= f.button type: "submit", class: "btn btn-primary" do %><%= icon_label(:save, "Save profile") %><% end %>
+      </div>
+    <% end %>
+  </div>

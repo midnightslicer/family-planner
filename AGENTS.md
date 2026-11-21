@@ -193,6 +193,17 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
 - **Invitations are the only join path.** Devise `:registerable` is off (no
   `/users/sign_up`); accounts come from `InvitationsController#join` or the
   setup wizard (first admin only).
+- **Admins can manage other members' details** (profile, house, work
+  schedule, days off) through `concerns/manages_person.rb`: those pages
+  act on `managed_person`, yourself unless an admin passes `person_id` for
+  a member of the current household (anyone else gets 404).
+  `PersonProfilesController` is the admin's "Manage profile" page; the
+  profile form (`shared/_profile_form`) and its save (`ProfileUpdate`) are
+  shared with the account page. Sign-in security is never managed this way.
+- **Checkboxes and radios are drawn by CSS** (`appearance: none`, tick and
+  dot as clip-paths in the tokens); toggles that should read as chips put
+  the input inside a label with `opacity: 0` (`who-chip`,
+  `follow-up-check`, `kind-option`, `pick-tile`).
 - **Two-factor must not be bypassable.** `Users::SessionsController#create`
   skips `set_current_context`: Devise enables params authentication for that
   action, so an early `current_user` call would sign the person in before

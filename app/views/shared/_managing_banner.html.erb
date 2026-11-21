@@ -1,0 +1,11 @@
+<%# Shown on pages where an admin is changing someone else's details. %>
+<div class="now-banner managing-banner">
+  <span class="banner-icon"><%= icon(:shield) %></span>
+  <div>
+    <strong>You're managing <%= managed_person.display_name %>'s details</strong>
+    <small>As an admin. Changes show for everyone straight away.</small>
+  </div>
+  <%= link_to edit_person_profile_path(managed_person), class: "btn btn-small btn-quiet" do %><%= icon_label(:user, "Their profile") %><% end %>
+  <%= link_to edit_work_schedule_path(person_id: managed_person.id), class: "btn btn-small btn-quiet" do %><%= icon_label(:briefcase, "Work & days off") %><% end %>
+  <%= link_to tasks_path(person: managed_person.id), class: "btn btn-small btn-quiet" do %><%= icon_label(:calendar, "Their day") %><% end %>
+</div>

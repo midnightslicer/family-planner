@@ -1,0 +1,7 @@
+<% content_for :title, "#{@user.display_name}'s profile" %>
+<%= render "shared/managing_banner" %>
+<h1><%= @user.display_name %>'s profile</h1>
+<p class="page-intro">Everything here is what they could change themselves. Their password, passkeys and two-step verification stay theirs; if they're locked out, use <%= link_to "Admin › People", admin_users_path %>.</p>
+
+<%= render "shared/form_errors", object: @user if @user.errors.any? %>
+<%= render "shared/profile_form", user: @user, url: person_profile_path(@user) %>

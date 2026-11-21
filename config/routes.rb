@@ -60,7 +60,10 @@ Rails.application.routes.draw do
   resource :work_schedule, only: [:edit, :update]
   post   "days_off",     to: "days_off#create",  as: :days_off
   delete "days_off/:id", to: "days_off#destroy", as: :day_off
-  resources :people, only: :show
+  resources :people, only: :show do
+    # Admins: someone else's profile (ManagesPerson).
+    resource :profile, only: [:edit, :update], controller: "person_profiles"
+  end
   post "people/me/location", to: "people#locate", as: :locate_me
 
   # Everyone's own account: profile, password, passkeys, two-step verification
