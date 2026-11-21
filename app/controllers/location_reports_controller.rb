@@ -8,7 +8,7 @@ class LocationReportsController < ApplicationController
     return head(:forbidden) unless report.reported_by_id == current_user.id || current_user.admin?
 
     report.destroy
-    fallback = report.subject_type == "Pet" ? pet_path(report.subject_id) : person_path(report.subject_id)
+    fallback = report.subject_type == "Pet" ? pet_path(report.subject_id) : tasks_path
     redirect_back_or_to fallback, notice: "Removed that report.", status: :see_other, allow_other_host: false
   end
 end

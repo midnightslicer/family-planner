@@ -20,6 +20,8 @@ class TasksController < ApplicationController
       @person = @members.find { |member| member.id.to_s == params[:person].to_s } || current_user
       @schedule = PersonSchedule.new(current_household, @person)
       @task = current_household.tasks.new(assigned_to: @person)
+      @where = LocationReport.latest_for(current_household, "User", [@person.id])[@person.id]
+      @locations = current_household.locations.in_display_order.with_attached_photo if @person == current_user
     end
   end
 

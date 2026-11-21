@@ -1811,6 +1811,58 @@ ul.sched-list.panel { padding: 0.25rem clamp(1.125rem, 3vw, 1.5rem); }
 .family-todos { margin: 0; }
 .family-todos small { display: inline-flex; align-items: center; gap: 0.375rem; }
 
+
+/* A person's day: profile header and the one-tap "I'm at" chips. */
+.day-header { margin-bottom: 1.25rem; }
+.day-header .profile-avatar { width: 4.5rem; height: 4.5rem; font-size: 1.375rem; }
+.day-where { color: var(--text); font-weight: 600; }
+.day-where .icon { color: var(--accent); }
+.profile-heading .report-comment { margin-top: 0.375rem; }
+
+.where-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 1.25rem;
+}
+.where-label { display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.875rem; font-weight: 650; color: var(--text-muted); }
+.where-label .icon { color: var(--accent); }
+.where-chips { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+.where-chips form { display: contents; }
+.where-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 36px;
+  padding: 0 0.875rem;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: border-color var(--fast) ease, background var(--fast) ease, transform var(--medium) var(--ease-spring);
+}
+.where-chip .icon { color: var(--accent); width: 1rem; height: 1rem; }
+.where-chip:hover { border-color: var(--accent); transform: translateY(-1px); }
+.where-chip:active { transform: scale(0.95); }
+.where-chip.is-current { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+.where-more { flex-basis: 100%; }
+.where-more > summary { display: inline-block; cursor: pointer; font-size: 0.875rem; font-weight: 600; color: var(--accent); }
+.where-more[open] > summary { margin-bottom: 0.75rem; }
+.where-more > form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: clamp(1rem, 3vw, 1.5rem);
+  max-width: 760px;
+  animation: slide-down 260ms var(--ease-out);
+}
+
 /* ---------- Icons & motion ----------
  * Icons come from IconsHelper as inline SVG stroked in currentColor, so they
  * take the colour of whatever text they sit in. Sized in em so they scale

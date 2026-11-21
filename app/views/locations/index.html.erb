@@ -1,6 +1,5 @@
 <% content_for :title, "Locations" %>
-<%= render "pets/live" %>
-<%= render "pets/tabs" %>
+<%= render "shared/live" %>
 
 <div class="page-header">
   <h1>Locations</h1>
@@ -34,7 +33,7 @@
                   <% if who.is_a?(Pet) %>
                     <%= link_to pet_path(who) do %><span class="person-avatar" style="<%= PetsHelper::PET_DISC_STYLE %>" aria-hidden="true"><%= pet_avatar_content(who) %></span><%= who.name %><% end %>
                   <% else %>
-                    <%= link_to person_path(who) do %><span class="person-avatar" style="--user-color: <%= who.color %>; --user-fg: <%= contrast_color(who.color) %>" aria-hidden="true"><%= avatar_content(who) %></span><%= who.display_name %><% end %>
+                    <%= link_to tasks_path(person: (who.id unless who == current_user)) do %><span class="person-avatar" style="--user-color: <%= who.color %>; --user-fg: <%= contrast_color(who.color) %>" aria-hidden="true"><%= avatar_content(who) %></span><%= who.display_name %><% end %>
                   <% end %>
                 </li>
               <% end %>

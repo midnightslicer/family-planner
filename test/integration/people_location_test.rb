@@ -9,24 +9,33 @@ class PeopleLocationTest < ActionDispatch::IntegrationTest
     sign_in @member
   end
 
-  test "you can report your own location from your profile" do
-    get person_path(@member)
-    assert_select "input[name='location_report[location_id]'][value='#{@yard.id}']"
+  test "your day has one-tap I'm at chips that set your location" do
+    get tasks_path
+    assert_select ".where-chips button", text: "Yard"
 
-    post locate_me_path, params: { location_report: { location_id: @yard.id, comment: "Mowing" } }
-    assert_redirected_to person_path(@member)
+    post locate_me_path, params: { location_report: { location_id: @yard.id } }, headers: { "Referer" => tasks_url }
+    assert_redirected_to tasks_url
     report = @member.location_reports.last
     assert_equal @yard, report.location
     assert_equal @member, report.reported_by
 
     get dashboard_path
     assert_select "##{ActionView::RecordIdentifier.dom_id(@member, :person_card)} .person-where", text: /Yard/
+    get tasks_path
+    assert_select ".day-where", text: /Yard/
+    assert_select ".where-chip.is-current", text: "Yard"
   end
 
-  test "someone else's profile has no form to set their location" do
+  test "someone else's day shows where they are but no way to set it" do
+    LocationReport.create!(household: @smiths, subject: @admin, location: @yard, reported_by: @admin)
+    get tasks_path(person: @admin.id)
+    assert_select ".day-where", text: /Yard/
+    assert_select ".where-bar", count: 0
+  end
+
+  test "the old profile address leads to their day" do
     get person_path(@admin)
-    assert_response :success
-    assert_select "input[name='location_report[location_id]']", count: 0
+    assert_redirected_to tasks_path(person: @admin.id)
   end
 
   test "the location endpoint can't be pointed at another person" do
@@ -38,21 +47,36 @@ class PeopleLocationTest < ActionDispatch::IntegrationTest
   test "a location from another household is refused" do
     theirs = Household.create!(name: "Others").locations.create!(name: "Theirs")
     post locate_me_path, params: { location_report: { location_id: theirs.id } }
-    assert_response :unprocessable_content
+    follow_redirect!
+    assert_select ".flash-alert"
     assert_equal 0, LocationReport.count
   end
 
-  test "you can add a new place while setting your location" do
-    post locate_me_path, params: { location_report: { location_id: "new", new_location_name: "Office" } }
-    assert_redirected_to person_path(@member)
-    assert_equal "Office", @member.location_reports.last.location.name
+  test "you can add a new place with a note while setting your location" do
+    post locate_me_path, params: { location_report: { location_id: "new", new_location_name: "Office", comment: "Back by 6" } }
+    report = @member.location_reports.last
+    assert_equal "Office", report.location.name
+    assert_equal "Back by 6", report.comment
   end
 
-  test "birthdays save on the account page and ages show on the profile" do
+  test "locations show people at their current event's place" do
+    little = @smiths.locations.create!(name: "Little house", kind: "house")
+    Task.create!(household: @smiths, title: "Client meeting", assigned_to: @admin, place: "Little house",
+                 starts_at: 10.minutes.ago, ends_at: 50.minutes.from_now)
+    get locations_path
+    assert_select "##{ActionView::RecordIdentifier.dom_id(little)} .here-now", text: /Admin User/
+  end
+
+  test "Locations is its own tab" do
+    get locations_path
+    assert_select ".nav-links a[aria-current=page]", text: "Locations"
+  end
+
+  test "birthdays save on the account page and ages show on your day" do
     patch account_profile_path, params: { user: { display_name: @member.display_name, handle: @member.handle,
                                                   color: @member.color, custom_color: "", birthday: "1990-05-04" } }
     assert_equal Date.new(1990, 5, 4), @member.reload.birthday
-    get person_path(@member)
-    assert_select ".profile-heading", text: /years · born May 4, 1990/
+    get tasks_path
+    assert_select ".profile-heading", text: /years/
   end
 end

@@ -1,7 +1,7 @@
 <% content_for :title, "Your account" %>
 <div class="page-header">
   <h1>Your account</h1>
-  <%= link_to person_path(@user), class: "btn" do %><%= icon_label(:map_pin, "Your profile & location") %><% end if current_household %>
+  <%= link_to tasks_path, class: "btn" do %><%= icon_label(:calendar, "Your day & location") %><% end if current_household %>
 </div>
 
 <section class="account-section">

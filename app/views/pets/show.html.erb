@@ -1,6 +1,5 @@
 <% content_for :title, @pet.name %>
-<%= render "pets/live" %>
-<%= render "pets/tabs" %>
+<%= render "shared/live" %>
 <% report = @status.report
    following = @pet.followed_by?(current_user) %>
 

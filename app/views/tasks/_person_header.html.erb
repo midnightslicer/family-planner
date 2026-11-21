@@ -1,0 +1,52 @@
+<%# The top of a person's day: who, how old, where they are. On your own
+    day, "I'm at" chips report your location in one tap; "Somewhere else"
+    opens the full picker (a comment, or a new place) without leaving the
+    page. Locals: person, where (their latest LocationReport), locations
+    (only for yourself). %>
+<% me = person == current_user %>
+<header class="profile-header day-header" style="--user-color: <%= person.color %>; --user-fg: <%= contrast_color(person.color) %>">
+  <span class="person-avatar profile-avatar" aria-hidden="true"><%= avatar_content(person) %></span>
+  <div class="profile-heading">
+    <h1><%= me ? "Your day" : "#{person.display_name}'s day" %><%= icon(:cake, label: "Birthday today", class: "birthday-cake") if birthday_today?(person.birthday) %></h1>
+    <p class="task-meta">
+      <span><%= icon(:calendar) %><%= Date.current.strftime("%A, %B %-d") %></span>
+      <% if person.birthday %><span><%= icon(:cake) %><%= age_in_words(person.birthday) %></span><% end %>
+      <% if where %>
+        <span class="day-where"><%= location_icon(where.location) %><%= where.location&.name || "Somewhere else" %> · <%= time_tag_ago(where.created_at) %></span>
+      <% end %>
+    </p>
+    <% if where&.comment %><p class="report-comment"><%= icon(:message) %><span><%= where.comment %></span></p><% end %>
+  </div>
+  <% if me %>
+    <div class="header-actions">
+      <%= link_to account_root_path, class: "btn btn-quiet btn-icon", title: "Edit your profile", "aria-label": "Edit your profile" do %><%= icon(:pencil) %><% end %>
+    </div>
+  <% end %>
+</header>
+
+<% if me %>
+  <div class="where-bar">
+    <span class="where-label"><%= icon(:map_pin) %>I'm at</span>
+    <div class="where-chips">
+      <% locations.each do |location| %>
+        <% here = where&.location_id == location.id %>
+        <%= button_to locate_me_path, params: { "location_report[location_id]" => location.id }, method: :post,
+                      class: "where-chip#{' is-current' if here}", "aria-pressed": here do %><%= location_icon(location) %><span><%= location.name %></span><% end %>
+      <% end %>
+    </div>
+    <details class="where-more">
+      <summary><%= locations.any? ? "Somewhere else or add a note" : "Say where you are" %></summary>
+      <%= form_with model: LocationReport.new, url: locate_me_path, method: :post do |f| %>
+        <%= render "shared/location_picker", locations: locations, field_name: "location_report[location_id]",
+                   new_name_field: "location_report[new_location_name]", selected: where&.location_id, legend: "Where are you?" %>
+        <div class="form-field">
+          <%= f.label :comment, "Note (optional)" %>
+          <%= f.text_field :comment, maxlength: LocationReport::COMMENT_MAX, placeholder: "e.g. Back by 6", autocomplete: "off" %>
+        </div>
+        <div class="form-actions">
+          <%= f.button type: "submit", class: "btn btn-primary" do %><%= icon_label(:map_pin, "Update where I am") %><% end %>
+        </div>
+      <% end %>
+    </details>
+  </div>
+<% end %>

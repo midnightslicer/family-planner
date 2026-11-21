@@ -132,7 +132,7 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
     `feeding-notes`, `form-row`, `form-card-wide`, `sticky-actions`,
     `btn-wide`, `danger-zone`. Partials: `shared/_photo_picker`,
     `shared/_pet_picker`, `shared/_location_picker`, `shared/_history`,
-    `pets/_pet_card`, `pets/_live`.
+    `pets/_pet_card`, `shared/_live`.
   - account & auth: `account-section`, `admin-tabs`, `copy-field`,
     `inline-form`, `inline-check`, `code-input`, `help-details`,
     `passkey-signin`, `passkey-choice`, `passkey-hint`, `passkey-add`,
@@ -227,7 +227,7 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   synchronously in `after_commit` and never raise into the request.
 - Pet, location and feeding changes call `Household#broadcast_refresh`
   (a debounced Turbo refresh on `[household, :members]`); pages that show
-  them render `pets/_live`, which subscribes and morphs. Person cards still
+  them render `shared/_live`, which subscribes and morphs. Person cards still
   get targeted replaces.
 - "Fed today" uses the viewer's time zone: `application.js` stores the
   browser's IANA zone in a `tz` cookie and `ApplicationController` wraps
