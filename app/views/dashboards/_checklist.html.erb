@@ -11,7 +11,7 @@
       <li class="checklist-step<%= ' is-done' if step.done %>">
         <span class="checklist-mark" aria-hidden="true"><%= icon(:check) if step.done %></span>
         <div class="checklist-body">
-          <strong><%= step.title %></strong><%= " (done)" if step.done %>
+          <strong><%= step.title %></strong><%= tag.span(" (done)", class: "visually-hidden") if step.done %>
           <small><%= step.detail %></small>
         </div>
         <% unless step.done %>
