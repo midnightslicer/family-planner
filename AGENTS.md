@@ -96,7 +96,7 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
     (> `user-menu-header`), closed by the `menu` Stimulus controller,
     `container`, `page-header`, `page-intro`, `household-switch`
   - messages: `flash-stack` (the always-present `#flash` container that
-    `TasksController` prepends into), `flash-notice`, `flash-alert`
+    flashes render into), `flash-notice`, `flash-alert`
   - forms: `form-card`, `form-field` (also on a `fieldset`), `form-actions`,
     `btn` + `btn-primary`/`btn-danger`/`btn-quiet`/`btn-small`, `devise-links`
   - tables: `table-wrap` (scroll container) + bare `table`, `table-actions`

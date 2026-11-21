@@ -28,7 +28,7 @@
       </div>
     </nav>
 
-    <%# Always rendered: TasksController prepends turbo_stream flashes into #flash. %>
+    <%# Always rendered, so a turbo stream can prepend a flash into #flash. %>
     <div class="flash-stack" id="flash">
       <%= flash_message(notice, :notice) if notice %>
       <%= flash_message(alert, :alert) if alert %>
