@@ -20,7 +20,7 @@
           <% if meta == :fed %>
             <%= status.tracks_meals? ? "#{status.fed_today} of #{status.meals} today" : "Not fed here" %>
           <% else %>
-            <%= status.report ? (status.report.location&.name || "Somewhere else") : "Unknown" %>
+            <%= status.report ? place_label(status.report) : "Unknown" %>
           <% end %>
         </span>
       </label>

@@ -14,11 +14,17 @@ class LocationReport < ApplicationRecord
 
   validates :subject_type, inclusion: { in: SUBJECT_TYPES }
   validates :location, presence: true, on: :create
+  SPOTS = %w[inside outside].freeze
+
   validates :comment, length: { maximum: COMMENT_MAX }
+  validates :spot, inclusion: { in: SPOTS }, allow_nil: true
   validate :everything_in_household, on: :create
   validate -> { Location.new_location_errors(location).each { |message| errors.add(:base, message) } }, on: :create
 
   normalizes :comment, with: ->(comment) { comment.squish.presence }
+  normalizes :spot, with: ->(spot) { spot.strip.downcase.presence }
+  # Inside/outside only means something at a house.
+  before_validation { self.spot = nil unless location&.house? }
 
   after_commit :broadcast
 

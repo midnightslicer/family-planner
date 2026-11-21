@@ -23,6 +23,13 @@ module PetsHelper
     end
   end
 
+  # "Red Brick House · Outside", "Back yard", "Somewhere else".
+  def place_label(report)
+    return "Not reported yet" unless report
+
+    [report.location&.name || "Somewhere else", report.spot&.capitalize].compact.join(" · ")
+  end
+
   # What goes inside a pet's .person-avatar disc: its photo, else a paw.
   def pet_avatar_content(pet)
     if pet.photo_saved?

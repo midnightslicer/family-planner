@@ -3,13 +3,14 @@ class PetsController < ApplicationController
 
   HISTORY_LIMIT = 15
 
-  before_action :set_pet, only: [:show, :edit, :update, :destroy]
+  before_action :set_pet, only: [:show, :edit, :update, :destroy, :away, :back]
   before_action -> { require_creator_or_admin(@pet) }, only: :destroy
 
   # GET /pets: every pet's card, with what to do next right on it.
   def index
-    @pets = current_household.pets.by_name.with_attached_photo
+    @pets = current_household.pets.here.by_name.with_attached_photo
     @statuses = Pet.statuses(current_household, @pets)
+    @away = current_household.pets.away.by_name.with_attached_photo
   end
 
   # GET /pets/:id: the pet's profile and its recent comings and goings.
@@ -44,6 +45,19 @@ class PetsController < ApplicationController
     else
       render :edit, status: :unprocessable_content
     end
+  end
+
+  # POST /pets/:id/away: not here for now (a dog we sit went home). Kept,
+  # with its history, under Away on the pets page.
+  def away
+    @pet.update!(away_since: Time.current)
+    redirect_to pets_path, notice: "#{@pet.name} is marked away. Find them under Away when they're back.", status: :see_other
+  end
+
+  # POST /pets/:id/back
+  def back
+    @pet.update!(away_since: nil)
+    redirect_to pet_path(@pet), notice: "#{@pet.name} is back. Where are they?", status: :see_other
   end
 
   def destroy

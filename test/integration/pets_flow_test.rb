@@ -85,6 +85,50 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     assert_select ".wall-pet button, .wall-pet form", count: 0
   end
 
+  test "at a house you can say inside or outside, and it shows" do
+    get new_pet_location_path
+    assert_select ".spot-field input[name='check_in[spot]'][value='outside']"
+    assert_select ".pick-house input[value='#{@house.id}']"
+
+    post pet_locations_path, params: { check_in: { pet_ids: [@rex.id], location_id: @house.id, spot: "outside" } }
+    follow_redirect!
+    assert_select ".flash-notice", text: "Rex is at House (outside)."
+    assert_select "##{ActionView::RecordIdentifier.dom_id(@rex, :pet_card)} .pet-where-name", text: "House · Outside"
+  end
+
+  test "inside or outside is ignored away from a house" do
+    post pet_locations_path, params: { check_in: { pet_ids: [@rex.id], location_id: @yard.id, spot: "inside" } }
+    assert_nil @rex.status.report.spot
+  end
+
+  test "a pet that isn't here is off the board, the wall and the pickers, and comes back with one tap" do
+    post away_pet_path(@rex)
+    assert @rex.reload.away?
+
+    get pets_path
+    assert_select ".pet-card", 1
+    assert_select ".away-list", text: /Rex/
+    get dashboard_path
+    assert_select ".pet-card .person-name", text: "Rex", count: 0
+    get new_feeding_path
+    assert_select "input[name='check_in[pet_ids][]'][value='#{@rex.id}']", count: 0
+    get new_pet_location_path
+    assert_select "input[name='check_in[pet_ids][]'][value='#{@rex.id}']", count: 0
+    get wall_path(@smiths.dashboard_token)
+    assert_select ".wall-pet", text: /Rex/, count: 0
+
+    # Even posted directly, an away pet isn't fed or moved.
+    post feedings_path, params: { check_in: { pet_ids: [@rex.id] } }
+    assert_equal 0, @rex.feedings.count
+
+    get pet_path(@rex)
+    assert_select ".away-banner", text: /Rex isn't here right now/
+    post back_pet_path(@rex)
+    assert_not @rex.reload.away?
+    get dashboard_path
+    assert_select ".pet-card .person-name", text: "Rex"
+  end
+
   test "you can take back your own feeding but not someone else's" do
     mine = Feeding.create!(household: @smiths, pet: @rex, fed_by: @member)
     theirs = Feeding.create!(household: @smiths, pet: @rex, fed_by: @admin)

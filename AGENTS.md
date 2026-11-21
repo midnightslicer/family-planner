@@ -65,9 +65,11 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   `GettingStarted` (the dashboard checklist), and the pets feature:
   `Location` (a place: house/yard/pasture/pool/other, with a photo),
   `Pet` (species, birthday, `meals_per_day`, `feeding_notes`, `home` =
-  where it sleeps; `Pet.statuses` loads every card's state in a few
+  where it sleeps; `away_since` for pets that come and go: `Pet.here` is
+  what every list but the Pets page's Away section uses; `Pet.statuses` loads every card's state in a few
   queries into `PetStatus`), `LocationReport` (polymorphic `subject`: Pet or
-  User; the newest per subject is where they are; `latest_for`), `Feeding`,
+  User; the newest per subject is where they are; `latest_for`; `spot`
+  inside/outside, houses only), `Feeding`,
   `PetSubscription` (follow a pet), and `PetCheckIn`, the form object behind
   both batch flows ("Report where" and "Feed": pick pets, maybe a place,
   comment) which also notifies followers. `concerns/small_photo.rb`

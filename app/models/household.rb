@@ -24,7 +24,7 @@ class Household < ApplicationRecord
   # People and pets grouped by the house they live in, houses in display
   # order, then anyone without one: [[house or nil, members, pets], ...].
   # Empty groups are left out.
-  def by_house(members = members_by_name.to_a, pets = self.pets.by_name.to_a)
+  def by_house(members = members_by_name.to_a, pets = self.pets.here.by_name.to_a)
     homes = household_memberships.pluck(:user_id, :home_id).to_h
     houses = locations.in_display_order.to_a
     groups = houses.map { |house| [house, members.select { |m| homes[m.id] == house.id }, pets.select { |p| p.home_id == house.id }] }

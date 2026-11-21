@@ -52,6 +52,10 @@ Rails.application.routes.draw do
   resources :feedings, only: :destroy
   resources :location_reports, only: :destroy
   resources :pets do
+    member do
+      post :away
+      post :back
+    end
     # Follow / unfollow: notifications when it's moved or fed.
     resource :subscription, only: [:create, :destroy], controller: "pet_subscriptions"
   end

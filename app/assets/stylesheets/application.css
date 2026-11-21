@@ -1751,7 +1751,8 @@ fieldset.picker-field { margin-top: 0; margin-bottom: 1.25rem; }
   gap: 1rem;
   align-items: start;
 }
-.panel > h2 .count {
+.panel > h2 .count,
+.section-title .count {
   margin-left: auto;
   min-width: 1.5rem;
   padding: 0 0.4375rem;
@@ -1832,6 +1833,19 @@ ul.sched-list.panel { padding: 0.25rem clamp(1.125rem, 3vw, 1.5rem); }
 /* An admin managing someone else's details */
 .managing-banner { border-color: var(--accent); }
 .managing-banner .banner-icon { color: var(--accent); background: var(--accent-soft); }
+
+/* Inside/outside: only once a house is picked. */
+.spot-field { display: none; }
+form:has(.pick-house input:checked) .spot-field { display: block; animation: slide-down 260ms var(--ease-out); }
+
+/* Pets that are away for now */
+.section-title.away-title .count { margin-left: 0.25rem; }
+.away-title .icon { color: var(--text-muted); }
+.away-list .pet-identity { flex: 1; }
+.away-list .person-avatar { opacity: 0.6; }
+.away-list .sched-actions { opacity: 1; align-self: center; }
+.away-banner { border-color: var(--border-strong); }
+.away-banner .banner-icon { color: var(--text-muted); background: var(--surface-sunken); }
 
 /* The board, by house */
 .board-tools { display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }

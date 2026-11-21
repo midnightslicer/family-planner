@@ -10,7 +10,7 @@ class PetCheckIn
 
   KINDS = %w[location feeding].freeze
 
-  attr_accessor :household, :actor, :kind, :location_id, :new_location_name, :comment
+  attr_accessor :household, :actor, :kind, :location_id, :new_location_name, :comment, :spot
   attr_reader :pet_ids
 
   validates :kind, inclusion: { in: KINDS }
@@ -31,7 +31,7 @@ class PetCheckIn
   end
 
   def pets
-    @pets ||= household.pets.where(id: pet_ids).by_name.to_a
+    @pets ||= household.pets.here.where(id: pet_ids).by_name.to_a
   end
 
   def location
@@ -47,7 +47,7 @@ class PetCheckIn
       location.save! if location? && location.new_record?
       pets.each do |pet|
         if location?
-          LocationReport.create!(household: household, subject: pet, location: location, reported_by: actor, comment: comment)
+          LocationReport.create!(household: household, subject: pet, location: location, spot: spot, reported_by: actor, comment: comment)
         else
           Feeding.create!(household: household, pet: pet, fed_by: actor, comment: comment)
         end
@@ -61,7 +61,7 @@ class PetCheckIn
   def summary
     names = pets.map(&:name).to_sentence
     if location?
-      "#{names} #{pets.one? ? 'is' : 'are'} at #{location.name}."
+      "#{names} #{pets.one? ? 'is' : 'are'} at #{location.name}#{" (#{spot})" if spot.present? && location.house?}."
     else
       "Fed #{names}."
     end

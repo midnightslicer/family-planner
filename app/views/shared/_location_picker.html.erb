@@ -7,7 +7,7 @@
   <legend><%= legend %></legend>
   <div class="pick-grid pick-grid-places">
     <% locations.each do |location| %>
-      <label class="pick-tile pick-place">
+      <label class="pick-tile pick-place<%= ' pick-house' if location.house? %>">
         <input type="radio" name="<%= field_name %>" value="<%= location.id %>" <%= "checked" if selected.to_s == location.id.to_s %> required>
         <span class="pick-check" aria-hidden="true"><%= icon(:check) %></span>
         <%= location_picture(location) %>

@@ -8,7 +8,7 @@ class DashboardsController < ApplicationController
     @members = @household.members_by_name
     @statuses = @household.member_statuses
     @checklist = GettingStarted.new(current_user, @household)
-    @pets = @household.pets.by_name.with_attached_photo
+    @pets = @household.pets.here.by_name.with_attached_photo
     @pet_statuses = Pet.statuses(@household, @pets)
   end
 

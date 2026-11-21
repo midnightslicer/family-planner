@@ -36,7 +36,7 @@ class FeedingsController < ApplicationController
   private
 
   def load_choices
-    @pets = current_household.pets.by_name.with_attached_photo
+    @pets = current_household.pets.here.by_name.with_attached_photo
     @statuses = Pet.statuses(current_household, @pets)
   end
 

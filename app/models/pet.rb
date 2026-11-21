@@ -27,6 +27,10 @@ class Pet < ApplicationRecord
   normalizes :name, :species, with: ->(value) { value.squish.presence }
 
   scope :by_name, -> { order(:name) }
+  # Pets that come and go (dog-sitting) are marked away rather than deleted:
+  # off the board, the wall and the pickers, back with one tap.
+  scope :here, -> { where(away_since: nil) }
+  scope :away, -> { where.not(away_since: nil) }
 
   after_commit { household.broadcast_refresh }
 
@@ -44,6 +48,10 @@ class Pet < ApplicationRecord
     pets.to_h do |pet|
       [pet.id, PetStatus.new(pet: pet, report: reports[pet.id], fed_today: fed_counts.fetch(pet.id, 0), last_feeding: last_fed[pet.id])]
     end
+  end
+
+  def away?
+    away_since.present?
   end
 
   def followed_by?(user)

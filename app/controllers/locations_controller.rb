@@ -7,7 +7,7 @@ class LocationsController < ApplicationController
   # GET /locations: every place, and who's there right now.
   def index
     @locations = current_household.locations.in_display_order.with_attached_photo
-    @pets = current_household.pets.by_name.with_attached_photo
+    @pets = current_household.pets.here.by_name.with_attached_photo
     pet_reports = LocationReport.latest_for(current_household, "Pet", @pets.map(&:id))
     @members = current_household.members_by_name.with_attached_avatar
     statuses = current_household.member_statuses

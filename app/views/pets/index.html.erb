@@ -12,7 +12,9 @@
   <% end %>
 </div>
 
-<% if @pets.empty? %>
+<% if @pets.empty? && @away.any? %>
+  <p class="empty-hint"><%= icon(:paw) %>Nobody's here right now. Welcome someone back from Away below.</p>
+<% elsif @pets.empty? %>
   <div class="empty-state">
     <span class="banner-icon"><%= icon(:paw) %></span>
     <h2>No pets yet</h2>
@@ -25,4 +27,25 @@
       <%= render "pets/pet_card", pet: pet, status: @statuses.fetch(pet.id) %>
     <% end %>
   </div>
+<% end %>
+
+<% if @away.any? %>
+  <h2 class="section-title away-title"><%= icon(:log_out) %>Away <span class="count"><%= @away.size %></span></h2>
+  <p class="page-intro">Not here right now (dogs we sit, say). They're off the board and the wall until they're back.</p>
+  <ul class="sched-list panel away-list">
+    <% @away.each do |pet| %>
+      <li class="sched-item">
+        <%= link_to pet_path(pet), class: "pet-identity" do %>
+          <span class="person-avatar" style="<%= PetsHelper::PET_DISC_STYLE %>" aria-hidden="true"><%= pet_avatar_content(pet) %></span>
+          <span class="person-meta">
+            <span class="person-name"><%= pet.name %></span>
+            <span class="pet-sub">Away since <%= pet.away_since.strftime("%b %-d") %></span>
+          </span>
+        <% end %>
+        <div class="sched-actions">
+          <%= button_to back_pet_path(pet), method: :post, class: "btn btn-small btn-primary" do %><%= icon_label(:log_in, "Back here") %><% end %>
+        </div>
+      </li>
+    <% end %>
+  </ul>
 <% end %>

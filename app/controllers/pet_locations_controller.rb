@@ -23,12 +23,12 @@ class PetLocationsController < ApplicationController
   private
 
   def load_choices
-    @pets = current_household.pets.by_name.with_attached_photo
+    @pets = current_household.pets.here.by_name.with_attached_photo
     @statuses = Pet.statuses(current_household, @pets)
     @locations = current_household.locations.in_display_order.with_attached_photo
   end
 
   def check_in_params
-    params.fetch(:check_in, {}).permit(:location_id, :new_location_name, :comment, pet_ids: [])
+    params.fetch(:check_in, {}).permit(:location_id, :new_location_name, :comment, :spot, pet_ids: [])
   end
 end

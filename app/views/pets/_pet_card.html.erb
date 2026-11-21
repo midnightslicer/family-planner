@@ -17,7 +17,7 @@
       <% if report.nil? %>
         <span class="pet-where-name is-unknown">Not reported yet</span>
       <% else %>
-        <span class="pet-where-name"><%= report.location&.name || "Somewhere else" %></span>
+        <span class="pet-where-name"><%= place_label(report) %></span>
         <small><%= time_tag_ago(report.created_at) %><%= " · #{report.reported_by.display_name}" if report.reported_by %></small>
       <% end %>
     </p>

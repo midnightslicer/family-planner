@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_22_050000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_22_060000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -105,6 +105,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_050000) do
     t.integer "reported_by_id"
     t.string "comment"
     t.datetime "created_at", null: false
+    t.string "spot"
     t.index ["household_id", "subject_type", "id"], name: "index_location_reports_on_household_id_and_subject_type_and_id"
     t.index ["household_id"], name: "index_location_reports_on_household_id"
     t.index ["location_id"], name: "index_location_reports_on_location_id"
@@ -158,6 +159,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_050000) do
     t.text "feeding_notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "away_since"
     t.index ["created_by_id"], name: "index_pets_on_created_by_id"
     t.index ["home_id"], name: "index_pets_on_home_id"
     t.index ["household_id"], name: "index_pets_on_household_id"

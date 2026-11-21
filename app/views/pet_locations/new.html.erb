@@ -12,6 +12,18 @@
     <%= render "shared/location_picker", locations: @locations, field_name: "check_in[location_id]",
                new_name_field: "check_in[new_location_name]", new_name: @check_in.new_location_name,
                selected: @check_in.location_id, legend: "Where are they?" %>
+    <%# Only for houses: shown once a house is picked (CSS, no JS). %>
+    <fieldset class="form-field spot-field">
+      <legend>Inside or outside? (optional)</legend>
+      <div class="kind-options" role="radiogroup">
+        <% [["inside", :house, "Inside"], ["outside", :trees, "Outside"]].each do |value, icon_name, label| %>
+          <label class="kind-option">
+            <input type="radio" name="check_in[spot]" value="<%= value %>" <%= "checked" if @check_in.spot == value %>>
+            <%= icon(icon_name) %><span><%= label %></span>
+          </label>
+        <% end %>
+      </div>
+    </fieldset>
     <div class="form-field">
       <%= label_tag "check_in_comment", "Comment (optional)" %>
       <%= text_field_tag "check_in[comment]", @check_in.comment, id: "check_in_comment", maxlength: LocationReport::COMMENT_MAX,
