@@ -117,3 +117,10 @@
     <%= link_to "Turn on two-step verification", new_account_two_factor_path, class: "btn btn-primary" %>
   <% end %>
 </section>
+
+<%# Stays here, done steps and all, until everything's done. %>
+<% if @checklist && !@checklist.complete? %>
+  <div class="account-section">
+    <%= render "dashboards/checklist", checklist: @checklist, dismissible: false %>
+  </div>
+<% end %>

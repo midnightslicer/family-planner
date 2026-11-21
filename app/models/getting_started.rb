@@ -1,5 +1,6 @@
-# The "getting started" card on the dashboard: the few things that make the
-# board useful, ticked off from real state, hidden once dismissed or done.
+# The "getting started" list: the few things that make the board useful,
+# ticked off from real state. On the dashboard until dismissed or done; at
+# the bottom of the account page until done.
 class GettingStarted
   Step = Struct.new(:key, :title, :detail, :done, :link_label, :path, keyword_init: true)
 
@@ -8,8 +9,16 @@ class GettingStarted
     @household = household
   end
 
+  # On the dashboard until hidden or done.
   def visible?
-    @user.onboarding_dismissed_at.nil? && !steps.reject { |step| step.key == :wall }.all?(&:done)
+    @user.onboarding_dismissed_at.nil? && !complete?
+  end
+
+  # Everything but the optional wall step is done. The account page shows
+  # the list (done steps included) until then, even after it's hidden on
+  # the dashboard.
+  def complete?
+    steps.reject { |step| step.key == :wall }.all?(&:done)
   end
 
   def steps

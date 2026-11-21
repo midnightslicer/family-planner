@@ -20,6 +20,22 @@ class ProfileTest < ActionDispatch::IntegrationTest
     assert_select "input[name='user[custom_color]']:not([value])"
   end
 
+  test "getting started stays at the bottom of the account page, done steps too, until it's all done" do
+    @member.update_column(:onboarding_dismissed_at, Time.current) # hidden on the dashboard
+    @smiths.tasks.destroy_all
+    Task.create!(household: @smiths, title: "Call the vet", assigned_to: @member)
+
+    get account_root_path
+    assert_select ".checklist", 1
+    assert_select ".checklist button", count: 0 # no Hide here
+    assert_select ".checklist-step.is-done", text: /Put something on your schedule/
+    assert_select ".checklist-step:not(.is-done)", text: /signing in quicker/
+
+    @member.update!(otp_secret: "JBSWY3DPEHPK3PXP", otp_enabled_at: Time.current)
+    get account_root_path
+    assert_select ".checklist", count: 0
+  end
+
   test "picking a swatch changes the colour" do
     patch account_profile_path, params: profile_params(color: "#ec4899", custom_color: "")
     assert_redirected_to account_root_path
