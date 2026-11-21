@@ -142,6 +142,30 @@ class TaskRecurrenceTest < ActiveSupport::TestCase
     assert_operator task.started_at, :>=, started_at
   end
 
+  test "finishing or skipping stamps when, and restarting clears it" do
+    travel_to Time.zone.local(2026, 11, 22, 9, 0) do
+      task = Task.create!(household: @household, title: "Stamp")
+      task.complete!
+      assert_equal Time.current, task.finished_at
+
+      one_off = Task.create!(household: @household, title: "Skip me")
+      one_off.start!
+      one_off.cancel!
+      assert_equal Time.current, one_off.finished_at
+      one_off.start!
+      assert_nil one_off.finished_at
+    end
+  end
+
+  test "a repeating event that rolls on is stamped finished when it ended" do
+    travel_to Time.zone.local(2026, 11, 22, 12, 0) do
+      past = Task.create!(household: @household, title: "Church", recurrence_interval: "weekly",
+                          starts_at: Time.zone.local(2026, 11, 22, 10, 0), ends_at: Time.zone.local(2026, 11, 22, 11, 0))
+      past.roll_forward!
+      assert_equal Time.zone.local(2026, 11, 22, 11, 0), past.reload.finished_at
+    end
+  end
+
   test "a planned to-do can be ticked off or skipped directly" do
     ticked = Task.create!(household: @household, title: "Tick")
     assert ticked.complete!

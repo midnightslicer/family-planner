@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_22_060000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_22_070000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -204,7 +204,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_060000) do
     t.boolean "private", default: false, null: false
     t.integer "location_id"
     t.boolean "follow_up", default: false, null: false
+    t.datetime "finished_at"
     t.index ["created_by_id"], name: "index_tasks_on_created_by_id"
+    t.index ["household_id", "finished_at"], name: "index_tasks_on_household_id_and_finished_at"
     t.index ["household_id", "status", "due_on"], name: "index_tasks_on_household_id_and_status_and_due_on"
     t.index ["household_id", "status", "starts_at"], name: "index_tasks_on_household_id_and_status_and_starts_at"
     t.index ["location_id"], name: "index_tasks_on_location_id"

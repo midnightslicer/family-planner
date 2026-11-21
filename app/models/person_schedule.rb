@@ -23,7 +23,7 @@ class PersonSchedule
     @person = person
     today = now.to_date
     items = household.tasks.for_person(person).includes(:created_by, :location, assignments: :user)
-                     .where("status IN (:open) OR updated_at >= :midnight", open: open_statuses, midnight: now.beginning_of_day)
+                     .where("status IN (:open) OR finished_at >= :midnight", open: open_statuses, midnight: now.beginning_of_day)
                      .where("starts_at IS NULL OR starts_at < :horizon", horizon: now + UPCOMING_DAYS.days)
                      .to_a
     items.reject! { |task| !task.timed? && !task.visible_to?(viewer) }
@@ -33,7 +33,7 @@ class PersonSchedule
     @following = viewer == person ? following_for(household, person, now) : []
 
     open, closed = items.partition(&:open?)
-    @done = closed.sort_by(&:updated_at).reverse
+    @done = closed.sort_by { |task| task.finished_at || task.updated_at }.reverse
     places = household.locations.to_a
     @off = person.day_off_on(today)
     @days_off = person.days_off.select { |off| off.ends_on >= today && !off.covers?(today) }
@@ -53,7 +53,7 @@ class PersonSchedule
 
   def following_for(household, person, now)
     household.tasks.where(created_by: person, follow_up: true).where.not(id: household.tasks.for_person(person).select(:id))
-             .where("status IN (:open) OR updated_at >= :midnight", open: open_statuses, midnight: now.beginning_of_day)
+             .where("status IN (:open) OR finished_at >= :midnight", open: open_statuses, midnight: now.beginning_of_day)
              .includes(:location, assignments: :user).order(:created_at).to_a
   end
 

@@ -154,7 +154,7 @@ class Task < ApplicationRecord
       break unless task.planned? && task.timed? && task.send(:recurs?) && task.finishes_at <= now
 
       task.recurrence_copy = true
-      task.update!(status: :completed)
+      task.update!(status: :completed, finished_at: task.finishes_at) # it ended when it ended
       task = task.send(:schedule_next_occurrence) or break
     end
   end
@@ -167,7 +167,7 @@ class Task < ApplicationRecord
   def start!
     return false unless planned? || restartable?
 
-    update!(status: :in_progress, started_at: Time.current)
+    update!(status: :in_progress, started_at: Time.current, finished_at: nil)
     true
   end
 
@@ -182,7 +182,7 @@ class Task < ApplicationRecord
   def complete!
     return false unless open?
 
-    update!(status: :completed)
+    update!(status: :completed, finished_at: Time.current)
     schedule_next_occurrence
     true
   end
@@ -190,7 +190,7 @@ class Task < ApplicationRecord
   def cancel!
     return false unless open?
 
-    update!(status: :undone)
+    update!(status: :undone, finished_at: Time.current)
     schedule_next_occurrence
     true
   end
