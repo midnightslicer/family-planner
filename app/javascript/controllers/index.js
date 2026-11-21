@@ -30,6 +30,9 @@ application.register("notifications", NotificationsController)
 import PhotoUploadController from "./photo_upload_controller"
 application.register("photo-upload", PhotoUploadController)
 
+import QuickAddController from "./quick_add_controller"
+application.register("quick-add", QuickAddController)
+
 import PickerController from "./picker_controller"
 application.register("picker", PickerController)
 

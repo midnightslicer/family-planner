@@ -1,0 +1,41 @@
+<%# Day, time, place and availability: shared by the quick add (tucked in
+    "Add a time or day") and the full form. Locals: form. %>
+<% task = form.object %>
+<div class="form-row form-row-3">
+  <div class="form-field">
+    <%= form.label :on_date, "Day" %>
+    <%= form.date_field :on_date, value: task.on_date, min: (Date.current - 1).iso8601 %>
+  </div>
+  <div class="form-field">
+    <%= form.label :from_time, "From" %>
+    <%= form.time_field :from_time, value: task.from_time, step: 300 %>
+  </div>
+  <div class="form-field">
+    <%= form.label :until_time, "Until" %>
+    <%= form.time_field :until_time, value: task.until_time, step: 300 %>
+  </div>
+</div>
+<p class="form-hint"><small>A day without a time puts it on your list that day. A time makes it an event: your card shows it while it's on (an hour, unless you say until when).</small></p>
+<div class="form-field">
+  <%= form.label :place, "Where (optional)" %>
+  <%= form.text_field :place, maxlength: 60, list: "schedule-places", placeholder: "e.g. Town, Grandma's house, Zoom", autocomplete: "off" %>
+  <datalist id="schedule-places">
+    <% current_household.locations.in_display_order.each do |location| %><option value="<%= location.name %>"><% end %>
+  </datalist>
+</div>
+<fieldset class="form-field">
+  <legend>While it's on</legend>
+  <div class="kind-options avail-options" role="radiogroup">
+    <% ScheduleHelper::AVAILABILITY.each do |value, (label, icon_name, css)| %>
+      <label class="kind-option <%= css %>" title="<%= ScheduleHelper::AVAILABILITY_HINTS[value] %>">
+        <%= form.radio_button :availability, value %>
+        <%= icon(icon_name) %><span><%= label %></span>
+      </label>
+    <% end %>
+  </div>
+</fieldset>
+<div class="form-field">
+  <%= form.label :recurrence_interval, "Repeats" %>
+  <%= form.select :recurrence_interval, [["Does not repeat", ""], ["Daily", "daily"], ["Weekly", "weekly"], ["Every 2 weeks", "biweekly"], ["Monthly", "monthly"]],
+                  selected: task.recurs_no_recurrence? ? "" : task.recurrence_interval %>
+</div>

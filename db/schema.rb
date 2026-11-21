@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_21_230100) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_22_000000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -171,8 +171,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_230100) do
     t.integer "status", default: 0, null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
+    t.string "availability", default: "text", null: false
+    t.string "place"
+    t.date "due_on"
+    t.datetime "started_at"
     t.index ["assigned_to_id"], name: "index_tasks_on_assigned_to_id"
     t.index ["created_by_id"], name: "index_tasks_on_created_by_id"
+    t.index ["household_id", "assigned_to_id", "due_on"], name: "index_tasks_on_household_id_and_assigned_to_id_and_due_on"
     t.index ["household_id", "assigned_to_id", "status", "starts_at"], name: "index_tasks_on_household_assignee_status"
     t.index ["household_id", "status", "starts_at"], name: "index_tasks_on_household_id_and_status_and_starts_at"
   end

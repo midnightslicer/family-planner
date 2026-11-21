@@ -4,13 +4,14 @@
 
 <div class="page-header">
   <h1><%= @household.name %></h1>
-  <%= link_to new_task_path, class: "btn btn-primary" do %><%= icon_label(:plus, "Add a task") %><% end %>
+  <%= link_to tasks_path, class: "btn btn-primary" do %><%= icon_label(:plus, "Add to my day") %><% end %>
 </div>
 
 <%= render "dashboards/checklist", checklist: @checklist if @checklist.visible? %>
 <%= render "shared/notifications_banner" %>
 
-<div class="dashboard-grid" data-controller="auto-refresh">
+<%# Refreshes each minute too, so cards flip as events start and end. %>
+<div class="dashboard-grid" data-controller="auto-refresh" data-auto-refresh-interval-value="60">
   <% @members.each do |member| %>
     <%= render "shared/person_card", user: member, household: @household, status: @statuses[member.id] %>
   <% end %>

@@ -14,7 +14,7 @@ class HouseholdScopingTest < ActionDispatch::IntegrationTest
   test "tasks index only shows current household tasks" do
     get tasks_path
     assert_response :success
-    assert_select ".task-title", text: "Other household task", count: 0
+    assert_select ".sched-title", text: "Other household task", count: 0
   end
 
   test "a task in another household is invisible (404) even by direct id" do
@@ -36,9 +36,9 @@ class HouseholdScopingTest < ActionDispatch::IntegrationTest
 
   test "dashboard spells out each person's status in words" do
     Task.create!(household: @smiths, title: "Dishes", assigned_to: @member, status: :in_progress)
-    Task.create!(household: @smiths, title: "Laundry", assigned_to: @admin, status: :planned)
     get dashboard_path
-    assert_select ".status-chip", text: "Busy: Dishes"
-    assert_select ".status-chip", text: "Up next: Laundry"
+    assert_select ".person-now", text: "Dishes"
+    assert_select ".status-chip", text: "Text only"
+    assert_select ".status-chip", text: "Free"
   end
 end

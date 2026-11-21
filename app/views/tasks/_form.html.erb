@@ -1,44 +1,29 @@
-<h1><%= action_name == "edit" ? "Edit task" : "Add a task" %></h1>
+<h1><%= @task.persisted? ? "Edit" : "Add something" %></h1>
 
 <%= render "shared/form_errors", object: @task %>
 
 <div class="form-card">
-  <%= form_with model: @task, url: @task.persisted? ? task_path(@task) : tasks_path, method: @task.persisted? ? :patch : :post do |f| %>
+  <%= form_with model: @task do |f| %>
     <div class="form-field">
-      <%= f.label :title, "Title" %>
-      <%= f.text_field :title, placeholder: "e.g. Fold the laundry" %>
+      <%= f.label :title, "What" %>
+      <%= f.text_field :title, required: true, maxlength: 120, placeholder: "e.g. Call the doctor, Church, Grocery run" %>
     </div>
     <div class="form-field">
-      <%= f.label :description, "Description" %>
-      <%= f.text_area :description, rows: 3 %>
+      <%= f.label :assigned_to_id, "For" %>
+      <%= f.collection_select :assigned_to_id, current_household.users.order(:display_name), :id, :display_name,
+                              { selected: @task.assigned_to_id, include_blank: "Anyone" } %>
     </div>
+    <%= render "tasks/when_fields", form: f %>
     <div class="form-field">
-      <%= f.label :assigned_to_id, "Who's doing it?" %>
-      <%= f.collection_select :assigned_to_id, current_household.users.order(:display_name), :id, :display_name, { selected: (@task.assigned_to_id || current_user.id), include_blank: "Anyone" } %>
+      <%= f.label :description, "Notes (optional)" %>
+      <%= f.text_area :description, rows: 3, maxlength: 2000 %>
     </div>
-    <%# Most tasks have no schedule: you start them and mark them done when
-        you're done. Times and repeats are tucked away for the few that do. %>
-    <details class="form-field" <%= "open" if @task.starts_at || @task.ends_at || !@task.recurs_no_recurrence? %>>
-      <summary><%= icon(:calendar) %>Schedule (optional)</summary>
-      <div class="form-field">
-        <%= f.label :starts_at, "Start time" %>
-        <%= f.datetime_local_field :starts_at %>
-      </div>
-      <div class="form-field">
-        <%= f.label :ends_at, "End time" %>
-        <%= f.datetime_local_field :ends_at %>
-      </div>
-      <div class="form-field">
-        <%= f.label :recurrence_interval, "Repeats" %>
-        <%= f.select :recurrence_interval, [["Does not repeat", ""], ["Daily", "daily"], ["Weekly", "weekly"], ["Every 2 weeks", "biweekly"], ["Monthly", "monthly"]], selected: @task.recurrence_interval %>
-      </div>
-    </details>
     <div class="form-actions">
       <% if @task.persisted? %>
         <%= f.button type: "submit", class: "btn btn-primary" do %><%= icon_label(:save, "Save changes") %><% end %>
       <% else %>
-        <%= f.button type: "submit", name: "start_now", value: "1", class: "btn btn-primary" do %><%= icon_label(:zap, "I'm doing this now") %><% end %>
-        <%= f.button type: "submit", class: "btn btn-quiet" do %><%= icon_label(:bookmark, "Save for later") %><% end %>
+        <%= f.button type: "submit", class: "btn btn-primary" do %><%= icon_label(:plus, "Add it") %><% end %>
+        <%= f.button type: "submit", name: "start_now", value: "1", class: "btn" do %><%= icon_label(:zap, "Add & start now") %><% end %>
       <% end %>
       <%= link_to "Never mind", tasks_path, class: "btn btn-quiet" %>
     </div>

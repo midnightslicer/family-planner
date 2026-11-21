@@ -202,7 +202,7 @@ blockquote {
 .nav-user form,
 .form-actions form,
 .task-actions form,
-.task-actions-end form,
+.sched-actions form,
 .invite-actions form,
 .checklist-header form,
 .checklist-step form,
@@ -844,24 +844,7 @@ tbody tr:hover { background: var(--surface-sunken); }
 .status-undone      { color: var(--status-undone);      background: var(--status-undone-bg);      border-color: var(--status-undone-border); }
 .status-completed   { color: var(--status-completed);   background: var(--status-completed-bg);   border-color: var(--status-completed-border); }
 
-/* ---------- Task cards ---------- */
-.task-list { display: grid; gap: 0.75rem; }
-
-.task-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  padding: 1.125rem 1.25rem;
-  transition: box-shadow var(--fast) ease, border-color var(--fast) ease, transform var(--medium) var(--ease-out);
-}
-.task-card:hover { box-shadow: var(--shadow); border-color: var(--border-strong); transform: translateY(-1px); }
-.task-card-in_progress { border-color: var(--status-in_progress-border); }
-.task-card-completed .task-title,
-.task-card-undone .task-title { color: var(--text-muted); }
-
-.task-title { font-size: 1rem; font-weight: 600; margin: 0 0 0.25rem; }
-
+/* ---------- Task meta (shared small print) ---------- */
 .task-meta {
   display: flex;
   align-items: center;
@@ -885,9 +868,9 @@ tbody tr:hover { background: var(--surface-sunken); }
   background: var(--accent-soft);
   padding: 0.1875rem 0.5rem;
   border-radius: var(--radius-pill);
-  margin-bottom: 0.75rem;
 }
 
+/* Action rows on cards (pet cards). */
 .task-actions {
   display: flex;
   align-items: center;
@@ -898,7 +881,6 @@ tbody tr:hover { background: var(--surface-sunken); }
 }
 .task-actions .btn { min-height: 36px; padding: 0.25rem 0.875rem; font-size: 0.875rem; }
 .task-actions .btn-icon { padding: 0; }
-.task-actions-end { display: flex; gap: 0.25rem; margin-left: auto; }
 
 /* ---------- Banners ---------- */
 .invite-banner {
@@ -1607,6 +1589,218 @@ fieldset.picker-field { margin-top: 0; margin-bottom: 1.25rem; }
 .number-input { max-width: 7rem; }
 .danger-zone { margin-top: 2rem; }
 
+
+/* ---------- Schedule ----------
+ * Availability is the first thing a card says: green "Free to call", amber
+ * "Text only", red "Do not disturb". Built from the status/danger tokens.
+ */
+.avail-free { color: var(--status-completed);   background: var(--status-completed-bg);   border-color: var(--status-completed-border); }
+.avail-text { color: var(--status-in_progress); background: var(--status-in_progress-bg); border-color: var(--status-in_progress-border); }
+.avail-busy { color: var(--danger);             background: var(--danger-bg);             border-color: var(--danger-border); }
+
+.person-status { display: grid; justify-items: start; gap: 0.375rem; }
+.person-now { margin: 0; color: var(--text); font-weight: 600; font-size: 0.9375rem; line-height: 1.35; }
+.person-next {
+  display: flex;
+  align-items: center;
+  gap: 0.4375rem;
+  margin: 0.625rem 0 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+.person-next .icon { color: var(--status-planned); width: 0.9375rem; height: 0.9375rem; }
+.person-card.is-busy::before { width: 8px; }
+.person-card.is-busy .person-avatar { animation: ring-pulse 2.4s ease-out infinite; }
+
+/* Whose schedule */
+.people-switch {
+  display: flex;
+  gap: 0.375rem;
+  margin: -0.25rem 0 1.5rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 0.25rem;
+}
+.people-switch::-webkit-scrollbar { display: none; }
+.people-switch a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: none;
+  min-height: 40px;
+  padding: 0.25rem 0.875rem 0.25rem 0.25rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  transition: color var(--fast) ease, border-color var(--fast) ease, background var(--fast) ease;
+}
+.people-switch a:hover { color: var(--text); border-color: var(--border-strong); text-decoration: none; }
+.people-switch a[aria-current="page"] { color: var(--text); border-color: var(--accent); background: var(--accent-soft); }
+.people-switch .person-avatar { width: 2rem; height: 2rem; font-size: 0.6875rem; box-shadow: none; }
+.family-avatar { --user-color: var(--accent); --user-fg: var(--accent-fg); }
+.family-avatar .icon { width: 55%; height: 55%; }
+
+/* Quick add */
+.quick-add {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+.quick-add:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft), var(--shadow); }
+.quick-add-row { display: flex; gap: 0.5rem; }
+.quick-add-row input { flex: 1; min-width: 0; border-color: transparent; font-size: 1.0625rem; background: var(--surface-sunken); }
+.quick-add-row input:focus { box-shadow: none; border-color: transparent; }
+.quick-add-more { margin-top: 0.5rem; }
+.quick-add-more > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  list-style: none;
+}
+.quick-add-more > summary::-webkit-details-marker { display: none; }
+.quick-add-more > summary:hover { color: var(--accent); background: var(--accent-soft); }
+.quick-add-more[open] > summary { color: var(--accent); margin-bottom: 0.75rem; }
+.quick-add-more[open] { padding: 0 0.25rem 0.25rem; animation: slide-down 260ms var(--ease-out); }
+.form-row-3 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr)); }
+.form-hint { margin: -0.5rem 0 1rem; }
+.form-hint small { display: block; }
+
+/* Now banner */
+.now-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  flex-wrap: wrap;
+  padding: 0.875rem 1.125rem;
+  margin-bottom: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--status-in_progress-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  animation: rise-in 420ms var(--ease-out) backwards;
+}
+.now-banner > div { flex: 1 1 12rem; display: grid; }
+.now-banner .banner-icon { color: var(--status-in_progress); background: var(--status-in_progress-bg); }
+.now-banner .banner-icon .icon { animation: none; }
+.now-banner.is-busy { border-color: var(--danger-border); }
+.now-banner.is-busy .banner-icon { color: var(--danger); background: var(--danger-bg); }
+.now-banner.is-free { border-color: var(--status-completed-border); }
+
+/* Schedule columns and rows */
+.schedule-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+.panel > h2 .count {
+  margin-left: auto;
+  min-width: 1.5rem;
+  padding: 0 0.4375rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.8125rem;
+  text-align: center;
+  color: var(--text-muted);
+  background: var(--surface-sunken);
+}
+
+.sched-list { list-style: none; margin: 0; padding: 0; display: grid; }
+ul.sched-list.panel { padding-block: 0.25rem; }
+.sched-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--border);
+}
+.sched-item:first-child { border-top: 0; }
+.sched-item.is-completed .sched-title,
+.sched-item.is-undone .sched-title { color: var(--text-muted); text-decoration: line-through; text-decoration-color: var(--border-strong); }
+.sched-item.is-past { opacity: 0.6; }
+.sched-item.is-now .sched-time { color: var(--status-in_progress); }
+
+.sched-check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-top: 0.0625rem;
+  padding: 0;
+  color: transparent;
+  background: var(--surface);
+  border: 2px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: border-color var(--fast) ease, color var(--fast) ease, background var(--fast) ease, transform var(--medium) var(--ease-spring);
+}
+.sched-check .icon { width: 1rem; height: 1rem; stroke-width: 3; }
+.sched-check:hover { color: var(--status-completed); border-color: var(--status-completed); transform: scale(1.1); }
+.sched-check:active { transform: scale(0.9); }
+.sched-check.is-checked { color: var(--status-completed); background: var(--status-completed-bg); border-color: var(--status-completed); cursor: default; }
+.is-undone .sched-check.is-checked { color: var(--text-muted); background: var(--surface-sunken); border-color: var(--border-strong); }
+.sched-item form:has(.sched-check) { display: contents; }
+
+.sched-time {
+  flex: none;
+  min-width: 5.5rem;
+  padding-top: 0.125rem;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--status-planned);
+  white-space: nowrap;
+}
+.sched-body { flex: 1; min-width: 0; display: grid; gap: 0.3125rem; }
+.sched-title { font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+.sched-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem 0.625rem; font-size: 0.8125rem; color: var(--text-muted); }
+.sched-meta:empty { display: none; }
+.sched-meta > span:not(.status-chip):not(.task-recurrence) { display: inline-flex; align-items: center; gap: 0.25rem; }
+.sched-meta .icon { width: 0.875rem; height: 0.875rem; }
+.sched-meta .status-chip { font-size: 0.75rem; padding: 0.125rem 0.5rem; }
+.sched-notes { font-size: 0.875rem; color: var(--text-muted); white-space: pre-line; }
+.sched-actions { flex: none; display: flex; gap: 0.125rem; opacity: 0.6; transition: opacity var(--fast) ease; }
+.sched-item:hover .sched-actions,
+.sched-actions:focus-within { opacity: 1; }
+.sched-actions .btn-icon { width: 34px; min-height: 34px; }
+
+.done-today { margin-top: 2rem; }
+.done-today > summary { display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600; color: var(--text-muted); }
+.done-today > summary .icon { color: var(--status-completed); }
+.done-today[open] > summary { margin-bottom: 0.5rem; }
+
+/* Family day */
+.family-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+.family-column { border-top: 4px solid var(--user-color); }
+.family-person { display: flex; align-items: center; gap: 0.625rem; color: var(--text); margin-bottom: 0.75rem; }
+.family-person:hover { text-decoration: none; }
+.family-person:hover .person-name { color: var(--accent); }
+.family-now { display: grid; justify-items: start; gap: 0.375rem; margin-bottom: 0.875rem; }
+.family-day { list-style: none; margin: 0 0 0.75rem; padding: 0; display: grid; gap: 0.5rem; font-size: 0.9375rem; }
+.family-day li { display: flex; gap: 0.625rem; }
+.family-day li.is-past { opacity: 0.55; }
+.family-day li.is-now { font-weight: 650; }
+.family-day .sched-time { min-width: 6.5rem; }
+.family-todos { margin: 0; }
+.family-todos small { display: inline-flex; align-items: center; gap: 0.375rem; }
+
 /* ---------- Icons & motion ----------
  * Icons come from IconsHelper as inline SVG stroked in currentColor, so they
  * take the colour of whatever text they sit in. Sized in em so they scale
@@ -1657,7 +1851,7 @@ form[aria-busy="true"] .btn {
 /* Cards rise in, one after another. A card replaced by a live broadcast
    (someone started a task) rises in again, which reads as "this changed". */
 .dashboard-grid > *,
-.task-list > *,
+.sched-list > *,
 .pet-grid > *,
 .place-grid > *,
 .pick-grid > *,
@@ -1665,11 +1859,11 @@ form[aria-busy="true"] .btn {
 .invite-banner {
   animation: rise-in 480ms var(--ease-out) backwards; /* not "both": a held end frame would block the hover lift */
 }
-.dashboard-grid > :nth-child(2), .task-list > :nth-child(2) { animation-delay: 50ms; }
-.dashboard-grid > :nth-child(3), .task-list > :nth-child(3) { animation-delay: 100ms; }
-.dashboard-grid > :nth-child(4), .task-list > :nth-child(4) { animation-delay: 150ms; }
-.dashboard-grid > :nth-child(5), .task-list > :nth-child(5) { animation-delay: 200ms; }
-.dashboard-grid > :nth-child(n+6), .task-list > :nth-child(n+6) { animation-delay: 250ms; }
+.dashboard-grid > :nth-child(2), .sched-list > :nth-child(2) { animation-delay: 40ms; }
+.dashboard-grid > :nth-child(3), .sched-list > :nth-child(3) { animation-delay: 80ms; }
+.dashboard-grid > :nth-child(4), .sched-list > :nth-child(4) { animation-delay: 120ms; }
+.dashboard-grid > :nth-child(5), .sched-list > :nth-child(5) { animation-delay: 160ms; }
+.dashboard-grid > :nth-child(n+6), .sched-list > :nth-child(n+6) { animation-delay: 200ms; }
 
 /* Confetti from the Done button (celebrate_controller.js). */
 .confetti {
@@ -1756,6 +1950,9 @@ form[aria-busy="true"] .btn {
   .page-header .header-actions .btn { flex: 1; }
   .sticky-actions .btn-wide { flex: 1; min-width: 0; }
   .pick-grid { grid-template-columns: repeat(auto-fill, minmax(6.25rem, 1fr)); }
+  .quick-add-row .btn span { display: none; }
+  .sched-time { min-width: 4.5rem; white-space: normal; }
+  .sched-actions { opacity: 1; }
 }
 
 /* ---------- Reduced motion ---------- */
@@ -1765,5 +1962,5 @@ form[aria-busy="true"] .btn {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
-  .btn:hover, .person-card:hover, .task-card:hover, .pet-card:hover, .place-card:hover, .pick-tile:hover { transform: none; }
+  .btn:hover, .person-card:hover, .pet-card:hover, .place-card:hover, .pick-tile:hover { transform: none; }
 }

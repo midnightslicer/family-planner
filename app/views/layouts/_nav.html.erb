@@ -3,7 +3,7 @@
             "aria-current": ("page" if user_signed_in? && (current_page?(dashboard_path) || current_page?(dashboard_root_path))) do %><%= icon(:house) %><span><%= app_name %></span><% end %>
 <% if current_user %>
   <div class="nav-links">
-    <%= link_to icon_label(:list, "Tasks"), tasks_path, "aria-current": ("page" if request.path.start_with?("/tasks")) %>
+    <%= link_to icon_label(:calendar, "Schedule"), tasks_path, "aria-current": ("page" if request.path.start_with?("/tasks")) %>
     <%= link_to icon_label(:paw, "Pets"), pets_path, "aria-current": ("page" if request.path.start_with?("/pets", "/locations")) %>
   </div>
   <% households = current_user.households.order(:name).to_a %>

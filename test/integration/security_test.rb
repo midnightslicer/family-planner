@@ -9,10 +9,11 @@ class SecurityTest < ActionDispatch::IntegrationTest
     @household = households(:smiths)
   end
 
-  test "task titles are escaped in turbo stream flash messages" do
+  test "task titles are escaped in flash messages and on the schedule" do
     sign_in @member
-    task = Task.create!(household: @household, title: "<img src=x onerror=alert(1)>", created_by: @member)
-    post start_task_path(task), headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    task = Task.create!(household: @household, title: "<img src=x onerror=alert(1)>", created_by: @member, assigned_to: @member)
+    post start_task_path(task)
+    follow_redirect!
     assert_response :success
     assert_no_match(/<img src=x/, response.body)
     assert_match(/&lt;img src=x/, response.body)

@@ -1,24 +1,96 @@
-<% content_for :title, "Tasks" %>
-<div class="page-header">
-  <h1>Tasks: <%= current_household.name %></h1>
-  <%= link_to new_task_path, class: "btn btn-primary" do %><%= icon_label(:plus, "Add a task") %><% end %>
-</div>
+<% content_for :title, "Schedule" %>
+<%= render "pets/live" %>
+<%= render "tasks/people_switch", members: @members, selected: @person || :family %>
 
-<% if @active_tasks.empty? && @done_tasks.empty? %>
-  <p class="empty-hint"><%= icon(:sparkles) %>No tasks yet. Add what you're doing or planning, and it shows up on your card on the board.</p>
-<% end %>
-
-<div class="task-list">
-  <% @active_tasks.each do |task| %>
-    <%= render "tasks/task_card", task: task %>
-  <% end %>
-</div>
-
-<% if @done_tasks.any? %>
-  <h2 class="section-title"><%= icon(:check_circle) %>Recently finished</h2>
-  <div class="task-list">
-    <% @done_tasks.each do |task| %>
-      <%= render "tasks/task_card", task: task %>
+<% if @family %>
+  <div class="page-header"><h1>Everyone's day</h1></div>
+  <div class="family-grid" data-controller="auto-refresh" data-auto-refresh-interval-value="60">
+    <% @family.each do |member, schedule| %>
+      <% status = @statuses[member.id] %>
+      <section class="family-column panel" style="--user-color: <%= member.color %>; --user-fg: <%= contrast_color(member.color) %>">
+        <%= link_to tasks_path(person: (member.id unless member == current_user)), class: "family-person" do %>
+          <span class="person-avatar" aria-hidden="true"><%= avatar_content(member) %></span>
+          <span class="person-name"><%= member.display_name %></span>
+        <% end %>
+        <div class="family-now">
+          <% if status[:current] %>
+            <%= availability_chip(status[:current]) %>
+            <p class="person-now"><%= now_line(status[:current]) %></p>
+          <% else %>
+            <span class="status-chip avail-free"><%= icon(:sun) %>Free</span>
+          <% end %>
+        </div>
+        <% if schedule.today.any? %>
+          <ol class="family-day">
+            <% schedule.today.each do |task| %>
+              <li class="<%= 'is-past' if task.past? %><%= ' is-now' if task.happening_at? %>">
+                <span class="sched-time"><%= time_range(task, with_day: :never) %></span>
+                <span><%= task.title %><%= " · #{task.place}" if task.place %></span>
+              </li>
+            <% end %>
+          </ol>
+        <% else %>
+          <p class="empty-hint">Nothing scheduled today.</p>
+        <% end %>
+        <p class="family-todos"><small><%= icon(:list) %><%= pluralize(schedule.todos.size, "thing") %> on their list</small></p>
+      </section>
     <% end %>
   </div>
+  <% if @anyone.any? %>
+    <h2 class="section-title"><%= icon(:users) %>For anyone</h2>
+    <ul class="sched-list"><%= render partial: "tasks/item", collection: @anyone, as: :task %></ul>
+  <% end %>
+<% else %>
+  <% me = @person == current_user
+     s = @schedule %>
+  <div class="page-header">
+    <h1><%= me ? "Your day" : "#{@person.display_name}'s day" %></h1>
+    <p><%= Date.current.strftime("%A, %B %-d") %></p>
+  </div>
+
+  <% if s.now %>
+    <div class="now-banner <%= "is-#{s.now.availability}" %>">
+      <span class="banner-icon"><%= icon(s.now.timed? ? :clock : :zap) %></span>
+      <div>
+        <strong><%= me ? "You're on" : "Now" %>: <%= s.now.title %></strong>
+        <small><%= s.now.timed? ? "until #{clock(s.now.finishes_at)}" : "started #{time_tag_ago(s.now.started_at || s.now.updated_at)}" %><%= " · #{s.now.place}" if s.now.place %></small>
+      </div>
+      <%= availability_chip(s.now) %>
+    </div>
+  <% end %>
+
+  <%= render "tasks/quick_add", task: @task %>
+
+  <div class="schedule-columns" data-controller="auto-refresh" data-auto-refresh-interval-value="60">
+    <section class="panel">
+      <h2><%= icon(:list) %><%= me ? "To do" : "On their list" %> <span class="count"><%= s.todos.size %></span></h2>
+      <% if s.todos.any? %>
+        <ul class="sched-list"><%= render partial: "tasks/item", collection: s.todos, as: :task %></ul>
+      <% else %>
+        <p class="empty-hint"><%= icon(:sparkles) %><%= me ? "Nothing on your list. Add anything above, as it comes to you." : "Their list is clear." %></p>
+      <% end %>
+    </section>
+
+    <section class="panel">
+      <h2><%= icon(:calendar) %>Today</h2>
+      <% if s.today.any? %>
+        <ul class="sched-list"><%= render partial: "tasks/item", collection: s.today, as: :task %></ul>
+      <% else %>
+        <p class="empty-hint">Nothing at a set time today.</p>
+      <% end %>
+    </section>
+  </div>
+
+  <% if s.later.any? %>
+    <h2 class="section-title"><%= icon(:calendar) %>Coming up</h2>
+    <ul class="sched-list panel"><%= render partial: "tasks/item", collection: s.later, as: :task, locals: { show_day: true } %></ul>
+  <% end %>
+
+  <% done = s.done.reject { |task| s.today.include?(task) } %>
+  <% if done.any? %>
+    <details class="done-today">
+      <summary><%= icon(:check_circle) %>Done today (<%= done.size %>)</summary>
+      <ul class="sched-list"><%= render partial: "tasks/item", collection: done, as: :task %></ul>
+    </details>
+  <% end %>
 <% end %>

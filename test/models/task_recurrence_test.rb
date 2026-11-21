@@ -73,13 +73,25 @@ class TaskRecurrenceTest < ActiveSupport::TestCase
     assert_equal 1, Task.where(title: "One-off").count
   end
 
-  test "start sets starts_at to now when nil" do
+  test "start records when it was started, leaving the scheduled time alone" do
     freeze_time = Time.zone.local(2026, 9, 23, 12, 0, 0)
     travel_to freeze_time do
       task = Task.create!(household: @household, title: "No start time")
       task.start!
       assert task.in_progress?
-      assert_equal freeze_time, task.starts_at
+      assert_equal freeze_time, task.started_at
+      assert_nil task.starts_at
+      assert_not task.timed?
+    end
+  end
+
+  test "a recurring to-do comes back on its next day, still without a time" do
+    travel_to Time.zone.local(2026, 11, 22, 9, 0) do
+      task = Task.create!(household: @household, title: "Vitamins", recurrence_interval: "daily")
+      task.complete!
+      copy = Task.where(title: "Vitamins").planned.sole
+      assert_nil copy.starts_at
+      assert_equal Date.new(2026, 11, 23), copy.due_on
     end
   end
 
@@ -93,9 +105,6 @@ class TaskRecurrenceTest < ActiveSupport::TestCase
 
   test "status transitions only move along allowed paths" do
     task = Task.create!(household: @household, title: "Flow")
-
-    assert_not task.complete!          # planned → completed forbidden
-    assert task.planned?
 
     assert task.start!
     assert task.in_progress?
@@ -122,7 +131,7 @@ class TaskRecurrenceTest < ActiveSupport::TestCase
     assert_not task.pause!             # planned → planned forbidden
 
     task.start!
-    started_at = task.starts_at
+    started_at = task.started_at
     assert_no_difference -> { Task.count } do   # pausing never spawns a recurrence
       assert task.pause!
     end
@@ -130,6 +139,14 @@ class TaskRecurrenceTest < ActiveSupport::TestCase
 
     assert task.start!
     assert task.in_progress?
-    assert_equal started_at, task.starts_at
+    assert_operator task.started_at, :>=, started_at
+  end
+
+  test "a planned to-do can be ticked off or skipped directly" do
+    ticked = Task.create!(household: @household, title: "Tick")
+    assert ticked.complete!
+    skipped = Task.create!(household: @household, title: "Skip")
+    assert skipped.cancel!
+    assert skipped.undone?
   end
 end

@@ -18,20 +18,31 @@ class Household < ApplicationRecord
     users.order(:display_name)
   end
 
-  # For every member, their current (in-progress) and next (planned) task and
-  # where they last said they were, in two queries instead of a few per card.
-  # Returns { user_id => { current: Task, next: Task, location: LocationReport } }.
-  def member_statuses
+  # For every member, what they're doing now, their next event within the
+  # week, and where they last said they were, in two queries instead of a
+  # few per card. "Now" is an event whose time has come, else a to-do they
+  # started. Returns { user_id => { current:, next:, location: } }.
+  def member_statuses(now = Time.current)
     statuses = Hash.new { |hash, key| hash[key] = {} }
-    tasks.where(status: [:in_progress, :planned]).where.not(assigned_to_id: nil)
-         .order(:starts_at, :id).each do |task|
-      slot = task.in_progress? ? :current : :next
-      statuses[task.assigned_to_id][slot] ||= task
+    open_tasks = tasks.open.where.not(assigned_to_id: nil)
+                      .where("status = :doing OR (starts_at < :horizon AND COALESCE(ends_at, starts_at) >= :earliest)",
+                             doing: Task.statuses[:in_progress], horizon: now + 7.days, earliest: now - Task::DEFAULT_LENGTH)
+                      .order(:starts_at, :id).to_a
+    open_tasks.group_by(&:assigned_to_id).each do |user_id, items|
+      statuses[user_id][:current] = items.find { |task| task.happening_at?(now) } || items.find(&:in_progress?)
+      statuses[user_id][:next] = items.find { |task| task.timed? && task.planned? && task.starts_at > now }
     end
     LocationReport.latest_for(self, "User", users.select(:id)).each do |user_id, report|
       statuses[user_id][:location] = report
     end
     statuses
+  end
+
+  # Recurring events that ended unmarked move on to their next time. Run
+  # before showing schedules (and by ScheduleTickJob in production).
+  def roll_recurring_events!(now = Time.current)
+    tasks.planned.timed.where.not(recurrence_interval: "")
+         .where("COALESCE(ends_at, starts_at) <= ?", now).find_each { |task| task.roll_forward!(now) }
   end
 
   # Asks every open page subscribed to `turbo_stream_from household, :members`

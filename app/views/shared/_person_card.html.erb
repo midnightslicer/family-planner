@@ -1,35 +1,37 @@
 <%# Shared person card: identical on the authenticated dashboard, the public
     kiosk wall and live broadcasts. Locals: user, household, and optionally
     status ({ current:, next:, location: } from Household#member_statuses,
-    which pages compute once for every card). The name links to their
-    profile; the wall makes links inert. %>
+    which pages compute once for every card). It answers "can I reach them
+    right now?" first, then what they're doing, what's next and where they
+    are. The name links to their schedule; the wall makes links inert. %>
 <% status = local_assigns[:status] || household.member_statuses[user.id]
    current_task = status[:current]
-   next_planned = status[:next]
-   here = status[:location] %>
-<div class="person-card<%= ' is-busy' if current_task %>"
+   next_event = status[:next]
+   here = status[:location]
+   reachable = current_task.nil? || current_task.availability_free? %>
+<div class="person-card<%= ' is-busy' unless reachable %><%= " is-#{current_task.availability}" if current_task %>"
      id="<%= dom_id(user, :person_card) %>"
      data-user-id="<%= user.id %>"
      style="--user-color: <%= user.color %>; --user-fg: <%= contrast_color(user.color) %>">
   <div class="person-identity">
     <span class="person-avatar" aria-hidden="true"><%= avatar_content(user) %></span>
     <span class="person-meta">
-      <%= link_to user.display_name, person_path(user), class: "person-name" %>
+      <%= link_to user.display_name, tasks_path(person: user.id), class: "person-name" %>
       <span class="person-handle">@<%= user.handle %></span>
     </span>
     <%= icon(:cake, label: "Birthday today", class: "birthday-cake") if birthday_today?(user.birthday) %>
   </div>
   <div class="person-status">
-    <%# The live dot comes from CSS (.status-in_progress::before); the other
-        states carry an icon instead. %>
     <% if current_task %>
-      <span class="status-chip status-in_progress">Busy: <%= current_task.title %></span>
-    <% elsif next_planned %>
-      <span class="status-chip status-planned"><%= icon(:clock) %>Up next: <%= next_planned.title %></span>
+      <%= availability_chip(current_task) %>
+      <p class="person-now"><%= now_line(current_task) %></p>
     <% else %>
-      <span class="status-chip status-completed"><%= icon(:sun) %>Free</span>
+      <span class="status-chip avail-free"><%= icon(:sun) %>Free</span>
     <% end %>
   </div>
+  <% if next_event %>
+    <p class="person-next"><%= icon(:clock) %><span>Next: <%= next_line(next_event) %></span></p>
+  <% end %>
   <% if here %>
     <p class="person-where">
       <%= location_icon(here.location) %>

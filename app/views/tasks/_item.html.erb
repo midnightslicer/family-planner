@@ -1,0 +1,52 @@
+<%# One row on a schedule. To-dos have a tick-off circle; events show their
+    time. Locals: task, show_day (events not today show their day). %>
+<% editable = [task.created_by_id, task.assigned_to_id].include?(current_user.id) || current_user.admin?
+   past = task.past? %>
+<li class="sched-item <%= task.timed? ? 'sched-event' : 'sched-todo' %> is-<%= task.status %><%= ' is-past' if past && task.open? %><%= ' is-now' if task.happening_at? %>"
+    id="<%= dom_id(task) %>">
+  <% if task.timed? %>
+    <span class="sched-time"><%= time_range(task, with_day: local_assigns[:show_day] ? :unless_today : :never) %></span>
+  <% elsif task.open? %>
+    <%= button_to complete_task_path(task), method: :post, class: "sched-check", title: "Mark done", "aria-label": "Mark #{task.title} done",
+                  data: { controller: "celebrate", action: "click->celebrate#burst" } do %><%= icon(:check) %><% end %>
+  <% else %>
+    <span class="sched-check is-checked" aria-hidden="true"><%= icon(task.completed? ? :check : :skip) %></span>
+  <% end %>
+
+  <div class="sched-body">
+    <span class="sched-title"><%= task.title %></span>
+    <span class="sched-meta">
+      <% if task.in_progress? %><span class="status-chip status-in_progress">Doing</span><% end %>
+      <% if task.happening_at? %><span class="status-chip status-in_progress">Now</span><% end %>
+      <% if task.timed? || task.in_progress? %><%= availability_chip(task) %><% end %>
+      <% if task.place %><span><%= icon(:map_pin) %><%= task.place %></span><% end %>
+      <% if task.due_on && !task.timed? %><span><%= icon(:calendar) %><%= day_name(task.due_on) %></span><% end %>
+      <% unless task.recurs_no_recurrence? %><span class="task-recurrence"><%= icon(:repeat) %><%= task.recurrence_interval.humanize.downcase %></span><% end %>
+      <% if task.created_by && task.created_by != task.assigned_to %><span><%= icon(:user) %>from <%= task.created_by.display_name %></span><% end %>
+    </span>
+    <% if task.description.present? %><span class="sched-notes"><%= task.description %></span><% end %>
+  </div>
+
+  <div class="sched-actions">
+    <% if task.open? && !task.timed? %>
+      <% if task.in_progress? %>
+        <%= button_to pause_task_path(task), method: :post, class: "btn btn-quiet btn-icon", title: "Pause", "aria-label": "Pause" do %><%= icon(:pause) %><% end %>
+      <% else %>
+        <%= button_to start_task_path(task), method: :post, class: "btn btn-quiet btn-icon", title: "I'm doing this now", "aria-label": "Start #{task.title}" do %><%= icon(:play) %><% end %>
+      <% end %>
+    <% elsif task.open? && task.timed? %>
+      <%= button_to complete_task_path(task), method: :post, class: "btn btn-quiet btn-icon", title: "Mark done", "aria-label": "Mark #{task.title} done" do %><%= icon(:check) %><% end %>
+    <% elsif task.restartable? %>
+      <%= button_to start_task_path(task), method: :post, class: "btn btn-quiet btn-icon", title: "Do it after all", "aria-label": "Restart #{task.title}" do %><%= icon(:undo) %><% end %>
+    <% end %>
+    <% if editable %>
+      <%= link_to edit_task_path(task), class: "btn btn-quiet btn-icon", title: "Edit", "aria-label": "Edit #{task.title}" do %><%= icon(:pencil) %><% end %>
+    <% end %>
+    <% if task.open? %>
+      <%= button_to cancel_task_path(task), method: :post, class: "btn btn-quiet btn-icon btn-icon-danger", title: "Skip", "aria-label": "Skip #{task.title}" do %><%= icon(:x) %><% end %>
+    <% elsif editable %>
+      <%= button_to task_path(task), method: :delete, class: "btn btn-quiet btn-icon btn-icon-danger", title: "Delete", "aria-label": "Delete #{task.title}",
+                    form: { data: { turbo_confirm: "Delete this for good?" } } do %><%= icon(:trash) %><% end %>
+    <% end %>
+  </div>
+</li>

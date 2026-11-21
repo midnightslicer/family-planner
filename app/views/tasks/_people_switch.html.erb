@@ -1,0 +1,14 @@
+<%# Whose schedule: you, anyone else, or the whole family. Locals: members, selected (a user or :family). %>
+<nav class="people-switch" aria-label="Whose schedule">
+  <% members.sort_by { |m| m == current_user ? 0 : 1 }.each do |member| %>
+    <%= link_to tasks_path(person: (member.id unless member == current_user)),
+                "aria-current": ("page" if selected == member),
+                style: "--user-color: #{member.color}; --user-fg: #{contrast_color(member.color)}" do %>
+      <span class="person-avatar" aria-hidden="true"><%= avatar_content(member) %></span>
+      <span><%= member == current_user ? "Me" : member.display_name.split.first %></span>
+    <% end %>
+  <% end %>
+  <%= link_to tasks_path(person: "family"), "aria-current": ("page" if selected == :family) do %>
+    <span class="person-avatar family-avatar" aria-hidden="true"><%= icon(:users) %></span><span>Family</span>
+  <% end %>
+</nav>
