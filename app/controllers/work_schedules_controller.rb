@@ -23,7 +23,8 @@ class WorkSchedulesController < ApplicationController
         day = days.fetch(weekday.to_s, {})
         shift = managed_person.work_shifts.find_or_initialize_by(weekday: weekday)
         if day["on"] == "1"
-          shift.assign_attributes(from_time: day["from_time"], until_time: day["until_time"], place: day["place"])
+          place = day["place"] == Location::NEW ? day["place_other"] : day["place"]
+          shift.assign_attributes(from_time: day["from_time"], until_time: day["until_time"], place: place)
           errors.concat(shift.errors.full_messages.map { |m| "#{Date::DAYNAMES[weekday]}: #{m}" }) unless shift.save
         elsif shift.persisted?
           shift.destroy!

@@ -3,6 +3,9 @@
 # midnight.
 class WorkShift < ApplicationRecord
   TIME_FORMAT = /\A([01]\d|2[0-3]):[0-5]\d\z/
+  # Where people usually work, offered before the household's houses. Just
+  # labels: unlike locations, nobody can be reported "at" them.
+  PLACES = %w[Office Remote].freeze
 
   belongs_to :user
 

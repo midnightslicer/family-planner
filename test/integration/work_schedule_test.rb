@@ -38,6 +38,25 @@ class WorkScheduleTest < ActionDispatch::IntegrationTest
     assert_equal [1, 2, 3, 4], @member.work_shifts.reload.pluck(:weekday)
   end
 
+  test "work place is picked from Office, Remote and your houses, or typed under Other" do
+    sign_in @member
+    get edit_work_schedule_path
+    assert_select "select[name='work_schedule[days][1][place]'] option", text: "Office"
+    assert_select "select[name='work_schedule[days][1][place]'] option", text: "Little house"
+
+    patch work_schedule_path, params: { work_schedule: { days: {
+      "1" => { on: "1", from_time: "09:00", until_time: "17:00", place: "Office" },
+      "2" => { on: "1", from_time: "09:00", until_time: "17:00", place: "new", place_other: "Client site" }
+    } } }
+    assert_equal ["Office", "Client site"], @member.work_shifts.order(:weekday).pluck(:place)
+    assert_equal 1, @smiths.locations.count, "Office is only a label, not a location"
+
+    get edit_work_schedule_path
+    assert_select "select[name='work_schedule[days][1][place]'] option[selected]", text: "Office"
+    assert_select "select[name='work_schedule[days][2][place]'] option[selected]", text: "Other…"
+    assert_select "input[name='work_schedule[days][2][place_other]'][value='Client site']"
+  end
+
   test "a bad time is explained and nothing changes" do
     sign_in @member
     patch work_schedule_path, params: { work_schedule: { days: { "1" => { on: "1", from_time: "nine", until_time: "17:00" } } } }

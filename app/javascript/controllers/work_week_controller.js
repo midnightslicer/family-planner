@@ -3,7 +3,7 @@ import { Controller } from "@hotwired/stimulus"
 // Work schedule: "Copy Monday to Tuesday–Friday", the usual week in one
 // tap. Rows are Monday first.
 export default class extends Controller {
-  static targets = ["day", "on", "from", "until", "place", "tools"]
+  static targets = ["day", "on", "from", "until", "place", "placeOther", "tools"]
 
   connect() {
     this.toolsTarget.hidden = false
@@ -15,6 +15,7 @@ export default class extends Controller {
       this.fromTargets[i].value = this.fromTargets[0].value
       this.untilTargets[i].value = this.untilTargets[0].value
       this.placeTargets[i].value = this.placeTargets[0].value
+      this.placeOtherTargets[i].value = this.placeOtherTargets[0].value
     }
   }
 }

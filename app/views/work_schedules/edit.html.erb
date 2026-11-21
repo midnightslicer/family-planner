@@ -23,20 +23,33 @@
           <span class="work-day-to" aria-hidden="true">to</span>
           <label class="visually-hidden" for="work_<%= weekday %>_until"><%= Date::DAYNAMES[weekday] %> until</label>
           <input type="time" id="work_<%= weekday %>_until" name="<%= name %>[until_time]" value="<%= shift&.until_time || "17:00" %>" step="900" data-work-week-target="until">
-          <label class="visually-hidden" for="work_<%= weekday %>_place"><%= Date::DAYNAMES[weekday] %>: where</label>
-          <input type="text" id="work_<%= weekday %>_place" name="<%= name %>[place]" value="<%= shift&.place %>" maxlength="60"
-                 list="work-places" placeholder="Where? (Remote, Office…)" autocomplete="off" data-work-week-target="place">
+          <%# A short list (Office, Remote, your houses) plus "Other…" for
+              anything else. None of these become locations: it's only a label. %>
+          <% choices = WorkShift::PLACES + @locations.select(&:house?).map(&:name)
+             current = shift&.place
+             other = current.present? && choices.none? { |c| c.casecmp?(current) } %>
+          <div class="work-day-place new-place-host">
+            <label class="visually-hidden" for="work_<%= weekday %>_place"><%= Date::DAYNAMES[weekday] %>: where</label>
+            <select id="work_<%= weekday %>_place" name="<%= name %>[place]" data-work-week-target="place">
+              <option value="">Where?</option>
+              <% choices.each do |choice| %>
+                <option value="<%= choice %>" <%= "selected" if current&.casecmp?(choice) %>><%= choice %></option>
+              <% end %>
+              <option value="new" <%= "selected" if other %>>Other…</option>
+            </select>
+            <span class="new-place-field">
+              <label class="visually-hidden" for="work_<%= weekday %>_place_other"><%= Date::DAYNAMES[weekday] %>: other place</label>
+              <input type="text" id="work_<%= weekday %>_place_other" name="<%= name %>[place_other]" value="<%= current if other %>"
+                     maxlength="60" placeholder="e.g. Client site" autocomplete="off" data-work-week-target="placeOther">
+            </span>
+          </div>
         </div>
       <% end %>
     </div>
-    <datalist id="work-places">
-      <option value="Remote">
-      <% @locations.each do |location| %><option value="<%= location.name %>"><% end %>
-    </datalist>
     <div class="work-week-tools" hidden data-work-week-target="tools">
       <button type="button" class="btn btn-small btn-quiet" data-action="work-week#copyMonday"><%= icon_label(:repeat, "Copy Monday to Tuesday–Friday") %></button>
     </div>
-    <small>Working from one of your locations (like "Little house")? Pick it and you'll show as there during work hours.</small>
+    <small>Office and Remote are just labels on the work hours. Pick one of your houses instead and you'll show as there while working.</small>
   </fieldset>
 
   <fieldset class="form-field">

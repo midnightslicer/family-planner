@@ -1928,6 +1928,9 @@ ul.sched-list.panel { padding: 0.25rem clamp(1.125rem, 3vw, 1.5rem); }
 }
 .work-day:not(:has(input[type="checkbox"]:checked)) > input { opacity: 0.4; }
 .work-day input[type="time"] { padding-inline: 0.625rem; }
+.work-day-place { display: grid; gap: 0.375rem; min-width: 0; }
+.work-day-place .new-place-field { margin-top: 0; }
+.work-day:not(:has(input[type="checkbox"]:checked)) .work-day-place { opacity: 0.4; }
 form:has(.work-days) { max-width: 860px; }
 .work-day-name { display: flex; align-items: center; gap: 0.25rem; font-weight: 600; cursor: pointer; }
 .work-day-to { font-size: 0.875rem; color: var(--text-muted); }
@@ -2169,7 +2172,7 @@ form[aria-busy="true"] .btn {
   .work-day { grid-template-columns: 1fr 1fr; }
   .work-day-name { grid-column: 1 / -1; }
   .work-day-to { display: none; }
-  .work-day > input[type="text"] { grid-column: 1 / -1; }
+  .work-day-place { grid-column: 1 / -1; }
 }
 
 /* ---------- Reduced motion ---------- */
