@@ -25,7 +25,11 @@
             <h2><%= location.name %></h2>
             <%= link_to edit_location_path(location), class: "btn btn-quiet btn-icon", title: "Edit", "aria-label": "Edit #{location.name}" do %><%= icon(:pencil) %><% end %>
           </div>
-          <p class="task-meta"><span><%= location_icon(location) %><%= location_kind_label(location.kind) %></span></p>
+          <p class="task-meta"><span><%= location_icon(location) %><%= location_kind_label(location.kind) %></span>
+            <% if (residents = @residents[location.id]).present? %>
+              <span><%= icon(:house) %>Home to <%= residents.map { |who| who.is_a?(Pet) ? who.name : who.display_name.split.first }.to_sentence %></span>
+            <% end %>
+          </p>
           <% if here.any? %>
             <ul class="here-now" aria-label="Here now">
               <% here.each do |who| %>

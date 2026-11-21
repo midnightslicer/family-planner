@@ -26,6 +26,19 @@
         <%= f.date_field :birthday, max: Date.current %>
         <small>Your age shows on your profile, and the board celebrates the day.</small>
       </div>
+      <% if current_household %>
+        <% houses = current_household.locations.where(kind: "house").order(:name)
+           home = current_user.home_in(current_household) %>
+        <div class="form-field new-place-host">
+          <%= label_tag :home_id, "I live at" %>
+          <%= select_tag :home_id, options_for_select([["Not set", ""]] + houses.map { |h| [h.name, h.id] } + [["New house…", Location::NEW]], home&.id) %>
+          <div class="new-place-field">
+            <%= label_tag :new_home_name, "Name of the house" %>
+            <%= text_field_tag :new_home_name, nil, maxlength: 40, placeholder: "e.g. Red Brick House", autocomplete: "off" %>
+          </div>
+          <small>The board groups people and pets by house.</small>
+        </div>
+      <% end %>
       <fieldset class="form-field">
         <legend>Color</legend>
         <%= render "shared/color_picker", form: f %>

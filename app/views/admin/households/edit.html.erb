@@ -10,12 +10,20 @@
   <h2>Members</h2>
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Name</th><th>Email</th><th></th></tr></thead>
+      <thead><tr><th>Name</th><th>Email</th><th>Lives at</th><th></th></tr></thead>
       <tbody>
         <% @members.each do |membership| %>
           <tr>
             <td><%= membership.user.display_name %></td>
             <td><%= membership.user.email %></td>
+            <td>
+              <%= form_with model: membership, url: admin_household_membership_path(@household, membership), method: :patch,
+                            data: { controller: "autosubmit" } do |f| %>
+                <%= f.label :home_id, "#{membership.user.display_name} lives at", class: "visually-hidden", for: "home_#{membership.id}" %>
+                <%= f.select :home_id, options_for_select([["Not set", ""]] + @household.locations.where(kind: "house").order(:name).map { |h| [h.name, h.id] }, membership.home_id),
+                             {}, id: "home_#{membership.id}", data: { action: "change->autosubmit#submit" } %>
+              <% end %>
+            </td>
             <td class="table-actions">
               <%= button_to "Remove", admin_household_membership_path(@household, membership), method: :delete,
                             class: "btn btn-danger btn-small",

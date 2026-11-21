@@ -37,7 +37,9 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
 - `app/models/`: `User` (Devise + `handle`, `color`, `admin`, TOTP fields,
   `webauthn_id`), `Passkey` (WebAuthn public keys), `Household`
   (`dashboard_token` for the public wall; `member_statuses` loads every
-  card's tasks in one query; `broadcast_member_cards`), `HouseholdMembership`,
+  card's tasks in one query; `broadcast_member_cards`), `HouseholdMembership` (`home`: the house, a household location, they
+  live in; `Household#by_house` groups people and pets by it for the
+  board),
   `Invitation` (SHA-256 token digest, expiry, optional email, atomic
   `accept!`), `Task` (a schedule item: a *to-do* with no time, optionally
   `due_on` a day, or an *event* with `starts_at`/`ends_at` and a `place`;

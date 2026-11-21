@@ -11,6 +11,8 @@ class LocationsController < ApplicationController
     pet_reports = LocationReport.latest_for(current_household, "Pet", @pets.map(&:id))
     @members = current_household.members_by_name.with_attached_avatar
     statuses = current_household.member_statuses
+    homes = current_household.household_memberships.pluck(:user_id, :home_id).to_h
+    @residents = (@members.to_a + @pets.to_a).group_by { |who| who.is_a?(Pet) ? who.home_id : homes[who.id] }
     @here = Hash.new { |hash, key| hash[key] = [] }
     @pets.each { |pet| @here[pet_reports[pet.id]&.location_id] << pet if pet_reports[pet.id] }
     # A person is where their current event is, if it's at one of these

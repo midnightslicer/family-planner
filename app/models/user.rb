@@ -74,6 +74,11 @@ class User < ApplicationRecord
     days_off.find { |off| off.covers?(date) }
   end
 
+  # The house they live in, in this household.
+  def home_in(household)
+    household_memberships.find_by(household: household)&.home
+  end
+
   def member_of?(household)
     households.exists?(household.id)
   end

@@ -80,7 +80,7 @@ Rails.application.routes.draw do
     root to: "households#index", as: :root
     resources :households, only: [:index, :create, :edit, :update, :destroy] do
       post :regenerate_wall_link, on: :member
-      resources :memberships, only: :destroy
+      resources :memberships, only: [:update, :destroy]
     end
     resources :invitations, only: [:index, :new, :create, :show, :destroy] do
       post :resend, on: :member

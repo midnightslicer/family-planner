@@ -4,8 +4,16 @@
 
 <% if @family %>
   <div class="page-header"><h1>Everyone's day</h1></div>
-  <div class="family-grid" data-controller="auto-refresh" data-auto-refresh-interval-value="60">
-    <% @family.each do |member, schedule| %>
+  <% groups = current_household.by_house(@members, []).reject { |_, people, _| people.empty? }
+     grouped = groups.any? { |house, _, _| house } %>
+  <div data-controller="auto-refresh" data-auto-refresh-interval-value="60">
+  <% groups.each do |house, people, _| %>
+  <% if grouped %>
+    <h2 class="house-title"><% if house %><%= location_picture(house) %><%= house.name %><% else %><span class="place-photo"><%= icon(:map_pin) %></span>No house set<% end %></h2>
+  <% end %>
+  <div class="family-grid">
+    <% people.each do |member| %>
+      <% schedule = @family.fetch(member) %>
       <% status = @statuses[member.id] %>
       <section class="family-column panel" style="--user-color: <%= member.color %>; --user-fg: <%= contrast_color(member.color) %>">
         <%= link_to tasks_path(person: (member.id unless member == current_user)), class: "family-person" do %>
@@ -39,6 +47,8 @@
         <% end %>
       </section>
     <% end %>
+  </div>
+  <% end %>
   </div>
   <% if @anyone.any? %>
     <h2 class="section-title"><%= icon(:users) %>For anyone</h2>

@@ -18,6 +18,18 @@ class Household < ApplicationRecord
     users.order(:display_name)
   end
 
+  # People and pets grouped by the house they live in, houses in display
+  # order, then anyone without one: [[house or nil, members, pets], ...].
+  # Empty groups are left out.
+  def by_house(members = members_by_name.to_a, pets = self.pets.by_name.to_a)
+    homes = household_memberships.pluck(:user_id, :home_id).to_h
+    houses = locations.in_display_order.to_a
+    groups = houses.map { |house| [house, members.select { |m| homes[m.id] == house.id }, pets.select { |p| p.home_id == house.id }] }
+    housed = houses.map(&:id)
+    groups << [nil, members.reject { |m| housed.include?(homes[m.id]) }, pets.reject { |p| housed.include?(p.home_id) }]
+    groups.reject { |_, people, animals| people.empty? && animals.empty? }
+  end
+
   # For every member, what they're doing now, what's next, whether they're
   # off today and where they are, in a fixed handful of queries rather than
   # a few per card. "Now" is an event whose time has come, else a to-do

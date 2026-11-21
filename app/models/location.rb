@@ -9,6 +9,7 @@ class Location < ApplicationRecord
   belongs_to :created_by, class_name: "User", optional: true
   has_many :location_reports, dependent: :nullify
   has_many :tasks, dependent: :nullify
+  has_many :residents, class_name: "HouseholdMembership", foreign_key: :home_id, inverse_of: :home, dependent: :nullify
   has_many :pets_living_here, class_name: "Pet", foreign_key: :home_id, inverse_of: :home, dependent: :nullify
 
   small_photo :photo

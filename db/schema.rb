@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_22_030000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_22_040000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -65,6 +65,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_030000) do
     t.integer "household_id", null: false
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
+    t.integer "home_id"
+    t.index ["home_id"], name: "index_household_memberships_on_home_id"
     t.index ["household_id"], name: "index_household_memberships_on_household_id"
     t.index ["user_id", "household_id"], name: "index_household_memberships_on_user_id_and_household_id", unique: true
     t.index ["user_id"], name: "index_household_memberships_on_user_id"
@@ -250,6 +252,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_030000) do
   add_foreign_key "feedings", "pets"
   add_foreign_key "feedings", "users", column: "fed_by_id"
   add_foreign_key "household_memberships", "households"
+  add_foreign_key "household_memberships", "locations", column: "home_id"
   add_foreign_key "household_memberships", "users"
   add_foreign_key "invitations", "households"
   add_foreign_key "invitations", "users", column: "invited_by_id"
