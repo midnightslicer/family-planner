@@ -39,9 +39,14 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   (`dashboard_token` for the public wall; `member_statuses` loads every
   card's tasks in one query; `broadcast_member_cards`), `HouseholdMembership`,
   `Invitation` (SHA-256 token digest, expiry, optional email, atomic
-  `accept!`), `Task` (status enum: `planned`, `in_progress`, `undone`,
-  `completed`; recurrence; broadcasts cards and assignee notifications after
-  commit), `Setting` (encrypted key/value, cached per request in `Current`),
+  `accept!`), `Task` (a schedule item: a *to-do* with no time, optionally
+  `due_on` a day, or an *event* with `starts_at`/`ends_at` and a `place`;
+  `availability` free/text/busy says how reachable the person is while it's
+  on; status enum `planned`, `in_progress`, `undone`, `completed`;
+  `started_at` stamps "doing it now"; recurrence, with `roll_forward!`
+  moving ended recurring events on; broadcasts cards and assignee
+  notifications after commit), `PersonSchedule` (one person's now / to-dos
+  / today / later / done, in one query), `Setting` (encrypted key/value, cached per request in `Current`),
   `AppSettings` (app name/URL, SMTP and setup code, Setting then ENV),
   `GettingStarted` (the dashboard checklist), and the pets feature:
   `Location` (a place: house/yard/pasture/pool/other, with a photo),
@@ -97,8 +102,16 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   - tables: `table-wrap` (scroll container) + bare `table`, `table-actions`
   - components: `dashboard-grid`, `person-card` > `person-identity` >
     `person-avatar` + `person-meta` > `person-name` + `person-handle`, then
-    `person-status`; `status-chip status-*`; `task-list`, `task-card`,
-    `task-title`, `task-meta`, `task-recurrence`, `task-actions`;
+    `person-status` (> `person-now`), `person-next`; `status-chip status-*`
+    and `status-chip avail-free|avail-text|avail-busy` (availability);
+    `task-meta`, `task-recurrence`, `task-actions`; the schedule:
+    `people-switch`, `quick-add` (> `quick-add-row`, `quick-add-more`),
+    `now-banner`, `schedule-columns`, `sched-list` > `sched-item`
+    (`sched-todo`/`sched-event`, `is-<status>`, `is-past`, `is-now`) >
+    `sched-check` or `sched-time`, `sched-body` (`sched-title`, `sched-meta`,
+    `sched-notes`), `sched-actions`; `done-today`; `family-grid` >
+    `family-column` (`family-person`, `family-now`, `family-day`,
+    `family-todos`); `avail-options`, `form-row-3`, `form-hint`;
     `invite-banner` + `invite-actions`; `color-picker` > `palette` > `swatch`
     and `custom-color`; `avatar-picker` > `avatar-preview` + `avatar-controls`, and the
     `crop-dialog` (`crop-hint`, `crop-stage` canvas, `crop-zoom`); `checklist` > `checklist-header` + `checklist-steps`
@@ -128,8 +141,8 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   - icons & motion: `icon(:name)` / `icon_label(:name, "Text")` from
     `IconsHelper` render inline SVG with `icon icon-<name>` (add new icons to
     `IconsHelper::ICONS`); `flash_message` renders a flash with its icon.
-    `btn-success` (Done), `btn-icon` (+ `btn-icon-danger`), `task-actions-end`,
-    `task-card-<status>`, `person-card.is-busy` (pulsing avatar),
+    `btn-success` (Done), `btn-icon` (+ `btn-icon-danger`),
+    `person-card.is-busy` (pulsing avatar: not free to call),
     `banner-icon`, `checklist-progress` (`--progress`), and `.confetti` from
     the `celebrate` Stimulus controller. Motion uses the `--ease-*`, `--fast`,
     `--medium` tokens; entrance animations use fill-mode `backwards`, never
@@ -172,6 +185,14 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   flashes unescaped).
 - Status colors: blue planned, amber in_progress, gray undone, green
   completed, set via `--status-*` custom properties in application.css.
+  Availability reuses them: green free, amber text only, red (danger)
+  do not disturb.
+- The Schedule lives at `/tasks` (`?person=<id>` or `?person=family`).
+  Every task action redirects back and the page morphs in place; there are
+  no task turbo-stream responses. A card's "now" is computed from the
+  clock, so the dashboard and schedule refresh every minute
+  (`auto-refresh` interval) and `ScheduleTickJob` (production, every
+  minute) broadcasts refreshes when events start or end.
 - Per-user color arrives as inline `--user-color` / `--user-fg` on
   `.person-card`; accents use `color-mix(...)`, so don't hardcode hexes.
 

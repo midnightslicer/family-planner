@@ -7,7 +7,7 @@
   <div class="quick-add-row">
     <%= f.label :title, mine ? "Add to your list" : "Add to #{task.assigned_to.display_name}'s list", class: "visually-hidden" %>
     <%= f.text_field :title, required: true, maxlength: 120, autocomplete: "off", enterkeyhint: "done",
-                     placeholder: mine ? "Add something… (call the doctor, church at 10)" : "Add something for #{task.assigned_to.display_name}…",
+                     placeholder: mine ? "Add something… (call the doctor, research flights)" : "Add something for #{task.assigned_to.display_name}…",
                      data: { quick_add_target: "title" } %>
     <%= f.button type: "submit", class: "btn btn-primary" do %><%= icon_label(:plus, "Add") %><% end %>
   </div>

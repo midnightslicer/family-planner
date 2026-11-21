@@ -32,7 +32,9 @@
         <% else %>
           <p class="empty-hint">Nothing scheduled today.</p>
         <% end %>
-        <p class="family-todos"><small><%= icon(:list) %><%= pluralize(schedule.todos.size, "thing") %> on their list</small></p>
+        <% if schedule.todos.any? %>
+          <p class="family-todos"><small><%= icon(:list) %><%= pluralize(schedule.todos.size, "to-do") %></small></p>
+        <% end %>
       </section>
     <% end %>
   </div>
