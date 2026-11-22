@@ -22,6 +22,46 @@ class PasskeyTest < ActionDispatch::IntegrationTest
     assert passkey.reload.last_used_at
   end
 
+  # Regression: Devise's remember-me cookie came from the password hash, so
+  # an account with no password crashed (500) on passkey sign-in.
+  test "an account with only a passkey signs in with it and stays signed in" do
+    sign_in @member
+    authenticator = register_passkey
+    @member.update_column(:encrypted_password, "")
+    assert_not @member.reload.password_set?
+
+    delete destroy_user_session_path
+    sign_in_with_passkey(authenticator)
+    assert_response :success
+    assert cookies["remember_user_token"].present?
+
+    get dashboard_path
+    assert_response :success
+  end
+
+  test "an account with only a passkey can get back in by email and set a password" do
+    @member.update_column(:encrypted_password, "")
+
+    perform_enqueued_jobs do
+      post user_password_path, params: { user: { email: @member.email } }
+    end
+    mail = ActionMailer::Base.deliveries.last
+    assert_equal [@member.email], mail.to
+    token = mail.body.encoded[/reset_password_token=([^"&\s]+)/, 1]
+    assert token
+
+    get edit_user_password_path(reset_password_token: token)
+    assert_response :success
+    put user_password_path, params: { user: { reset_password_token: token, password: "a-new-long-password", password_confirmation: "a-new-long-password" } }
+    assert @member.reload.password_set?
+    assert @member.valid_password?("a-new-long-password")
+    assert_redirected_to new_user_session_path # then signs in with it
+
+    post user_session_path, params: { user: { email: @member.email, password: "a-new-long-password" } }
+    get dashboard_path
+    assert_response :success
+  end
+
   test "sign-in options reuse no challenge" do
     sign_in @member
     authenticator = register_passkey
