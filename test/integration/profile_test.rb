@@ -27,13 +27,24 @@ class ProfileTest < ActionDispatch::IntegrationTest
 
     get account_root_path
     assert_select ".checklist", 1
-    assert_select ".checklist button", count: 0 # no Hide here
+    assert_select ".checklist-header button", count: 0 # no Hide here
     assert_select ".checklist-step.is-done", text: /Put something on your schedule/
     assert_select ".checklist-step:not(.is-done)", text: /signing in quicker/
 
     @member.update!(otp_secret: "JBSWY3DPEHPK3PXP", otp_enabled_at: Time.current)
+    @member.avatar.attach(io: file_fixture("avatar.png").open, filename: "avatar.png")
+    @member.household_memberships.find_by(household: @smiths).update!(home: @smiths.locations.create!(name: "Red Brick", kind: "house"))
+    get account_root_path
+    assert_select ".checklist-step:not(.is-done)", 1
+    assert_select ".checklist-step:not(.is-done)", text: /work schedule/
+
+    # No work schedule: skip it and the list is done.
+    post skip_checklist_step_path("work"), headers: { "HTTP_REFERER" => account_root_url }
+    assert_redirected_to account_root_url
     get account_root_path
     assert_select ".checklist", count: 0
+    post skip_checklist_step_path("nope")
+    assert_response :not_found
   end
 
   test "picking a swatch changes the colour" do

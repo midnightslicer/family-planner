@@ -1267,7 +1267,9 @@ a.nav-brand { color: var(--text); text-decoration: none; }
   color: var(--status-completed);
 }
 .checklist-step.is-done strong { color: var(--text-muted); font-weight: 500; }
+.checklist-step.is-skipped .checklist-mark { border-color: var(--border-strong); background: var(--surface-sunken); color: var(--text-muted); }
 .checklist-body { flex: 1; min-width: 0; display: grid; }
+.checklist-actions { display: flex; align-items: center; gap: 0.375rem; flex-wrap: wrap; justify-content: flex-end; }
 
 
 /* ---------- Pets, locations & profiles ----------

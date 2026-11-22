@@ -2,7 +2,10 @@
 # ticked off from real state. On the dashboard until dismissed or done; at
 # the bottom of the account page until done.
 class GettingStarted
-  Step = Struct.new(:key, :title, :detail, :done, :link_label, :path, keyword_init: true)
+  Step = Struct.new(:key, :title, :detail, :done, :link_label, :path, :skippable, :skipped, keyword_init: true)
+
+  # Steps that can be waved off one at a time ("I don't have one").
+  SKIPPABLE = %w[work].freeze
 
   def initialize(user, household)
     @user = user
@@ -25,6 +28,13 @@ class GettingStarted
     @steps ||= [
       invite_step,
       time_zone_step,
+      Step.new(key: :photo, title: "Add a profile picture",
+               detail: "So everyone can spot you at a glance on the board and the wall.",
+               done: @user.avatar_saved?, link_label: "Add one", path: routes.account_root_path),
+      Step.new(key: :home, title: "Say which house you live in",
+               detail: "The board groups everyone by the house they live in.",
+               done: @user.home_in(@household).present?, link_label: "Set it", path: routes.account_root_path),
+      work_step,
       Step.new(key: :task, title: "Put something on your schedule",
                detail: "A to-do, or something at a time like a call or a trip to town. Your card shows it while it's on.",
                done: @household.tasks.exists?, link_label: "Your day", path: routes.tasks_path),
@@ -40,6 +50,16 @@ class GettingStarted
   end
 
   private
+
+  def work_step
+    skipped = @user.work_schedule_skipped_at.present?
+    works = @user.works?
+    Step.new(key: :work, title: "Add your work schedule",
+             detail: skipped && !works ? "Skipped. You can add one any time from your day." :
+                     "Your work hours show on your card, with how reachable you are. No set schedule? Skip it.",
+             done: works || skipped, skipped: skipped && !works, skippable: true,
+             link_label: "Add hours", path: routes.edit_work_schedule_path)
+  end
 
   def invite_step
     return unless @user.admin?

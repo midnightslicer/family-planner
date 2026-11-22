@@ -9,14 +9,19 @@
        style="--progress: <%= (checklist.done_count * 100.0 / [checklist.steps.size, 1].max).round %>%"></div>
   <ol class="checklist-steps">
     <% checklist.steps.each do |step| %>
-      <li class="checklist-step<%= ' is-done' if step.done %>">
-        <span class="checklist-mark" aria-hidden="true"><%= icon(:check) if step.done %></span>
+      <li class="checklist-step<%= ' is-done' if step.done %><%= ' is-skipped' if step.skipped %>">
+        <span class="checklist-mark" aria-hidden="true"><%= icon(step.skipped ? :skip : :check) if step.done %></span>
         <div class="checklist-body">
-          <strong><%= step.title %></strong><%= tag.span(" (done)", class: "visually-hidden") if step.done %>
+          <strong><%= step.title %></strong><%= tag.span(step.skipped ? " (skipped)" : " (done)", class: "visually-hidden") if step.done %>
           <small><%= step.detail %></small>
         </div>
         <% unless step.done %>
-          <%= link_to step.path, class: "btn btn-small btn-primary" do %><span><%= step.link_label %></span><%= icon(:arrow_right) %><% end %>
+          <div class="checklist-actions">
+            <% if step.skippable %>
+              <%= button_to "I don't have one", skip_checklist_step_path(step.key), class: "btn btn-small btn-quiet" %>
+            <% end %>
+            <%= link_to step.path, class: "btn btn-small btn-primary" do %><span><%= step.link_label %></span><%= icon(:arrow_right) %><% end %>
+          </div>
         <% end %>
       </li>
     <% end %>
