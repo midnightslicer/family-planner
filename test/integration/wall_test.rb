@@ -12,7 +12,7 @@ class WallTest < ActionDispatch::IntegrationTest
 
   setup { sign_in @admin }
 
-  def wall = get(wall_path(@smiths.dashboard_token))
+  def wall = get(wall_path(@smiths.slug))
 
   test "a section for each occupied place, with everyone there and their cards" do
     LocationReport.create!(household: @smiths, subject: @member, location: @yard, reported_by: @member)

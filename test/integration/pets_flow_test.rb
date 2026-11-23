@@ -110,7 +110,7 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
   test "pets are on the wall, read-only, with where they are and whether they've eaten" do
     LocationReport.create!(household: @smiths, subject: @rex, location: @yard, reported_by: @admin)
     Feeding.create!(household: @smiths, pet: @rex, fed_by: @admin)
-    get wall_path(@smiths.dashboard_token)
+    get wall_path(@smiths.slug)
     assert_response :success
     assert_select ".wall-pet", 2
     assert_select ".wall-pet", text: /Rex.*Fed 1 of 2/m
@@ -170,7 +170,7 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     assert_select "input[name='check_in[pet_ids][]'][value='#{@rex.id}']", count: 0
     get new_pet_location_path
     assert_select "input[name='check_in[pet_ids][]'][value='#{@rex.id}']", count: 0
-    get wall_path(@smiths.dashboard_token)
+    get wall_path(@smiths.slug)
     assert_select ".wall-pet", text: /Rex/, count: 0
 
     # Even posted directly, an away pet isn't fed or moved.

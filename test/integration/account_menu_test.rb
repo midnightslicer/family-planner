@@ -6,7 +6,7 @@ class AccountMenuTest < ActionDispatch::IntegrationTest
   test "every member finds the wall link on their account page" do
     sign_in users(:member)
     get account_root_path
-    assert_select "#wall input[value*=?]", "/h/#{@smiths.dashboard_token}"
+    assert_select "#wall input[value*=?]", "/h/#{@smiths.slug}"
     assert_select "#wall button", text: "Make a new link", count: 0
   end
 

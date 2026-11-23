@@ -59,7 +59,7 @@ class HouseholdTimeZoneTest < ActionDispatch::IntegrationTest
     @member.work_shifts.create!(weekday: 1, from_time: "09:00", until_time: "17:00", place: "Office")
     sign_in @member
     travel_to Time.utc(2026, 11, 23, 16, 0) do
-      get wall_path(@smiths.dashboard_token)
+      get wall_path(@smiths.slug)
       assert_select "#{card(@member)} .person-now", text: "Work · until 5 PM · Office"
     end
   end

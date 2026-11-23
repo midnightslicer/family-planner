@@ -8,8 +8,8 @@ Guide for AI assistants and humans working in this repo.
 Each person has their own Devise account; accounts join **only via email
 invitation** (no open signup). Members manage household-scoped tasks (including
 recurring ones), and everyone sees a live auto-updating dashboard of who's busy.
-A wall view (`GET /h/:dashboard_token`, sign-in required: a member of that
-household, else 404; the token only names the household) is meant for a
+A wall view (`GET /h/:slug`, sign-in required: a member of that
+household, else 404; the slug only names the household) is meant for a
 wall-mounted iPad / browser home page that stays signed in: a section per place someone (or a
 pet) is right now (`Whereabouts`), with their status cards, then
 "Somewhere else"; read-only, and `wall_fit_controller.js` shrinks it to
@@ -40,7 +40,7 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
 
 - `app/models/`: `User` (Devise + `handle`, `color`, `admin`, TOTP fields,
   `webauthn_id`), `Passkey` (WebAuthn public keys), `Household`
-  (`dashboard_token` names it in the wall URL; `member_statuses` loads every
+  (`slug`, from its name and editable by an admin, is its wall URL; `member_statuses` loads every
   card's tasks in one query; `broadcast_member_cards`), `HouseholdMembership` (`home`: the house, a household location, they
   live in; `Household#by_house` groups people and pets by it for the
   board),

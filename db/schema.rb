@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_22_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_22_150000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -74,11 +74,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_140000) do
 
   create_table "households", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.string "dashboard_token", null: false
     t.string "name", null: false
     t.datetime "updated_at", null: false
     t.string "time_zone"
-    t.index ["dashboard_token"], name: "index_households_on_dashboard_token", unique: true
+    t.string "slug", null: false
+    t.index ["slug"], name: "index_households_on_slug", unique: true
   end
 
   create_table "invitations", force: :cascade do |t|

@@ -45,6 +45,11 @@
         <%= f.label :name, "Name" %>
         <%= f.text_field :name, required: true, maxlength: 80 %>
       </div>
+      <div class="form-field">
+        <%= f.label :slug, "Wall address" %>
+        <%= f.text_field :slug, required: true, maxlength: 60, autocomplete: "off", spellcheck: false %>
+        <small>The wall lives at <code>/h/<%= @household.slug_was.presence || @household.slug %></code>. Changing this changes that link, so update any screen using the old one.</small>
+      </div>
       <%# Preselect the admin's own zone (from their browser) when none is set
           yet, so saving it is one click. %>
       <% suggested = @household.time_zone ||

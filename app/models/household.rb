@@ -15,11 +15,15 @@ class Household < ApplicationRecord
   has_many :locations, -> { where(archived_at: nil) }, inverse_of: :household
 
   validates :name, presence: true, length: { maximum: 80 }
+  # The wall's address: /h/<slug>. Not a secret (the wall needs sign-in).
+  validates :slug, presence: true, length: { maximum: 60 }, uniqueness: true,
+                   format: { with: /\A[a-z0-9]+(?:-[a-z0-9]+)*\z/, message: "can only have lowercase letters, numbers and dashes" }
   validate :time_zone_is_known
 
   normalizes :time_zone, with: ->(zone) { zone.strip.presence }
+  normalizes :slug, with: ->(slug) { slug.to_s.parameterize.presence }
 
-  before_validation :generate_dashboard_token, on: :create
+  before_validation :generate_slug, on: :create
 
   # Members sorted by display name, as shown on dashboards.
   def members_by_name
@@ -118,7 +122,14 @@ class Household < ApplicationRecord
     errors.add(:time_zone, "isn't a time zone we know") if time_zone && zone.nil?
   end
 
-  def generate_dashboard_token
-    self.dashboard_token ||= SecureRandom.hex(16)
+  # "The Smiths" -> "the-smiths"; "the-smiths-2" if that's taken.
+  def generate_slug
+    return if slug.present?
+
+    base = name.to_s.parameterize.first(50).presence || "home"
+    candidate = base
+    count = 1
+    candidate = "#{base}-#{count += 1}" while Household.exists?(slug: candidate)
+    self.slug = candidate
   end
 end

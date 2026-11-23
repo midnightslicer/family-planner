@@ -1,5 +1,5 @@
 /*
- * Kiosk / wall view variant — the public /h/:dashboard_token page, rendered by
+ * Kiosk / wall view variant — the /h/:slug page, rendered by
  * layouts/wall.html.erb with <body class="kiosk">. Propshaft serves this file
  * alongside application.css (stylesheet_link_tag :app loads both), so every
  * rule here is scoped to body.kiosk and is inert on the normal app.

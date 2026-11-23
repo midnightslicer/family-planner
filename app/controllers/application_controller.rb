@@ -46,7 +46,7 @@ class ApplicationController < ActionController::Base
     Time.use_zone(time_zone_household&.zone || browser_time_zone || Time.zone_default, &)
   end
 
-  # Whose clock this request runs on. The wall overrides it (the token picks the household).
+  # Whose clock this request runs on. The wall overrides it (the slug picks the household).
   def time_zone_household
     current_household
   end

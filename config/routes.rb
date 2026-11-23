@@ -26,7 +26,7 @@ Rails.application.routes.draw do
 
   # Household switching + the wall (live updates arrive over Action Cable)
   post "switch_household",  to: "households#switch", as: :switch_household
-  get  "h/:dashboard_token", to: "walls#show",       as: :wall
+  get  "h/:slug", to: "walls#show",       as: :wall
 
   # Authenticated app
   root to: "dashboards#show", as: :dashboard_root

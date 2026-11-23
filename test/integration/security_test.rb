@@ -78,11 +78,11 @@ class SecurityTest < ActionDispatch::IntegrationTest
   end
 
   test "the wall needs a signed-in member of that household" do
-    get wall_path(@household.dashboard_token)
+    get wall_path(@household.slug)
     assert_redirected_to new_user_session_path
 
     sign_in @admin
-    get wall_path(@household.dashboard_token)
+    get wall_path(@household.slug)
     assert_response :success
     assert_select ".person-card", 2
     get wall_path("not-a-token")
@@ -92,14 +92,14 @@ class SecurityTest < ActionDispatch::IntegrationTest
     outsider = User.create!(email: "outsider@example.com", password: "password123", display_name: "Outsider", handle: "outsider")
     Household.create!(name: "Others").household_memberships.create!(user: outsider)
     sign_in outsider
-    get wall_path(@household.dashboard_token)
+    get wall_path(@household.slug)
     assert_response :not_found
   end
 
   test "signing in from the wall's link returns to the wall" do
-    get wall_path(@household.dashboard_token)
+    get wall_path(@household.slug)
     post user_session_path, params: { user: { email: @admin.email, password: "password" } }
-    assert_redirected_to wall_path(@household.dashboard_token)
+    assert_redirected_to wall_path(@household.slug)
   end
 
   test "a member without a household sees a message, not a redirect loop" do

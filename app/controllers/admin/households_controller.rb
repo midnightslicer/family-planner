@@ -45,7 +45,7 @@ module Admin
     end
 
     def household_params
-      params.require(:household).permit(:name, :time_zone)
+      params.require(:household).permit(:name, :slug, :time_zone)
     end
   end
 end

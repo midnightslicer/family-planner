@@ -1,6 +1,23 @@
 require "test_helper"
 
 class HouseholdTest < ActiveSupport::TestCase
+  test "a new household gets a readable, unique wall slug from its name" do
+    first = Household.create!(name: "Grandma's House!")
+    assert_equal "grandma-s-house", first.slug
+    assert_equal "grandma-s-house-2", Household.create!(name: "Grandma's house").slug
+    assert_equal "home", Household.create!(name: "!!!").slug
+  end
+
+  test "a slug can be edited but must be a plain address and unique" do
+    household = households(:smiths)
+    assert household.update(slug: "Our Place")
+    assert_equal "our-place", household.slug
+
+    other = Household.create!(name: "Others")
+    assert_not other.update(slug: "our-place")
+    assert_not other.update(slug: "")
+  end
+
   test "member_statuses finds each member's current and next task in a fixed number of queries" do
     household = households(:smiths)
     member = users(:member)

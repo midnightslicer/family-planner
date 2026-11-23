@@ -8,10 +8,10 @@
   </p>
   <div class="form-card" data-controller="clipboard">
     <div class="copy-field">
-      <input type="text" value="<%= wall_url(household.dashboard_token, **AppSettings.url_options) %>" readonly
+      <input type="text" value="<%= wall_url(household.slug, **AppSettings.url_options) %>" readonly
              aria-label="Wall link" data-clipboard-target="source">
       <button type="button" class="btn" data-clipboard-target="button" data-action="clipboard#copy">Copy</button>
-      <%= link_to wall_path(household.dashboard_token), class: "btn btn-quiet", target: "_blank", rel: "noopener" do %><%= icon_label(:external, "Open") %><% end %>
+      <%= link_to wall_path(household.slug), class: "btn btn-quiet", target: "_blank", rel: "noopener" do %><%= icon_label(:external, "Open") %><% end %>
     </div>
   </div>
 </section>
