@@ -100,7 +100,8 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   deletes, whitelisted `return_to`). Anyone in the household can add and edit
   pets and locations; deleting is for whoever added it or an admin.
 - `app/controllers/admin/`: admin-only area (households + wall link and
-  members, invitations, people, settings). `walls_controller.rb`: the wall (signed in).
+  members, invitations, people, settings; Settings also shows whether push
+  and email work, the device count and the last failed push). `walls_controller.rb`: the wall (signed in).
 - `config/initializers/mailer.rb` + `app/mailers/app_mail_delivery.rb`: SMTP
   is read at send time (`:app_smtp` delivery method), so settings changes
   apply without a restart; email links use `AppSettings.url_options`. The
@@ -237,6 +238,15 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   emails" (`NotificationUnsubscribe` signed token, no sign-in; GET
   confirms, POST unsubscribes, also the RFC 8058 `List-Unsubscribe-Post`
   target, so CSRF is off for it).
+- Reminders on the clock: `ReminderJob` (production, every minute, next to
+  `ScheduleTickJob`) sends event reminders to accepted assignees at their
+  `reminder_lead_minutes`, and the morning to-do digest at their
+  `digest_hour` on the household's clock (only if they want push or email
+  for it, and only if something is due). Each is claimed first in
+  `reminders_sent` (`ReminderSent.claim`; unique on user, household, kind,
+  `COALESCE(task_id, 0)` and the occurrence's start, because SQLite treats
+  NULLs as distinct), so double ticks never repeat one. A reminder's push
+  expires when its event starts (`Notifier.notify(ttl:)`).
 - Push in the browser: `app/javascript/lib/push.js` (subscribe, sync,
   unsubscribe; reads the `push-key` / `push-user` metas the app layout
   prints for signed-in people), the `push` controller (the Notifications
@@ -317,7 +327,8 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   no task turbo-stream responses. A card's "now" is computed from the
   clock, so the dashboard and schedule refresh every minute
   (`auto-refresh` interval) and `ScheduleTickJob` (production, every
-  minute) broadcasts refreshes when events start or end.
+  minute) broadcasts refreshes when events start or end. `ReminderJob`
+  (also every minute) sends reminders; see Notifications above.
 - Per-user color arrives as inline `--user-color` / `--user-fg` on
   `.person-card`; accents use `color-mix(...)`, so don't hardcode hexes.
 

@@ -61,10 +61,12 @@ offline" page and reloads itself when the connection is back.
 
 Each person picks, on **Your account > Notifications**, which kinds of
 update reach them by push (on each phone they turn it on for) and which by
-email, plus quiet hours and a pause button. Pushes need https and, on an
-iPhone, the app added to the Home Screen first (iOS 16.4 or later); the
-page walks people through it. Email needs SMTP (Admin > Settings) and
-every email has a one-click unsubscribe.
+email, plus quiet hours and a pause button. Event reminders (5 to 60
+minutes before) and a morning list of the day's to-dos are among the
+choices. Pushes need https and, on an iPhone, the app added to the Home
+Screen first (iOS 16.4 or later); the page walks people through it. Email
+needs SMTP (Admin > Settings) and every email has a one-click unsubscribe.
+Admin > Settings also shows whether push and email are working.
 
 ### Deploy with Kamal (a VPS with a domain)
 

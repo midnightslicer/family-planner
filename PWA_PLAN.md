@@ -1,5 +1,17 @@
 # PWA plan: installable app, push and email notifications, per-user settings
 
+> **Status (Nov 2026):** phases 1 to 5 and the folded-in hardening are
+> built on the `pwa-plan` branch, one commit per phase. What's left is
+> section 6 (the owner's steps) and the manual device checklist in
+> section 5. Small departures from the text below: the Email column's
+> address is shown in the hint under the table (a header that long doesn't
+> fit at 320px); the Notifications page already existed in phase 3, so the
+> temporary account-page section was skipped; a replaced subscription is
+> re-posted to `POST /push_subscriptions/renew`, authorised by the old
+> endpoint, since a service worker has no CSRF token; and
+> `public/icon.svg` is a new mark (the nav's house on the accent colour)
+> because the old one was the Rails placeholder circle.
+
 Goal: people install family-status from their browser onto their phone, it
 behaves like an app (icon, full screen, no browser chrome), and they get
 notifications on the lock screen even when the app is closed. Each person

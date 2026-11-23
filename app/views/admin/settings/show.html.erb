@@ -60,3 +60,40 @@
   <p>Check the email settings by sending a message to <strong><%= current_user.email %></strong>. Save first.</p>
   <%= button_to test_email_admin_settings_path, method: :post, class: "btn" do %><%= icon_label(:send, "Send test email") %><% end %>
 </div>
+
+<h2 id="push-and-email">Notifications</h2>
+<div class="form-card admin-notifications">
+  <dl class="setting-facts">
+    <dt>Push</dt>
+    <dd>
+      <% if @push_key %>
+        <span class="status-chip status-completed"><%= icon(:check) %>Set up</span>
+        <small>Public key (VAPID): <code><%= @push_key %></code></small>
+        <small>From <%= ENV["VAPID_PRIVATE_KEY"].present? ? "the VAPID_PRIVATE_KEY environment variable" : "storage/.vapid_key" %>.
+          Keep it with your backups: replacing it stops pushes until each device opens the app again.</small>
+      <% else %>
+        <span class="status-chip avail-busy"><%= icon(:alert_circle) %>Unavailable</span>
+        <small>No usable key: check VAPID_PRIVATE_KEY / VAPID_PUBLIC_KEY, or that the storage folder is writable. The server log says which.</small>
+      <% end %>
+    </dd>
+    <dt>Devices</dt>
+    <dd><%= pluralize(@push_devices, "device") %> across all households get pushes.</dd>
+    <dt>Last failed push</dt>
+    <dd>
+      <% if @push_failing %>
+        <%= time_ago_in_words(@push_failing.failed_at) %> ago, to <%= @push_failing.user.display_name %>'s <%= @push_failing.device_name %>:
+        <code><%= @push_failing.last_error %></code>
+      <% else %>
+        None.
+      <% end %>
+    </dd>
+    <dt>Email</dt>
+    <dd>
+      <% if AppSettings.smtp_configured? %>
+        Available: people can choose email for each kind of update.
+      <% else %>
+        Not set up, so the Email column on everyone's Notifications page is off. Fill in the SMTP settings above.
+      <% end %>
+    </dd>
+  </dl>
+</div>

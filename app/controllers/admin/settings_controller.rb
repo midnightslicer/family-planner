@@ -6,6 +6,9 @@ module Admin
       @settings = KEYS.index_with { |key| Setting.get(key) }
       @password_saved = Setting.get("smtp_password").present?
       @smtp_tls = Setting.get("smtp_tls") == "true"
+      @push_key = PushKeys.public_key
+      @push_devices = PushSubscription.count
+      @push_failing = PushSubscription.where.not(failed_at: nil).order(failed_at: :desc).first
     end
 
     def update

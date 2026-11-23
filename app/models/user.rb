@@ -40,6 +40,7 @@ class User < ApplicationRecord
   has_many :passkeys, dependent: :destroy
   has_many :push_subscriptions, dependent: :delete_all
   has_many :notification_preferences, dependent: :delete_all
+  has_many :reminders_sent, class_name: "ReminderSent", dependent: :delete_all
   has_many :task_assignments, dependent: :delete_all
   has_many :residences, dependent: :delete_all
   has_many :work_schedule_versions, dependent: :delete_all

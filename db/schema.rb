@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_23_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_23_020000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -205,6 +205,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_010000) do
     t.index ["user_id"], name: "index_push_subscriptions_on_user_id"
   end
 
+  create_table "reminders_sent", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.integer "household_id", null: false
+    t.integer "task_id"
+    t.string "kind", null: false
+    t.datetime "occurrence_starts_at", null: false
+    t.datetime "created_at", null: false
+    t.index "user_id, household_id, kind, COALESCE(task_id, 0), occurrence_starts_at", name: "index_reminders_sent_once", unique: true
+    t.index ["household_id"], name: "index_reminders_sent_on_household_id"
+    t.index ["task_id"], name: "index_reminders_sent_on_task_id"
+  end
+
   create_table "residences", force: :cascade do |t|
     t.integer "user_id", null: false
     t.integer "household_id", null: false
@@ -348,6 +360,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_010000) do
   add_foreign_key "pets", "locations", column: "home_id"
   add_foreign_key "pets", "users", column: "created_by_id"
   add_foreign_key "push_subscriptions", "users"
+  add_foreign_key "reminders_sent", "households", on_delete: :cascade
+  add_foreign_key "reminders_sent", "tasks", on_delete: :cascade
+  add_foreign_key "reminders_sent", "users", on_delete: :cascade
   add_foreign_key "residences", "households"
   add_foreign_key "residences", "locations"
   add_foreign_key "residences", "users"

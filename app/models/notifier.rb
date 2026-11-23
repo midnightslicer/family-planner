@@ -24,12 +24,15 @@ module Notifier
 
   module_function
 
-  def notify(user, category:, title:, path:, household:, tag:, body: nil, urgent: false, now: Time.current)
+  # `ttl`: how long a push may wait for a phone that's off (a reminder is
+  # worthless once its event has started).
+  def notify(user, category:, title:, path:, household:, tag:, body: nil, urgent: false, now: Time.current, ttl: TTL)
     return if user.nil?
 
     preference = user.notification_preference(category) # raises on an unknown category
     note = Note.new(category: preference.category, title: title.to_s.squish.truncate(TITLE_MAX), body: body.to_s.squish.truncate(BODY_MAX).presence,
-                    path: link(path, household), household: household, tag: tag.to_s, urgent: urgent)
+                    path: link(path, household), household: household, tag: tag.to_s, urgent: urgent,
+                    ttl: ttl.to_i.clamp(60, TTL.to_i))
     toast(user, note)
     push(user, note) if push?(user, preference, note, now)
     email(user, note) if preference.email && AppSettings.smtp_configured?
@@ -43,7 +46,7 @@ module Notifier
     note.urgent || !user.quiet_at?(now.in_time_zone(note.household&.zone || Time.zone))
   end
 
-  Note = Struct.new(:category, :title, :body, :path, :household, :tag, :urgent, keyword_init: true) do
+  Note = Struct.new(:category, :title, :body, :path, :household, :tag, :urgent, :ttl, keyword_init: true) do
     # "Sam added you to Church. It clashes with Work: accept or decline."
     def text = [title, body].compact.join(" ")
   end
@@ -64,7 +67,7 @@ module Notifier
 
     payload = push_payload(note)
     subscriptions.each do |id|
-      SendPushJob.perform_later(id, payload, ttl: TTL.to_i, urgency: note.urgent ? "high" : "normal", topic: topic(note.tag))
+      SendPushJob.perform_later(id, payload, ttl: note.ttl || TTL.to_i, urgency: note.urgent ? "high" : "normal", topic: topic(note.tag))
     end
   rescue StandardError => error
     Rails.logger.warn("Queueing pushes failed: #{error.class}: #{error.message}")
