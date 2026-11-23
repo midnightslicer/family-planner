@@ -395,7 +395,8 @@ people's notifications, like sign-in security).
 | Reminders | Model/job tests with `travel_to` |
 | Install and push on devices | Manual, real hardware (below) |
 
-Manual device checklist (Android Chrome and iPhone Safari):
+Manual device checklist (Android in Chrome, Edge, Brave and Firefox; the
+iPhone Home Screen app; see the table in section 8):
 
 1. Open the site, sign in, install (Install prompt, or Share > Add to Home
    Screen). Icon and name look right.
@@ -458,14 +459,34 @@ Manual device checklist (Android Chrome and iPhone Safari):
 - **Several households**: every notification names its household and its
   link switches to it.
 
-## 8. Status and handoff (Nov 23, 2026)
+## 8. Status and handoff (updated Nov 23, 2026)
 
 For whoever picks this up next. Everything in sections 3 and "Folded in"
-is built on the **`pwa-plan`** branch (pushed), plus an installable wall,
-which wasn't in the original plan. Nothing has been tried on a real phone
-yet: that and section 6 are what's left.
+is built and **merged to master** (PR #5; the `pwa-plan` branch is gone),
+plus an installable wall, which wasn't in the original plan, and browser
+coverage beyond Chrome and Safari (below). Push has been proven end to end
+on desktop Chromium; nothing has been tried on a real phone yet. The owner
+will run the device testing (section 5 and the table under "Not verified").
 
-### Commits on `pwa-plan`
+### Browser support goal (owner, Nov 23)
+
+- **Desktop:** some kind of notification in Chromium, Edge, Brave, Google
+  Chrome and Firefox.
+- **Android:** push with minimal tinkering in Brave, Google Chrome, Edge
+  and Firefox. Never tell people to install another browser (an exotic one
+  like DuckDuckGo may simply not get them, but don't say so anywhere).
+- **iOS:** push from the Home Screen app (every iOS browser is WebKit, so
+  this is Safari's path whatever they use).
+
+How that's met: push services are allowlisted per service, not per
+browser (Google `fcm.googleapis.com` and `*.google.com`, Mozilla, Apple,
+Microsoft). Desktop Brave leaves its push service off by default, so the
+page falls back to the "local" state: notifications pop up from an open
+(even background) tab, under the same push/pause/quiet-hours rules, with a
+Brave-only hint about its setting. Setup text says "your browser's menu",
+never "use Chrome".
+
+### Commits
 
 | Commit | What |
 | --- | --- |
@@ -476,6 +497,7 @@ yet: that and section 6 are what's left.
 | `1479674` | Phase 5: `ReminderJob`, `reminders_sent`, Admin > Settings health block, invitation phone steps |
 | `8db6d60` | Fix: the `?household=` redirect squeezes `//` so it can't become protocol-relative |
 | `74a9d1a` | The wall as its own installable, full-screen app; offline page retries every 20s |
+| `380f6d9` | (on master) Chromium's `jmt17.google.com` endpoints allowed; Brave "local" fallback; browser-neutral setup text |
 
 Each phase updated README.md and AGENTS.md as it went; AGENTS.md is the
 best map of where things live (search it for `Notifier`, `PushKeys`,
@@ -537,40 +559,65 @@ best map of where things live (search it for `Notifier`, `PushKeys`,
 
 ### What was verified, and how
 
-- `bin/rails test`: 334 runs, green, repeatedly (was 228). Brakeman: no
-  warnings. Rubocop: the same 9 offenses as before this work, ignoring
+- `bin/rails test`: 335 runs, green. Brakeman: no warnings. bundler-audit:
+  clean. Rubocop: the same 9 offenses as before this work, ignoring
   `Layout/SpaceInsideArrayLiteralBrackets`, which the codebase doesn't
-  follow (449 offenses project-wide before this branch).
+  follow.
 - Encryption matches the RFC 8291 appendix vector byte for byte, and the
   tests decrypt every message from the browser's side. VAPID tokens verify
   against the public key.
-- In Chromium (Playwright, dev server): zero installability errors for the
-  app and for a wall; the browser fetched the wall manifest with the
+- **Real push, end to end, desktop Chromium 155** (Arch build, headless via
+  Playwright and the owner's own headed Chromium): turn on → the browser
+  registered with Google (endpoint on `jmt17.google.com`) → saved → "Send
+  a test" and real app events (someone adds you to an item, posted through
+  the web server by a second account) → Google answered 201 → the service
+  worker decrypted and showed them with the right title, body, tag and
+  `?household=` link. The device list showed "This device" and "Last
+  notified". Pushes sent while the browser was closed arrived as soon as
+  it reopened (TTL queueing works). The Notifications page has no console
+  errors, light or dark.
+- **Brave (desktop, headless):** subscribing fails with `AbortError:
+  Registration failed - push service error` (Brave's default), the page
+  lands on "While open" with the Brave hint, "Show a test" shows a
+  notification, and an update from another account shows as a system
+  notification from a background tab with the right text and link.
+- Earlier, by the first agent (Chromium, Playwright): zero installability
+  errors for the app and for a wall; the wall manifest fetched with the
   cookie; offline navigations show the offline page and recover by
-  themselves; pushes delivered to the worker through DevTools
-  (`ServiceWorker.deliverPushMessage`) show with the right title, body,
-  tag, icon and badge, junk payloads still show a generic notice, and a
-  `//evil.example/` path is rewritten to `/`; the full turn on / test /
-  turn off flow on the Notifications page; live toasts in light and dark;
-  the settings page at 320px with no horizontal scroll.
-- A "Send a test" reached the **real** FCM server, which answered
-  `410 Gone` for the stand-in endpoint (FCM checks VAPID before the
-  subscription, so the headers are at least well-formed).
+  themselves; DevTools-delivered pushes (`ServiceWorker.deliverPushMessage`)
+  show correctly, junk payloads show a generic notice, and a
+  `//evil.example/` path is rewritten to `/`; turn on / test / turn off;
+  live toasts; the settings page at 320px with no horizontal scroll.
 
-### Not verified (needs real hardware or the real domain)
+### Not verified (for the owner to test)
 
-- A real subscription and a real push arriving on Android Chrome or an
-  iPhone. Chromium can't register with Google's push service in the
-  sandbox, so a stand-in `PushManager` (real P-256 keys, FCM-shaped
-  endpoint) was used for the page flow. Run the section 5 checklist.
-- `notificationclick` (focus or open the right window, never a wall tab):
-  only reviewed, since a system notification can't be clicked headlessly.
+| Platform | Browser | Expected | What to check |
+| --- | --- | --- | --- |
+| Desktop | Google Chrome | Push (`fcm.googleapis.com`) | Turn on, test, app event with the tab closed |
+| Desktop | Edge | Push (`*.notify.windows.com`) | Same |
+| Desktop | Firefox | Push (Mozilla) | Same |
+| Desktop | Brave, headed | "While open" | Background-tab popups; with Brave's push setting on and Brave restarted, "Try again" upgrades to real push |
+| Android | Chrome | Push, no install needed | Section 5 checklist |
+| Android | Edge | Push | Section 5 checklist, steps 3-4 |
+| Android | Brave | Push expected (desktop setting shouldn't apply); else "While open" | Which state it lands in |
+| Android | Firefox | Push (Mozilla) | Section 5 checklist, steps 3-4 |
+| Android | any | Install from the browser's menu | Icon, name, full screen |
+| iPhone | Safari, Home Screen app | Push (Apple) | Section 5 checklist; set SMTP From or an https APP_URL first (Apple and the VAPID `sub`) |
+| iPhone | Safari tab | "Add to Home Screen" steps, no push | Panel shows the steps |
+| Tablet | any | Wall installs full screen | Opens from its icon, recovers after Wi-Fi drops |
+
+Also unverified anywhere:
+
+- Tapping a notification (`notificationclick`: focus or open the right
+  window, never a wall tab): only reviewed, since headless can't click a
+  system notification.
 - `pushsubscriptionchange` → `/renew` from a real browser.
-- Mail through a real SMTP server (letter_opener and mailer tests only).
-- Apple's push service accepting the VAPID `sub`. It's `mailto:` the
-  SMTP From address, else the https APP_URL, else `mailto:no-reply@<host>`;
-  Apple has been known to reject `localhost`-ish subjects, so set SMTP From
-  or an https APP_URL before testing on an iPhone.
+- Mail through a real SMTP server (letter_opener and mailer tests only),
+  including one-click unsubscribe from a real mail app.
+- `ReminderJob` on the production schedule (tests only; `recurring.yml`
+  runs it in production).
+- Any of it on the real domain over https (everything so far was
+  `http://localhost`).
 
 ### Gotchas for the next agent
 
@@ -592,11 +639,19 @@ best map of where things live (search it for `Notifier`, `PushKeys`,
   `task.title_for(recipient)` for titles.
 - `#notifications` is the toast container in the app layout: don't give
   anything else that id (an admin heading did, briefly).
+- Playwright can drive the system browsers (`executablePath:
+  '/usr/bin/chromium'` or `'/usr/bin/brave'`) instead of downloading its
+  own. On Linux, system notifications close after a few seconds and then
+  vanish from `registration.getNotifications()`: poll it every few hundred
+  ms from just before sending, or you'll think nothing arrived. Several
+  quick sign-ins trip the sign-in rate limit (the page silently stays on
+  sign-in).
 
 ### Next steps
 
-1. Owner steps in section 6, then the section 5 device checklist on a real
-   Android phone and iPhone, plus installing a wall on a tablet.
+1. Owner steps in section 6, then the "Not verified" table above and the
+   section 5 checklist on a real Android phone and iPhone, plus installing
+   a wall on a tablet.
 2. Ask the owner about: the icons, the category defaults (owner step 5),
    whether the digest should include overdue to-dos, and the 12-character
    short name ("Family Status" becomes "FamilyStatus" under the icon).
