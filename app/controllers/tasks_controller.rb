@@ -134,10 +134,8 @@ class TasksController < ApplicationController
     assignment.update!(status: status, responded_at: Time.current, conflict_note: (assignment.conflict_note if status == "pending"))
     creator = @task.created_by
     if creator && creator != current_user
-      Turbo::StreamsChannel.broadcast_append_to(
-        creator, :notifications, target: "notifications", partial: "shared/notification",
-        locals: { title: current_household.name, body: "#{current_user.display_name} #{verb} #{@task.title}", tag: "task-#{@task.id}-reply" }
-      )
+      Notifier.notify(creator, category: "replies", title: "#{current_user.display_name} #{verb} #{@task.title_for(creator)}",
+                               path: task_path(@task), household: current_household, tag: "task-#{@task.id}-reply")
     end
     redirect_back_or_to tasks_path, notice: notice, status: :see_other, allow_other_host: false
   end

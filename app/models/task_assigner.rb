@@ -66,11 +66,13 @@ class TaskAssigner
     if clashes.empty?
       assignment.update!(status: "accepted", conflict_note: nil)
       @added << user if fresh
-      notify(user, "#{actor.display_name} added you to #{task.title}#{when_text}") if fresh
+      notify(user, "#{actor.display_name} added you to #{task.title_for(user)}#{when_text}") if fresh
     else
       assignment.update!(status: "pending", conflict_note: "Clashes with #{clashes.to_sentence}")
       @waiting << [user, clashes]
-      notify(user, "#{actor.display_name} asked you to #{task.title}#{when_text}. It clashes with #{clashes.to_sentence}: accept or decline on your day.")
+      # Waiting on their answer: urgent, so it gets through quiet hours.
+      notify(user, "#{actor.display_name} asked you to #{task.title_for(user)}#{when_text}.",
+             body: "It clashes with #{clashes.to_sentence}: accept or decline on your day.", urgent: true)
     end
   end
 
@@ -80,15 +82,11 @@ class TaskAssigner
     " (#{task.starts_at.strftime('%a %-l:%M %p').sub(':00', '')})"
   end
 
-  def notify(user, message)
+  def notify(user, title, body: nil, urgent: false)
     return if user == actor
 
-    Turbo::StreamsChannel.broadcast_append_to(
-      user, :notifications,
-      target: "notifications", partial: "shared/notification",
-      locals: { title: task.household.name, body: message, tag: "task-#{task.id}-#{user.id}" }
-    )
-  rescue StandardError => error
-    Rails.logger.warn("Assignment notification failed: #{error.class}: #{error.message}")
+    Notifier.notify(user, category: "assigned", title: title, body: body, urgent: urgent,
+                          path: Rails.application.routes.url_helpers.task_path(task),
+                          household: task.household, tag: "task-#{task.id}-#{user.id}")
   end
 end

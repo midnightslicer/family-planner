@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_22_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_23_000000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -180,6 +180,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_150000) do
     t.index ["household_id"], name: "index_pets_on_household_id"
   end
 
+  create_table "push_subscriptions", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.text "endpoint", null: false
+    t.text "p256dh", null: false
+    t.text "auth", null: false
+    t.string "user_agent"
+    t.datetime "last_used_at"
+    t.string "last_error"
+    t.datetime "failed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["endpoint"], name: "index_push_subscriptions_on_endpoint", unique: true
+    t.index ["user_id"], name: "index_push_subscriptions_on_user_id"
+  end
+
   create_table "residences", force: :cascade do |t|
     t.integer "user_id", null: false
     t.integer "household_id", null: false
@@ -316,6 +331,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_150000) do
   add_foreign_key "pets", "households"
   add_foreign_key "pets", "locations", column: "home_id"
   add_foreign_key "pets", "users", column: "created_by_id"
+  add_foreign_key "push_subscriptions", "users"
   add_foreign_key "residences", "households"
   add_foreign_key "residences", "locations"
   add_foreign_key "residences", "users"

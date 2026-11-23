@@ -75,6 +75,14 @@ Rails.application.routes.draw do
   end
   post "people/me/location", to: "people#locate", as: :locate_me
 
+  # Devices that get push notifications (always the signed-in person's own).
+  resources :push_subscriptions, only: [:create, :destroy] do
+    collection do
+      post :test
+      post :unsubscribe
+    end
+  end
+
   # Everyone's own account: profile, password, passkeys, two-step verification
   namespace :account do
     root to: "profiles#show"

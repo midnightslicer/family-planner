@@ -13,6 +13,40 @@ module ActiveSupport
   end
 end
 
+# The VAPID key lives in tmp, not storage/, under test (generated once and
+# shared by the parallel workers; PushKeys handles the race).
+PushKeys.path = Rails.root.join("tmp/storage/.vapid_key")
+
+# A stand-in for the push services: records each request PushSubscription
+# would have sent and answers with the given status code.
+class FakePushService
+  attr_reader :requests
+
+  def initialize(code = "201")
+    @code = code
+    @requests = []
+  end
+
+  def respond_with(code)
+    @code = code
+  end
+
+  def call(uri, request)
+    @requests << [uri, request]
+    Net::HTTPResponse::CODE_TO_OBJ.fetch(@code).new("1.1", @code, "").tap do |response|
+      response.instance_variable_set(:@body, "")
+      response.instance_variable_set(:@read, true)
+    end
+  end
+
+  def install
+    PushSubscription.transport = self
+    yield self
+  ensure
+    PushSubscription.transport = nil
+  end
+end
+
 # Requests made by integration tests share the test's thread, so Current (the
 # per-request cache of settings, user and household) would leak from one
 # request into the next and into the test's own assertions.

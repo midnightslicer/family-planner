@@ -87,11 +87,10 @@ class PetCheckIn
           "#{actor&.display_name || 'Someone'} fed #{names}"
         end
       body += " (#{comment})" if comment.present?
-      Turbo::StreamsChannel.broadcast_append_to(
-        follower, :notifications,
-        target: "notifications", partial: "shared/notification",
-        locals: { title: household.name, body: body, tag: "pets-#{kind}-#{followed.map(&:id).join('-')}" }
-      )
+      routes = Rails.application.routes.url_helpers
+      Notifier.notify(follower, category: "pets", title: body, household: household,
+                                path: followed.one? ? routes.pet_path(followed.first) : routes.pets_path,
+                                tag: "pets-#{kind}-#{followed.map(&:id).join('-')}")
     end
   rescue StandardError => error
     Rails.logger.warn("Pet notifications failed: #{error.class}: #{error.message}")

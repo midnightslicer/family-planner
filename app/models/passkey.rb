@@ -9,8 +9,9 @@ class Passkey < ApplicationRecord
   validates :name, presence: true, length: { maximum: 60 }
 
   # A readable default name from the browser's user agent, so the list on the
-  # account page says "iPhone" or "Mac" instead of a credential id.
-  def self.name_from_user_agent(user_agent)
+  # account page says "iPhone" or "Mac" instead of a credential id. Also
+  # names push devices ("Android · Chrome").
+  def self.name_from_user_agent(user_agent, fallback: "Passkey")
     ua = user_agent.to_s
     device =
       case ua
@@ -21,7 +22,7 @@ class Passkey < ApplicationRecord
       when /Windows/ then "Windows"
       when /CrOS/ then "Chromebook"
       when /Linux/ then "Linux"
-      else "Passkey"
+      else fallback
       end
     browser =
       case ua

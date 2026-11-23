@@ -34,8 +34,8 @@ class Task < ApplicationRecord
   validates :recurrence_interval, inclusion: { in: recurrence_intervals.keys }
 
   # Live updates: every change re-renders the affected person cards on the
-  # household's dashboards and wall, and pings the assignee's browser when
-  # someone else touched their task.
+  # household's dashboards and wall, and notifies the others it's for
+  # (Notifier) when someone else touched it.
   after_commit :broadcast_member_cards
   after_commit :notify_people, on: :update
 
@@ -301,13 +301,10 @@ class Task < ApplicationRecord
 
     recipients = people
     recipients += [created_by] if follow_up? && created_by
-    message = "#{actor.display_name} #{STATUS_VERBS.fetch(status, 'updated')} #{title}"
+    verb = STATUS_VERBS.fetch(status, "updated")
     recipients.compact.uniq.reject { |person| person == actor }.each do |person|
-      Turbo::StreamsChannel.broadcast_append_to(
-        person, :notifications,
-        target: "notifications", partial: "shared/notification",
-        locals: { title: household.name, body: message, tag: "task-#{id}" }
-      )
+      Notifier.notify(person, category: "task_updates", title: "#{actor.display_name} #{verb} #{title_for(person)}",
+                              path: Rails.application.routes.url_helpers.task_path(self), household: household, tag: "task-#{id}")
     end
   rescue StandardError => error
     Rails.logger.warn("Notification failed for task #{id}: #{error.class}: #{error.message}")

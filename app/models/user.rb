@@ -28,6 +28,7 @@ class User < ApplicationRecord
   has_many :household_memberships, dependent: :destroy
   has_many :households, through: :household_memberships
   has_many :passkeys, dependent: :destroy
+  has_many :push_subscriptions, dependent: :delete_all
   has_many :task_assignments, dependent: :delete_all
   has_many :residences, dependent: :delete_all
   has_many :work_schedule_versions, dependent: :delete_all

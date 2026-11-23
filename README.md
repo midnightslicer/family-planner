@@ -41,6 +41,7 @@ Optional settings go in a `.env` file next to `compose.yml`:
 | `APP_HOSTS` | Extra hostnames to accept (comma separated), e.g. a LAN name |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | Email, if you'd rather not enter it in Admin > Settings |
 | `APP_NAME` | Board name before setup names it |
+| `VAPID_PRIVATE_KEY`, `VAPID_PUBLIC_KEY` | Push notification keys (base64url, as printed by any web-push key generator). Optional: without them a key pair is generated into `storage/.vapid_key` on first use |
 
 **https matters.** Passkeys, the copy buttons and browser notifications only
 work over https (or on `http://localhost`). On plain http over a LAN the app
@@ -84,8 +85,10 @@ Tests: `bin/rails test`
 
 ## Backups
 
-Everything lives in the `storage` volume: the SQLite databases and the
-generated `.secret_key_base`. Keep them together; encrypted settings (the
+Everything lives in the `storage` volume: the SQLite databases, the
+generated `.secret_key_base` and the push notification key `.vapid_key`.
+Losing `.vapid_key` stops pushes to every device until each one opens the
+app again (it re-subscribes itself). Keep them together; encrypted settings (the
 SMTP password, two-step verification secrets) can't be read without that
 secret. To back up, stop the app and copy the volume, or use
 `sqlite3 storage/production.sqlite3 ".backup backup.sqlite3"` while it runs.

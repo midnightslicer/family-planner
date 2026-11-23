@@ -6,6 +6,7 @@ class ApplicationController < ActionController::Base
 
   before_action :require_setup
   before_action :set_current_context
+  before_action :switch_household_from_link
   around_action :use_household_time_zone
 
   helper_method :current_household, :app_name
@@ -35,6 +36,25 @@ class ApplicationController < ActionController::Base
 
   def current_household
     Current.household
+  end
+
+  # Notification links carry ?household=<id> (Notifier.link), so tapping one
+  # opens the household it's about. Only one of the person's own households
+  # is switched to; any other id is ignored. Either way the page reloads at
+  # its clean address. Signed out, the param rides along to after sign-in.
+  def switch_household_from_link
+    id = params[:household]
+    return unless id.is_a?(String) && request.get? && Current.user
+
+    household = Current.user.households.find_by(id: id)
+    if household
+      session[:current_household_id] = household.id
+      Current.household = household
+    end
+    return unless request.format.html?
+
+    query = request.query_parameters.except("household")
+    redirect_to(query.empty? ? request.path : "#{request.path}?#{query.to_query}")
   end
 
   # Every request runs on the household's clock (set by an admin): work

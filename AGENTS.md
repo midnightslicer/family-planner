@@ -195,6 +195,25 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   on pages that link the manifest (the `application` layout, not `wall`).
   The `theme-color` metas, the manifest colours and `offline.html` repeat a
   few token hexes because they can't read CSS: change them with the tokens.
+- Notifications: `Notifier.notify(user, category:, title:, body:, path:,
+  household:, tag:, urgent:)` is the only way to tell someone something
+  happened (`TaskAssigner`, `Task#notify_people`, `TasksController`
+  accept/decline, `PetCheckIn`). It toasts open tabs over
+  `[user, :notifications]` and queues a `SendPushJob` per
+  `PushSubscription` (a browser's endpoint + encrypted `p256dh`/`auth`).
+  Push titles are the household's name; links carry `?household=<id>`,
+  which `ApplicationController#switch_household_from_link` turns into a
+  household switch (own households only) and a redirect to the clean URL.
+  Pass `task.title_for(recipient)`, never a bare title. Web Push itself is
+  `lib/web_push/` (RFC 8291 encryption, RFC 8292 VAPID, RFC 8030 delivery
+  on OpenSSL + Net::HTTP, tested in `test/lib` with the RFC vector); only
+  https endpoints on `WebPush::ALLOWED_HOSTS` are ever saved or posted to.
+  `PushKeys` holds the VAPID key: `VAPID_PRIVATE_KEY` (+ optional
+  `VAPID_PUBLIC_KEY`) or `storage/.vapid_key`, generated on first use;
+  `bin/rails push:keys` prints the public key. `PushSubscriptionsController`
+  (create = upsert by endpoint, moving it to whoever is signed in; test;
+  unsubscribe; destroy) only ever touches `current_user`'s devices. Tests
+  fake the push services with `FakePushService` (test_helper).
 - App icons: `public/icon.svg` is the source; `icon.png`, `icon-192.png`,
   `icon-512.png`, `icon-maskable-512.png` (glyph inside the 80% safe zone,
   solid background) and `apple-touch-icon.png` (180px, opaque) are
@@ -305,9 +324,9 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   the wall uses its token's household. Work hours, "today", "fed today"
   and every time shown follow it. Until it's set, the browser's own zone
   (the `tz` cookie from `application.js`) is used, then UTC.
-- Pet-follow notifications ride the same `[user, :notifications]` stream as
-  task notifications, so they only arrive while the app is open somewhere
-  (there's no Web Push).
+- Every notification rides the `[user, :notifications]` stream (in-page
+  toast) and Web Push (devices the person turned it on for), both through
+  `Notifier`. A push only reaches a device that subscribed over https.
 - Passkeys, clipboard and notifications require a secure context; on LAN
   http the UI hides passkeys and falls back to passwords. Passkeys are bound
   to the hostname they were created on.
