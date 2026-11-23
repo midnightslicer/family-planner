@@ -148,8 +148,7 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
     (`pick-check`, `pick-name`, `pick-meta`, `pick-place`, `pick-add`) driven
     by the `picker` Stimulus controller; `kind-options` > `kind-option`;
     `feeding-notes`, `form-row`, `form-card-wide`, `sticky-actions`,
-    `btn-wide`, `danger-zone`; pickers group pets by type (`pick-group`, each
-    with its own All/None via `data-picker-group-param`). Pet types are a
+    `btn-wide`, `danger-zone`; pickers group pets by type (`pick-group`; no All/None buttons). Pet types are a
     menu (`Pet.kinds_for`: defaults plus the household's own, "New type…"),
     and house choices on the pet and profile forms are `shared/_location_picker`
     tiles (`blank_label` adds a "Not set" tile). A person's "Off property" is

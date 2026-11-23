@@ -1519,10 +1519,8 @@ a.person-name:hover { color: var(--accent); text-decoration: none; }
 .form-card-wide { max-width: 760px; }
 .picker-field { position: relative; }
 fieldset.picker-field { margin-top: 0; margin-bottom: 1.25rem; }
-.picker-shortcuts { display: flex; justify-content: flex-end; gap: 0.25rem; margin-bottom: 0.25rem; }
 .pick-group + .pick-group { margin-top: 1rem; }
-.pick-group-header { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
-.pick-group-title { margin: 0; font-size: 0.8125rem; font-weight: 600; color: var(--text-muted); }
+.pick-group-title { margin: 0 0 0.5rem; font-size: 0.8125rem; font-weight: 600; color: var(--text-muted); }
 .pick-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 7.5rem), 1fr));

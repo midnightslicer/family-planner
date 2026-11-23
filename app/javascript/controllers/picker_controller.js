@@ -1,35 +1,15 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Tile pickers (pick pets, pick a place): "All" / "None" shortcuts (overall
-// and per pet type), and the
-// submit button counts what's picked ("Feed 2 pets"), so it's clear what
+// Tile pickers (pick pets, pick a place): the submit button counts what's picked ("Feed 2 pets"), so it's clear what
 // will happen before it does. Details (feeding notes) for pets that aren't
 // picked are hidden once anything is picked. Without JS the checkboxes
 // still work and every note shows.
 export default class extends Controller {
-  static targets = ["option", "submit", "shortcuts", "detail"]
+  static targets = ["option", "submit", "detail"]
   static values = { verb: String, noun: { type: String, default: "pet" } }
 
   connect() {
-    this.shortcutsTargets.forEach((shortcuts) => (shortcuts.hidden = false))
     this.update()
-  }
-
-  // All / None for everything, or for one group (a pet type) when the
-  // button carries data-picker-group-param.
-  all({ params } = {}) {
-    this.within(params).forEach((box) => (box.checked = true))
-    this.update()
-  }
-
-  none({ params } = {}) {
-    this.within(params).forEach((box) => (box.checked = false))
-    this.update()
-  }
-
-  within(params) {
-    const group = params?.group
-    return group === undefined ? this.optionTargets : this.optionTargets.filter((box) => box.dataset.group === group)
   }
 
   update() {

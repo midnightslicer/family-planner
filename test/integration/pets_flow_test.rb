@@ -25,14 +25,14 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     assert_select ".pet-card .status-chip", text: /Not fed yet today/
   end
 
-  test "the feed and where screens group pets by type with All and None for each" do
+  test "the feed and where screens group pets by type" do
     [new_feeding_path, new_pet_location_path].each do |path|
       get path
       assert_response :success
       assert_select ".pick-group", 2
       assert_select ".pick-group-title", text: "Cats"
       assert_select ".pick-group-title", text: "Dogs"
-      assert_select ".pick-group button[data-picker-group-param=Dog]", 2
+      assert_select ".picker-shortcuts", count: 0
     end
   end
 

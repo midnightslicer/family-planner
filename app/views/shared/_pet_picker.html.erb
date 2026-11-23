@@ -1,32 +1,21 @@
-<%# Pick pets as big photo tiles (checkboxes), grouped by type with an All /
-    None pair for each group. Lives inside a form with the `picker`
-    controller. Locals: pets, statuses, chosen (ids), meta (:where or :fed:
+<%# Pick pets as big photo tiles (checkboxes), grouped by type. Lives inside a form with
+    the `picker` controller. Locals: pets, statuses, chosen (ids), meta (:where or :fed:
     what the line under each name shows). %>
 <% groups = pets.group_by { |pet| pet.species.presence || "Other" }
    groups = groups.sort_by { |kind, _| [kind == "Other" ? 1 : 0, kind.downcase] } %>
 <fieldset class="form-field picker-field">
   <legend>Which pets?</legend>
-  <div class="picker-shortcuts" data-picker-target="shortcuts" hidden>
-    <button type="button" class="btn btn-small btn-quiet" data-action="picker#all">All</button>
-    <button type="button" class="btn btn-small btn-quiet" data-action="picker#none">None</button>
-  </div>
   <% groups.each do |kind, group| %>
     <section class="pick-group" aria-label="<%= kind.pluralize %>">
       <% if groups.size > 1 %>
-        <div class="pick-group-header">
-          <h3 class="pick-group-title"><%= kind.pluralize %></h3>
-          <div class="picker-shortcuts" data-picker-target="shortcuts" hidden>
-            <button type="button" class="btn btn-small btn-quiet" data-action="picker#all" data-picker-group-param="<%= kind %>">All</button>
-            <button type="button" class="btn btn-small btn-quiet" data-action="picker#none" data-picker-group-param="<%= kind %>">None</button>
-          </div>
-        </div>
+        <h3 class="pick-group-title"><%= kind.pluralize %></h3>
       <% end %>
       <div class="pick-grid">
         <% group.each do |pet| %>
           <% status = statuses.fetch(pet.id) %>
           <label class="pick-tile">
             <input type="checkbox" name="check_in[pet_ids][]" value="<%= pet.id %>" <%= "checked" if chosen.include?(pet.id) %>
-                   data-picker-target="option" data-group="<%= kind %>" data-action="picker#update">
+                   data-picker-target="option" data-action="picker#update">
             <span class="pick-check" aria-hidden="true"><%= icon(:check) %></span>
             <span class="person-avatar" style="<%= PetsHelper::PET_DISC_STYLE %>" aria-hidden="true"><%= pet_avatar_content(pet) %></span>
             <span class="pick-name"><%= pet.name %></span>
