@@ -1,0 +1,11 @@
+<%= @title %>
+<% if @detail.present? %>
+<%= @detail %>
+<% end %>
+
+Open it: <%= @open_url %>
+
+--
+You get emails about "<%= @category.label %>"<%= " in #{@household.name}" if @household %> because of your notification settings.
+Change notification settings: <%= @settings_url %>
+Unsubscribe from these emails: <%= @unsubscribe_url %>

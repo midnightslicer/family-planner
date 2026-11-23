@@ -17,6 +17,19 @@ end
 # shared by the parallel workers; PushKeys handles the race).
 PushKeys.path = Rails.root.join("tmp/storage/.vapid_key")
 
+# Push "not set up on this server" for the length of a block.
+module PushKeys
+  def self.stub_unavailable
+    LOCK.synchronize do
+      @saved = defined?(@key) ? [@key] : nil
+      @key = nil
+    end
+    yield
+  ensure
+    LOCK.synchronize { @saved ? @key = @saved.first : remove_instance_variable(:@key) }
+  end
+end
+
 # A stand-in for the push services: records each request PushSubscription
 # would have sent and answers with the given status code.
 class FakePushService

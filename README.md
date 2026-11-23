@@ -57,6 +57,15 @@ It opens full screen from its icon. Installing needs https (or
 `http://localhost` while developing). Offline, it shows a short "You're
 offline" page and reloads itself when the connection is back.
 
+### Notifications
+
+Each person picks, on **Your account > Notifications**, which kinds of
+update reach them by push (on each phone they turn it on for) and which by
+email, plus quiet hours and a pause button. Pushes need https and, on an
+iPhone, the app added to the Home Screen first (iOS 16.4 or later); the
+page walks people through it. Email needs SMTP (Admin > Settings) and
+every email has a one-click unsubscribe.
+
 ### Deploy with Kamal (a VPS with a domain)
 
 1. Point a DNS name at the server.

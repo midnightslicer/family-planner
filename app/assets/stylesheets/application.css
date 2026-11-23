@@ -456,6 +456,35 @@ blockquote {
 .push-panel .flash-notice,
 .push-panel .flash-alert { margin-top: 1rem; }
 .push-steps { margin: 0 0 1rem; padding-left: 1.25rem; }
+/* The push/email matrix on the Notifications page. Fits a 320px phone:
+   the hint and any select wrap under the label, the checkbox columns stay
+   narrow, and nothing scrolls sideways. */
+.notification-matrix { table-layout: auto; }
+.notification-matrix thead th { background: none; padding: 0 0.25rem 0.5rem; text-align: center; }
+.notification-matrix thead th:first-child { text-align: left; padding-left: 0; }
+.notification-matrix tbody th {
+  text-align: left;
+  font-weight: 400;
+  padding: 0.75rem 0.5rem 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.notification-matrix tbody th strong { display: block; font-weight: 600; }
+.notification-matrix tbody th small { display: block; margin-top: 0.125rem; }
+.notification-matrix tbody td {
+  width: 3.75rem;
+  padding: 0.75rem 0.25rem;
+  text-align: center;
+}
+.notification-matrix tbody td input { margin: 0; }
+.notification-matrix tbody tr:hover { background: none; }
+.notification-matrix tbody tr:last-child th { border-bottom: 0; }
+.notification-matrix input:disabled { opacity: 0.4; cursor: not-allowed; }
+.matrix-select { width: auto; max-width: 100%; margin-top: 0.5rem; min-height: 36px; padding: 0.25rem 0.625rem; font-size: 0.875rem; }
+.matrix-hints { margin: 1rem 0 0; display: grid; gap: 0.25rem; }
+.quiet-hours { margin-top: 0.5rem; }
+/* Quiet hours off: the times stay editable but read as not in effect. */
+.form-field:has(#notifications_quiet_hours:not(:checked)) .quiet-hours { opacity: 0.55; }
+
 .push-steps li { margin: 0.25rem 0; }
 
 /* ---------- Household switcher ---------- */

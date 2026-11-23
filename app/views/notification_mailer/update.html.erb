@@ -1,0 +1,16 @@
+<p style="font-size: 16px; font-weight: 600; margin: 0 0 8px;"><%= @title %></p>
+<% if @detail.present? %>
+  <p style="margin: 0 0 16px;"><%= @detail %></p>
+<% end %>
+
+<p style="margin: 20px 0;">
+  <%= link_to "Open in #{@app_name}", @open_url,
+              style: "display: inline-block; background: #4f6ef7; color: #ffffff; padding: 10px 18px; border-radius: 999px; text-decoration: none; font-weight: 600;" %>
+</p>
+
+<p style="font-size: 12px; color: #6b7280; margin-top: 28px;">
+  You get emails about <strong><%= @category.label %></strong><%= " in #{@household.name}" if @household %>
+  because of your notification settings.<br>
+  <%= link_to "Change notification settings", @settings_url, style: "color: #6b7280;" %> ·
+  <%= link_to "Unsubscribe from these emails", @unsubscribe_url, style: "color: #6b7280;" %>
+</p>

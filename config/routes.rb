@@ -84,6 +84,11 @@ Rails.application.routes.draw do
     end
   end
 
+  # "Unsubscribe from these emails": signed token, no sign-in (GET confirms, POST unsubscribes).
+  get  "notifications/unsubscribe/:token", to: "notification_unsubscribes#show",   as: :notification_unsubscribe,
+                                           constraints: { token: /[A-Za-z0-9_\-=]+/ }
+  post "notifications/unsubscribe/:token", to: "notification_unsubscribes#create", constraints: { token: /[A-Za-z0-9_\-=]+/ }
+
   # Everyone's own account: profile, password, passkeys, two-step verification
   namespace :account do
     root to: "profiles#show"
@@ -95,7 +100,10 @@ Rails.application.routes.draw do
     resource :two_factor, only: [:new, :create, :destroy], controller: "two_factor"
     resource :recovery_codes, only: :create
     # How you hear about updates: devices, and push/email per kind of update.
-    resource :notifications, only: :show
+    resource :notifications, only: [:show, :update] do
+      post :pause
+      post :resume
+    end
   end
 
   # Admin namespace (admin check in Admin::BaseController)

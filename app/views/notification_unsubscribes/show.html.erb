@@ -1,0 +1,9 @@
+<% content_for :title, "Unsubscribe" %>
+<div class="form-card">
+  <h1>Stop these emails?</h1>
+  <p>You'll stop getting emails about <strong><%= @category.label %></strong> (<%= @category.hint.downcase_first %>).
+    Other emails, and notifications on your phone, aren't affected.</p>
+  <div class="form-actions">
+    <%= button_to "Unsubscribe", notification_unsubscribe_path(params[:token]), method: :post, class: "btn btn-primary" %>
+  </div>
+</div>

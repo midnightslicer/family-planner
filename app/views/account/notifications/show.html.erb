@@ -3,16 +3,121 @@
   <h1>Notifications</h1>
   <%= link_to account_root_path, class: "btn btn-quiet" do %><%= icon_label(:user, "Your account") %><% end %>
 </div>
+<p class="page-intro">Choose which devices buzz, and which updates reach you by push, by email, or both.</p>
 
-<%# One push controller around both sections, so the device list can mark this browser's row. %>
+<%# One push controller around the whole page, so the device list can mark this browser's row. %>
 <%= tag.div data: push_controller_data(@devices) do %>
 <section class="account-section" id="this-device">
   <h2><%= icon(:phone) %>This device</h2>
   <%= render "shared/push_panel", devices: @devices %>
 </section>
 
+<section class="account-section" id="what">
+  <h2><%= icon(:bell) %>What you hear about</h2>
+  <%= render "shared/form_errors", object: @user if @user.errors.any? %>
+  <%= form_with url: account_notifications_path, method: :patch, scope: :notifications, class: "form-card notification-form" do |f| %>
+    <table class="notification-matrix">
+      <thead>
+        <tr>
+          <th scope="col"><span class="visually-hidden">Kind of update</span></th>
+          <th scope="col">Push</th>
+          <th scope="col">Email</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @matrix.each do |preference| %>
+          <% key = preference.category %>
+          <tr>
+            <th scope="row">
+              <strong><%= preference.label %></strong>
+              <small><%= preference.hint %></small>
+              <% if key == "event_reminders" %>
+                <%= label_tag "notifications_reminder_lead_minutes", "When", class: "visually-hidden" %>
+                <%= f.select :reminder_lead_minutes, reminder_lead_options(@user.reminder_lead_minutes), {}, class: "matrix-select" %>
+              <% elsif key == "todo_digest" %>
+                <%= label_tag "notifications_digest_hour", "What time", class: "visually-hidden" %>
+                <%= f.select :digest_hour, digest_hour_options(@user.digest_hour), {}, class: "matrix-select" %>
+              <% end %>
+            </th>
+            <% { push: @push_available, email: @email_available }.each do |channel, available| %>
+              <td>
+                <% name = "notifications[categories][#{key}][#{channel}]" %>
+                <%= hidden_field_tag name, "0", id: nil, disabled: !available %>
+                <%= check_box_tag name, "1", preference.public_send(channel), id: "#{channel}_#{key}", disabled: !available %>
+                <%= label_tag "#{channel}_#{key}", "#{channel.to_s.capitalize}: #{preference.label}", class: "visually-hidden" %>
+              </td>
+            <% end %>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+
+    <div class="form-hint matrix-hints">
+      <% if !@push_available %>
+        <small>Push isn't available on this server right now, so these can't be changed.</small>
+      <% elsif @devices.empty? %>
+        <small>None of your devices get pushes yet. Turn them on above, on each phone you use.</small>
+      <% end %>
+      <% if @email_available %>
+        <small>Emails go to <strong><%= current_user.email %></strong>, one per update.</small>
+      <% else %>
+        <small>Email isn't set up on this server.<%= link_to(" Set it up in Admin > Settings.", admin_settings_path) if current_user.admin? %></small>
+      <% end %>
+    </div>
+
+    <div class="form-actions">
+      <%= f.button class: "btn btn-primary" do %><%= icon_label(:save, "Save") %><% end %>
+    </div>
+  <% end %>
+</section>
+
+<section class="account-section" id="quiet">
+  <h2><%= icon(:bell_off) %>Quiet hours and pause</h2>
+  <%= form_with url: account_notifications_path, method: :patch, scope: :notifications, class: "form-card" do |f| %>
+    <div class="form-field">
+      <label class="inline-check">
+        <%= hidden_field_tag "notifications[quiet_hours]", "0", id: nil %>
+        <%= check_box_tag "notifications[quiet_hours]", "1", @user.quiet_hours?, id: "notifications_quiet_hours" %>
+        Quiet hours
+      </label>
+      <div class="form-row quiet-hours">
+        <div class="form-field">
+          <%= f.label :quiet_hours_start, "From" %>
+          <%= f.select :quiet_hours_start, quiet_hours_options(@user.quiet_hours_start || 22 * 60) %>
+        </div>
+        <div class="form-field">
+          <%= f.label :quiet_hours_end, "Until" %>
+          <%= f.select :quiet_hours_end, quiet_hours_options(@user.quiet_hours_end || 7 * 60) %>
+        </div>
+      </div>
+      <small>No pushes between these times, except requests that need your OK. Email isn't affected.
+        <%= "Times are #{current_household.zone ? "#{current_household.name}'s" : 'on your'} clock." if current_household %></small>
+    </div>
+    <div class="form-actions">
+      <%= f.button class: "btn" do %><%= icon_label(:save, "Save quiet hours") %><% end %>
+    </div>
+  <% end %>
+
+  <div class="form-card">
+    <% if current_user.notifications_paused? %>
+      <p><span class="status-chip status-in_progress"><%= icon(:pause) %>Paused</span>
+        No pushes until <%= paused_until_text(current_user.notifications_paused_until) %>.</p>
+      <div class="form-actions">
+        <%= button_to resume_account_notifications_path, method: :post, class: "btn btn-primary" do %><%= icon_label(:play, "Resume now") %><% end %>
+      </div>
+    <% else %>
+      <p>Need a break? Pause pushes on all your devices for a while. Email isn't affected.</p>
+      <div class="form-actions">
+        <% { 1 => "1 hour", 8 => "8 hours", 24 => "1 day" }.each do |hours, label| %>
+          <%= button_to "Pause for #{label}", pause_account_notifications_path, method: :post, params: { hours: hours }, class: "btn" %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</section>
+
 <section class="account-section" id="devices">
-  <h2><%= icon(:bell) %>Your devices</h2>
+  <h2><%= icon(:tablet) %>Your devices</h2>
   <%= render "shared/push_devices", devices: @devices %>
 </section>
 <% end %>

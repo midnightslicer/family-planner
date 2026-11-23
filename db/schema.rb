@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_23_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_23_010000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -124,6 +124,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_000000) do
     t.datetime "archived_at"
     t.index ["created_by_id"], name: "index_locations_on_created_by_id"
     t.index ["household_id"], name: "index_locations_on_household_id"
+  end
+
+  create_table "notification_preferences", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.string "category", null: false
+    t.boolean "push", null: false
+    t.boolean "email", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "category"], name: "index_notification_preferences_on_user_id_and_category", unique: true
   end
 
   create_table "passkeys", force: :cascade do |t|
@@ -279,6 +289,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_000000) do
     t.string "work_availability", default: "text", null: false
     t.datetime "work_schedule_skipped_at"
     t.string "remember_token"
+    t.integer "reminder_lead_minutes", default: 15, null: false
+    t.integer "digest_hour", default: 7, null: false
+    t.integer "quiet_hours_start"
+    t.integer "quiet_hours_end"
+    t.datetime "notifications_paused_until"
     t.index ["admin"], name: "index_users_on_admin"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["handle"], name: "index_users_on_handle", unique: true
@@ -323,6 +338,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_000000) do
   add_foreign_key "location_reports", "users", column: "reported_by_id"
   add_foreign_key "locations", "households"
   add_foreign_key "locations", "users", column: "created_by_id"
+  add_foreign_key "notification_preferences", "users"
   add_foreign_key "passkeys", "users"
   add_foreign_key "pet_subscriptions", "pets"
   add_foreign_key "pet_subscriptions", "users"

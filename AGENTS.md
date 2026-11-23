@@ -165,7 +165,9 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
     bottom corner) > `flash toast` > `toast-body` (household in `small`,
     then the text), driven by the `toast` Stimulus controller; the
     Notifications page's `push-panel` (a `form-card` whose states are
-    `[data-push-target=state][data-state=…]`) and `push-steps` lists.
+    `[data-push-target=state][data-state=…]`), `push-steps` lists, the
+    push/email table `notification-matrix` (row `th` holds label, hint
+    and any `matrix-select`), `matrix-hints`, `quiet-hours`.
   - icons & motion: `icon(:name)` / `icon_label(:name, "Text")` from
     `IconsHelper` render inline SVG with `icon icon-<name>` (add new icons to
     `IconsHelper::ICONS`); `flash_message` renders a flash with its icon.
@@ -219,6 +221,22 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   (create = upsert by endpoint, moving it to whoever is signed in; test;
   unsubscribe; destroy) only ever touches `current_user`'s devices. Tests
   fake the push services with `FakePushService` (test_helper).
+- Notification settings, per person (not per household): a
+  `NotificationPreference` row per category (`push`, `email`;
+  `NotificationPreference::CATEGORIES` holds the labels, display order and
+  defaults, and a missing row means the defaults), plus
+  `users.reminder_lead_minutes`, `digest_hour`, `quiet_hours_start`/`_end`
+  (minutes after midnight on the household's clock) and
+  `notifications_paused_until`. `Notifier` applies them: toast always;
+  push if chosen, not paused, and outside quiet hours unless `urgent:`;
+  email (`NotificationMailer.update`, one per update) if chosen and
+  `AppSettings.smtp_configured?`. A new kind of notification needs a
+  category added there first (an unknown one raises). The page's update
+  never touches a column that's disabled (no SMTP, no VAPID key), and
+  reads no user id from params. Every email has "Unsubscribe from these
+  emails" (`NotificationUnsubscribe` signed token, no sign-in; GET
+  confirms, POST unsubscribes, also the RFC 8058 `List-Unsubscribe-Post`
+  target, so CSRF is off for it).
 - Push in the browser: `app/javascript/lib/push.js` (subscribe, sync,
   unsubscribe; reads the `push-key` / `push-user` metas the app layout
   prints for signed-in people), the `push` controller (the Notifications

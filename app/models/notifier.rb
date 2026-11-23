@@ -5,8 +5,13 @@
 #                   body: nil, path: "/tasks/12", household: household, tag: "task-12-3", urgent: false)
 #
 # - toast: an in-page notice in any tab the person has open (Turbo stream
-#   on [user, :notifications]);
-# - push: a SendPushJob for each device they've subscribed.
+#   on [user, :notifications]). Always.
+# - push: a SendPushJob for each device they've subscribed, if they want
+#   pushes for this category, haven't paused them, and it isn't their
+#   quiet hours (on the household's clock). Urgent ones (a request that
+#   waits on their answer) ignore quiet hours, not a pause.
+# - email: NotificationMailer, if they want email for this category and
+#   the server can send mail. Quiet hours don't apply: email doesn't buzz.
 #
 # `title` is the headline, `body` an optional second line. The push shows
 # the household's name as its title, so someone in two households knows
@@ -19,14 +24,23 @@ module Notifier
 
   module_function
 
-  def notify(user, category:, title:, path:, household:, tag:, body: nil, urgent: false)
+  def notify(user, category:, title:, path:, household:, tag:, body: nil, urgent: false, now: Time.current)
     return if user.nil?
 
-    note = Note.new(category: category.to_s, title: title.to_s.squish.truncate(TITLE_MAX), body: body.to_s.squish.truncate(BODY_MAX).presence,
+    preference = user.notification_preference(category) # raises on an unknown category
+    note = Note.new(category: preference.category, title: title.to_s.squish.truncate(TITLE_MAX), body: body.to_s.squish.truncate(BODY_MAX).presence,
                     path: link(path, household), household: household, tag: tag.to_s, urgent: urgent)
     toast(user, note)
-    push(user, note)
+    push(user, note) if push?(user, preference, note, now)
+    email(user, note) if preference.email && AppSettings.smtp_configured?
     note
+  end
+
+  def push?(user, preference, note, now)
+    return false unless preference.push
+    return false if user.notifications_paused?(now)
+
+    note.urgent || !user.quiet_at?(now.in_time_zone(note.household&.zone || Time.zone))
   end
 
   Note = Struct.new(:category, :title, :body, :path, :household, :tag, :urgent, keyword_init: true) do
@@ -54,6 +68,13 @@ module Notifier
     end
   rescue StandardError => error
     Rails.logger.warn("Queueing pushes failed: #{error.class}: #{error.message}")
+  end
+
+  def email(user, note)
+    NotificationMailer.update(user, category: note.category, title: note.title, body: note.body,
+                                    path: note.path, household: note.household).deliver_later
+  rescue StandardError => error
+    Rails.logger.warn("Queueing a notification email failed: #{error.class}: #{error.message}")
   end
 
   # What the service worker shows (app/views/pwa/service-worker.js.erb).

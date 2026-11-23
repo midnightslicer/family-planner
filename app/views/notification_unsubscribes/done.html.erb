@@ -1,0 +1,6 @@
+<% content_for :title, "Unsubscribed" %>
+<div class="form-card">
+  <h1>Unsubscribed</h1>
+  <p>You won't get emails about <strong><%= @category.label %></strong> any more.</p>
+  <p><%= link_to "Change your notification settings", account_notifications_path %> to choose what you hear about, and how.</p>
+</div>

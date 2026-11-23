@@ -25,10 +25,21 @@ class User < ApplicationRecord
   validate :birthday_not_in_future
   validates :work_availability, inclusion: { in: %w[free text busy] }
 
+  # Notification settings (the Notifications page).
+  REMINDER_LEADS = [5, 15, 30, 60].freeze
+  DIGEST_HOURS = (0..23).freeze
+  QUIET_STEP = 30 # quiet hours start and end on the hour or half hour
+  validates :reminder_lead_minutes, inclusion: { in: REMINDER_LEADS }
+  validates :digest_hour, inclusion: { in: DIGEST_HOURS }
+  validates :quiet_hours_start, :quiet_hours_end,
+            inclusion: { in: (0...24 * 60).step(QUIET_STEP).to_a, message: "isn't a time" }, allow_nil: true
+  validate :quiet_hours_complete
+
   has_many :household_memberships, dependent: :destroy
   has_many :households, through: :household_memberships
   has_many :passkeys, dependent: :destroy
   has_many :push_subscriptions, dependent: :delete_all
+  has_many :notification_preferences, dependent: :delete_all
   has_many :task_assignments, dependent: :delete_all
   has_many :residences, dependent: :delete_all
   has_many :work_schedule_versions, dependent: :delete_all
@@ -72,6 +83,36 @@ class User < ApplicationRecord
 
   def works?
     work_shifts.any?
+  end
+
+  # ---- Notifications ----
+
+  # This person's choice for a kind of update, saved or the default.
+  def notification_preference(category)
+    category = NotificationPreference.category(category).key
+    notification_preferences.find { |preference| preference.category == category } ||
+      NotificationPreference.new(user: self, category: category)
+  end
+
+  def notifications_paused?(now = Time.current)
+    notifications_paused_until.present? && notifications_paused_until > now
+  end
+
+  def quiet_hours?
+    quiet_hours_start.present? && quiet_hours_end.present? && quiet_hours_start != quiet_hours_end
+  end
+
+  # Whether `time` falls in quiet hours, read on `time`'s own clock (pass it
+  # in the household's zone). 22:00-07:00 runs across midnight.
+  def quiet_at?(time)
+    return false unless quiet_hours?
+
+    minute = time.hour * 60 + time.min
+    if quiet_hours_start < quiet_hours_end
+      minute >= quiet_hours_start && minute < quiet_hours_end
+    else
+      minute >= quiet_hours_start || minute < quiet_hours_end
+    end
   end
 
   def day_off_on(date = Date.current)
@@ -206,6 +247,12 @@ class User < ApplicationRecord
 
   def apply_custom_color
     self.color = custom_color if custom_color.present?
+  end
+
+  def quiet_hours_complete
+    return if quiet_hours_start.nil? == quiet_hours_end.nil?
+
+    errors.add(:base, "Quiet hours need both a start and an end.")
   end
 
   def birthday_not_in_future
