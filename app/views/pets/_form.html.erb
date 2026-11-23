@@ -31,24 +31,19 @@
         <%= f.date_field :birthday, max: Date.current %>
       </div>
     </div>
-    <%# "New place…" reveals a name box (CSS, no page change), so adding the
-        house never loses what's typed above. %>
+    <%# Photo tiles; "New house" reveals a name box (CSS, no page change), so
+        adding the house never loses what's typed above. %>
     <% new_home = @pet.home&.new_record?
-       selected = new_home || homes.empty? ? Location::NEW : @pet.home_id %>
+       selected = new_home ? Location::NEW : @pet.home_id %>
     <label class="inline-check visitor-check">
       <%= f.check_box :visitor %>
       <span>We dog-sit them: they come and go</span>
     </label>
-    <div class="form-field new-place-host">
-      <%= f.label :home_id, "Sleeps at" %>
-      <%= f.select :home_id, options_for_select([["Not set", ""]] + homes.map { |l| [l.name, l.id] } + [["New place…", Location::NEW]], selected) %>
-      <div class="new-place-field">
-        <%= label_tag "pet_new_home_name", "Name of the new place" %>
-        <%= text_field_tag "pet[new_home_name]", @new_home_name || (@pet.home.name if new_home), id: "pet_new_home_name",
-                           maxlength: 40, placeholder: "e.g. Farmhouse, Grandma's", autocomplete: "off" %>
-        <small>It's added to your locations as a house.</small>
-      </div>
-    </div>
+    <%= render "shared/location_picker", locations: homes, field_name: "pet[home_id]",
+               new_name_field: "pet[new_home_name]", new_name: @new_home_name || (@pet.home.name if new_home),
+               selected: selected, legend: "Sleeps at", blank_label: "Not set", new_label: "New house",
+               new_prompt: "Name of the new place", new_placeholder: "e.g. Farmhouse, Grandma's",
+               new_hint: "It's added to your locations as a house." %>
 
     <fieldset class="form-field">
       <legend>Feeding</legend>

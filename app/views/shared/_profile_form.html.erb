@@ -24,15 +24,10 @@
       <% if current_household %>
         <% houses = current_household.locations.where(kind: "house").order(:name)
            home = user.home_in(current_household) %>
-        <div class="form-field new-place-host">
-          <%= label_tag :home_id, me ? "I live at" : "Lives at" %>
-          <%= select_tag :home_id, options_for_select([["Not set", ""]] + houses.map { |h| [h.name, h.id] } + [["New house…", Location::NEW]], home&.id) %>
-          <div class="new-place-field">
-            <%= label_tag :new_home_name, "Name of the house" %>
-            <%= text_field_tag :new_home_name, nil, maxlength: 40, placeholder: "e.g. Red Brick House", autocomplete: "off" %>
-          </div>
-          <small>The board groups people and pets by house.</small>
-        </div>
+        <%= render "shared/location_picker", locations: houses, field_name: "home_id", new_name_field: "new_home_name",
+                   selected: home&.id, legend: (me ? "I live at" : "Lives at"), blank_label: "Not set", new_label: "New house",
+                   new_prompt: "Name of the house", new_placeholder: "e.g. Red Brick House",
+                   new_hint: "It's added to your locations as a house. The board groups people and pets by house." %>
       <% end %>
       <fieldset class="form-field">
         <legend>Color</legend>

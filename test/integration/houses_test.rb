@@ -20,6 +20,14 @@ class HousesTest < ActionDispatch::IntegrationTest
     assert_select ".person-card", 2
   end
 
+  test "the profile picks your house from photo tiles, including Not set and a new house" do
+    get account_root_path
+    assert_select ".picker-field .pick-tile input[name=home_id]", count: 4 # Not set, two houses, New house
+    assert_select ".pick-tile .pick-name", text: "Our House"
+    assert_select ".pick-tile .pick-name", text: "New house"
+    assert_select "select#home_id", count: 0
+  end
+
   test "you pick the house you live in, and the board groups by house" do
     patch account_profile_path, params: profile_params(home_id: @ours.id)
     assert_equal @ours, @me.home_in(@smiths)

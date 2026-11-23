@@ -36,6 +36,17 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "the pet form picks where it sleeps from photo tiles" do
+    @rex.update!(home: @house)
+    get edit_pet_path(@rex)
+    assert_select ".pick-tile input[name='pet[home_id]']", count: 4 # Not set, House, Yard, New house
+    assert_select ".pick-tile input[name='pet[home_id]'][value='#{@house.id}'][checked]"
+    assert_select "select#pet_home_id", count: 0
+
+    patch pet_path(@rex), params: { pet: { name: "Rex", meals_per_day: 2, home_id: "" } }
+    assert_nil @rex.reload.home
+  end
+
   test "a pet can have a custom type that then joins the menu" do
     post pets_path, params: { pet: { name: "Alma", species: Pet::NEW_KIND, new_species: "Alpaca", meals_per_day: 1 } }
     assert_equal "Alpaca", Pet.find_by!(name: "Alma").species

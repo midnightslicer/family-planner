@@ -2,13 +2,26 @@
     place right here: picking it reveals a name box (CSS, no page change),
     so nothing already chosen in the form is lost. Locals: locations,
     field_name (the radio's name), new_name_field, new_name (to refill
-    after an error), selected (an id or "new"), legend. %>
+    after an error), selected (an id or "new"), legend. Optional: blank_label
+    (adds a first tile such as "Not set" that posts an empty value, so the
+    choice is optional), new_label (the last tile, default "New place"),
+    new_prompt, new_placeholder and new_hint (the new-place box). %>
+<% blank_label = local_assigns[:blank_label]
+   new_checked = selected.to_s == Location::NEW || (locations.empty? && blank_label.nil?) %>
 <fieldset class="form-field picker-field new-place-host">
   <legend><%= legend %></legend>
   <div class="pick-grid pick-grid-places">
+    <% if blank_label %>
+      <label class="pick-tile pick-place">
+        <input type="radio" name="<%= field_name %>" value="" <%= "checked" if selected.blank? %>>
+        <span class="pick-check" aria-hidden="true"><%= icon(:check) %></span>
+        <span class="place-photo"><%= icon(:x) %></span>
+        <span class="pick-name"><%= blank_label %></span>
+      </label>
+    <% end %>
     <% locations.each do |location| %>
       <label class="pick-tile pick-place<%= ' pick-house' if location.house? %>">
-        <input type="radio" name="<%= field_name %>" value="<%= location.id %>" <%= "checked" if selected.to_s == location.id.to_s %> required>
+        <input type="radio" name="<%= field_name %>" value="<%= location.id %>" <%= "checked" if selected.to_s == location.id.to_s %> <%= "required" unless blank_label %>>
         <span class="pick-check" aria-hidden="true"><%= icon(:check) %></span>
         <%= location_picture(location) %>
         <span class="pick-name"><%= location.name %></span>
@@ -16,16 +29,16 @@
     <% end %>
     <label class="pick-tile pick-place pick-add">
       <input type="radio" name="<%= field_name %>" value="<%= Location::NEW %>"
-             <%= "checked" if selected.to_s == Location::NEW || locations.empty? %> required>
+             <%= "checked" if new_checked %> <%= "required" unless blank_label %>>
       <span class="pick-check" aria-hidden="true"><%= icon(:check) %></span>
       <span class="place-photo"><%= icon(:plus) %></span>
-      <span class="pick-name">New place</span>
+      <span class="pick-name"><%= local_assigns.fetch(:new_label, "New place") %></span>
     </label>
   </div>
   <div class="form-field new-place-field">
-    <%= label_tag new_name_field.parameterize(separator: "_"), "Name of the new place" %>
+    <%= label_tag new_name_field.parameterize(separator: "_"), local_assigns.fetch(:new_prompt, "Name of the new place") %>
     <%= text_field_tag new_name_field, local_assigns[:new_name], id: new_name_field.parameterize(separator: "_"),
-                       maxlength: 40, placeholder: "e.g. Back yard, Pool, Grandma's", autocomplete: "off" %>
-    <small>It's added to your locations. You can give it a photo there later.</small>
+                       maxlength: 40, placeholder: local_assigns.fetch(:new_placeholder, "e.g. Back yard, Pool, Grandma's"), autocomplete: "off" %>
+    <small><%= local_assigns.fetch(:new_hint, "It's added to your locations. You can give it a photo there later.") %></small>
   </div>
 </fieldset>
