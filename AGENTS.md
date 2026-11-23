@@ -303,7 +303,7 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   and reports, feedings and events keep pointing at them, so history
   survives. Keep data that charts will need (who, what, when) rather than
   overwriting or deleting it. The history tables: `location_reports` (`spot` inside/outside at
-  houses, `penned` when outdoors) and
+  houses, `penned` only outside at a house) and
   `feedings` (append-only; undo deletes a mistaken row), `tasks`
   (`finished_at`, `finished_by`), `task_assignments`, `pet_visits` (each
   stretch a pet is here; `pets.visitor` marks dogs we sit), `residences`

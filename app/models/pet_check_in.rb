@@ -97,7 +97,7 @@ class PetCheckIn
   end
 
   # What the saved reports will say, after LocationReport drops what
-  # doesn't apply here (inside/outside away from houses, penned indoors).
+  # doesn't apply here (inside/outside away from houses, penned anywhere but outside at a house).
   def spot_words
     return unless location?
 

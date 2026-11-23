@@ -28,7 +28,7 @@ class LocationReport < ApplicationRecord
   normalizes :comment, with: ->(comment) { comment.squish.presence }
   normalizes :spot, with: ->(spot) { spot.strip.downcase.presence }
   # Inside/outside only means something at a house; penned up only means
-  # something outdoors (outside at a house, or anywhere that isn't one).
+  # something outside at a house (the house's pen), nowhere else.
   before_validation do
     self.spot = nil unless location&.house?
     self.penned = false unless pennable?
@@ -52,7 +52,7 @@ class LocationReport < ApplicationRecord
   end
 
   def pennable?
-    location.present? && (!location.house? || spot == "outside")
+    location&.house? && spot == "outside"
   end
 
   # "outside, penned up" / "inside" / "penned up" / nil.
