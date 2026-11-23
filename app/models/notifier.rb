@@ -5,7 +5,9 @@
 #                   body: nil, path: "/tasks/12", household: household, tag: "task-12-3", urgent: false)
 #
 # - toast: an in-page notice in any tab the person has open (Turbo stream
-#   on [user, :notifications]). Always.
+#   on [user, :notifications]). Always. In a browser that can't get pushes
+#   but allows notifications, a tab in the background also shows it as a
+#   system notification, under the same rules as a push.
 # - push: a SendPushJob for each device they've subscribed, if they want
 #   pushes for this category, haven't paused them, and it isn't their
 #   quiet hours (on the household's clock). Urgent ones (a request that
@@ -33,8 +35,9 @@ module Notifier
     note = Note.new(category: preference.category, title: title.to_s.squish.truncate(TITLE_MAX), body: body.to_s.squish.truncate(BODY_MAX).presence,
                     path: link(path, household), household: household, tag: tag.to_s, urgent: urgent,
                     ttl: ttl.to_i.clamp(60, TTL.to_i))
-    toast(user, note)
-    push(user, note) if push?(user, preference, note, now)
+    alert = push?(user, preference, note, now)
+    toast(user, note, alert: alert)
+    push(user, note) if alert
     email(user, note) if preference.email && AppSettings.smtp_configured?
     note
   end
@@ -51,11 +54,14 @@ module Notifier
     def text = [title, body].compact.join(" ")
   end
 
-  def toast(user, note)
+  # `alert`: whether this update may buzz (the push rule above). A browser
+  # without push (Brave on a computer, say) then shows it as a system
+  # notification from the open tab instead (toast_controller.js).
+  def toast(user, note, alert: false)
     Turbo::StreamsChannel.broadcast_append_to(
       user, :notifications,
       target: "notifications", partial: "shared/notification",
-      locals: { title: note.household&.name.to_s, body: note.text, tag: note.tag, path: note.path }
+      locals: { title: note.household&.name.presence || AppSettings.app_name, body: note.text, tag: note.tag, path: note.path, alert: alert }
     )
   rescue StandardError => error
     Rails.logger.warn("Notification toast failed: #{error.class}: #{error.message}")

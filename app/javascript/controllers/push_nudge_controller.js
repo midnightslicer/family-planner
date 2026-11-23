@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
-import { pushKey, pushSupported, isIos, currentSubscription } from "../lib/push"
+import { pushKey, pushSupported, isIos, currentSubscription, pushUnavailable } from "../lib/push"
 
 // The "Get notifications on your phone" banner (shared/_notifications_banner).
 // Rendered hidden; shown only where it can help: push is set up on the
@@ -17,6 +17,7 @@ export default class extends Controller {
     if (!pushKey() || localStorage.getItem(DISMISSED)) return false
     if (!pushSupported()) return isIos() // iPhone in Safari: install first
     if (Notification.permission === "denied") return false
+    if (Notification.permission === "granted" && pushUnavailable()) return false // the most this browser can do
     return !(Notification.permission === "granted" && await currentSubscription())
   }
 

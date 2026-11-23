@@ -1,7 +1,10 @@
 <%# One in-page notification, appended into #notifications by Notifier while
     the app is open; the toast controller dismisses it after a while.
-    Locals: title (household name), body, tag, path (optional). %>
+    Locals: title (household name), body, tag, path (optional), alert (may also
+    show as a system notification where push isn't available). %>
 <div class="flash toast" role="status" data-controller="toast" data-tag="<%= tag %>"
+     data-toast-alert-value="<%= local_assigns[:alert] ? "true" : "false" %>" data-toast-title-value="<%= title %>"
+     data-toast-body-value="<%= body %>" data-toast-path-value="<%= local_assigns[:path] %>"
      data-action="mouseenter->toast#hold mouseleave->toast#start focusin->toast#hold focusout->toast#start">
   <%= icon(:bell) %>
   <div class="toast-body">

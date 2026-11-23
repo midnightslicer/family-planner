@@ -15,6 +15,7 @@ module WebPush
   # Exact hosts, and suffixes (leading dot) for services with many hosts.
   ALLOWED_HOSTS = [
     "fcm.googleapis.com",                 # Chrome, Edge on Android, Samsung, Opera, Brave
+    ".google.com",                        # Chromium builds without Google's keys (jmt17.google.com)
     ".push.apple.com",                    # Safari (web.push.apple.com)
     ".notify.windows.com",                # Edge on Windows (wns2-*.notify.windows.com)
     "updates.push.services.mozilla.com",  # Firefox

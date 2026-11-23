@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 import { Turbo } from "@hotwired/turbo-rails"
 import {
   pushKey, pushSupported, isIos, isStandalone, currentSubscription, endpointDigest,
-  subscribe, unsubscribe, post
+  subscribe, unsubscribe, post, pushUnavailable, notificationsSupported, showLocalNotification
 } from "../lib/push"
 
 // "This device" on the Notifications page (shared/_push_panel). Shows one of:
@@ -13,11 +13,13 @@ import {
 //   prompt       a "Turn on notifications" button (never prompts by itself)
 //   denied       blocked in the browser/phone settings: how to undo that
 //   on           subscribed and known to the server: "Send a test", "Turn off"
+//   local        notifications allowed but no push in this browser (Brave on
+//                a computer): they show while the app is open in a tab
 //
 // Also marks this device's row in the device list (`device` targets carry
 // a SHA-256 of their endpoint in data-digest).
 export default class extends Controller {
-  static targets = ["state", "checking", "error", "notice", "device", "button"]
+  static targets = ["state", "checking", "error", "notice", "device", "button", "brave"]
   static values = { subscribeUrl: String, unsubscribeUrl: String, testUrl: String, known: Array }
 
   connect() {
@@ -35,11 +37,13 @@ export default class extends Controller {
 
   async currentState() {
     if (!pushKey()) return "unavailable"
-    if (!pushSupported()) return isIos() && !isStandalone() ? "ios" : "unsupported"
+    if (isIos() && !isStandalone() && !pushSupported()) return "ios"
+    if (!notificationsSupported()) return "unsupported"
     if (Notification.permission === "denied") return "denied"
+    if (!pushSupported()) return Notification.permission === "granted" ? "local" : "prompt"
 
     const subscription = await currentSubscription()
-    if (!subscription) return "prompt"
+    if (!subscription) return Notification.permission === "granted" && pushUnavailable() ? "local" : "prompt"
 
     const digest = await endpointDigest(subscription)
     this.deviceTargets.forEach((row) => {
@@ -52,6 +56,11 @@ export default class extends Controller {
   async enable() {
     this.busy(true)
     try {
+      if (!pushSupported()) {
+        const permission = await Notification.requestPermission()
+        this.show(permission === "granted" ? "local" : permission === "denied" ? "denied" : "prompt")
+        return
+      }
       const permission = await subscribe(this.subscribeUrlValue)
       if (permission === "granted") {
         this.reload()
@@ -59,7 +68,23 @@ export default class extends Controller {
         this.show(permission === "denied" ? "denied" : "prompt")
       }
     } catch (error) {
-      this.fail(error)
+      if (error.pushUnavailable) {
+        this.show("local")
+      } else {
+        this.fail(error)
+      }
+    } finally {
+      this.busy(false)
+    }
+  }
+
+  // "Show a test" where there's no push: straight from this page.
+  async testLocal() {
+    this.busy(true)
+    try {
+      const shown = await showLocalNotification(document.title.split(" · ").pop(), { body: "Notifications are working in this browser.", tag: "test" })
+      if (shown) this.say("Shown. Nothing? Check that notifications for this site are allowed in your browser and computer settings.")
+      else this.fail(new Error("This browser wouldn't show it. Try reloading the page."))
     } finally {
       this.busy(false)
     }
@@ -102,6 +127,7 @@ export default class extends Controller {
 
   show(state) {
     if (this.hasCheckingTarget) this.checkingTarget.hidden = true
+    this.braveTargets.forEach((element) => (element.hidden = !navigator.brave))
     this.stateTargets.forEach((element) => (element.hidden = element.dataset.state !== state))
     this.element.dataset.pushState = state
   }

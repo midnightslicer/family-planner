@@ -10,8 +10,7 @@
   </div>
 
   <div data-push-target="state" data-state="unsupported" hidden>
-    <p>This browser can't get notifications. On a phone, use Chrome on Android, or Safari on an iPhone or iPad
-      (iOS 16.4 or later). They also need the app's https address.</p>
+    <p>This browser can't show notifications here. You'll still see updates on screen while <%= app_name %> is open.</p>
   </div>
 
   <div data-push-target="state" data-state="ios" hidden>
@@ -28,6 +27,19 @@
       to allow them.</p>
     <div class="form-actions">
       <button type="button" class="btn btn-primary" data-push-target="button" data-action="push#enable"><%= icon_label(:bell, "Turn on notifications") %></button>
+    </div>
+  </div>
+
+  <div data-push-target="state" data-state="local" hidden>
+    <p><span class="status-chip status-in_progress"><%= icon(:bell) %>While open</span>
+      This browser shows notifications while <%= app_name %> is open in a tab, even one in the background. It can't
+      get them once every tab is closed.</p>
+    <p data-push-target="brave" hidden><small>In Brave, turn on <strong>Use Google services for push messaging</strong>
+      (Settings, Privacy and security), restart Brave, then press <strong>Try again</strong> to get them even when it's
+      closed.</small></p>
+    <div class="form-actions">
+      <button type="button" class="btn" data-push-target="button" data-action="push#testLocal"><%= icon_label(:send, "Show a test") %></button>
+      <button type="button" class="btn btn-quiet" data-push-target="button" data-action="push#enable"><%= icon_label(:bell, "Try again") %></button>
     </div>
   </div>
 

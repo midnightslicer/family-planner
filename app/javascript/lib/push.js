@@ -11,6 +11,29 @@
 // device (the server moves the device to them).
 
 const SYNCED = "push-synced" // localStorage: "<user id>|<endpoint>" the server last accepted
+const NO_PUSH = "push-unavailable" // localStorage: notifications are allowed, but this browser's push service refused
+
+// Notifications are allowed here but push isn't available (Brave on a
+// computer leaves Google's push service off): updates still pop up as system
+// notifications while the app is open in a tab (toast_controller.js).
+export function pushUnavailable() {
+  return localStorage.getItem(NO_PUSH) === "1"
+}
+
+export function notificationsSupported() {
+  return "Notification" in window && "serviceWorker" in navigator && window.isSecureContext
+}
+
+// A system notification shown from the page (no push involved). Through the
+// service worker, so a click opens the app (notificationclick) and it works
+// on Android too, where `new Notification()` isn't allowed.
+export async function showLocalNotification(title, { body, tag, path } = {}) {
+  if (!notificationsSupported() || Notification.permission !== "granted") return false
+  const reg = await navigator.serviceWorker.getRegistration("/")
+  if (!reg) return false
+  await reg.showNotification(title, { body, tag: tag || undefined, icon: "/icon-192.png", badge: "/badge-96.png", data: { path: path || "/" } })
+  return true
+}
 
 export function pushKey() {
   return document.querySelector('meta[name="push-key"]')?.content || ""
@@ -56,8 +79,17 @@ export async function subscribe(url) {
     await subscription.unsubscribe()
     subscription = null
   }
-  subscription ||= await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: decode(pushKey()) })
+  if (!subscription) {
+    try {
+      subscription = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: decode(pushKey()) })
+    } catch (error) {
+      // Permission is granted but the browser's push service said no.
+      localStorage.setItem(NO_PUSH, "1")
+      throw Object.assign(error, { pushUnavailable: true })
+    }
+  }
   await register(url, subscription)
+  localStorage.removeItem(NO_PUSH)
   return permission
 }
 

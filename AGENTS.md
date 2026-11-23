@@ -260,10 +260,17 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   prints for signed-in people), the `push` controller (the Notifications
   page at `/account/notifications`, `Account::NotificationsController`:
   unavailable / unsupported / iOS-install-first / turn on / blocked / on
-  with "Send a test"), `push-sync` (every page: re-registers after a key
+  with "Send a test" / local: notifications allowed but the browser's push
+  service refused, as Brave on a computer does by default, remembered in
+  localStorage `push-unavailable`), `push-sync` (every page: re-registers after a key
   change or a different person signing in on the device, never prompts),
   `push-nudge` (the dashboard and pet banner `shared/_notifications_banner`,
-  hidden until it can help, links to the page) and `toast`. The service
+  hidden until it can help, links to the page) and `toast` (where there's
+  no push subscription, a background tab shows the toast as a system
+  notification itself, if `Notifier` set `alert`: the same push/pause/quiet
+  hours rule). The goal is no "use another browser": any major browser on
+  Android, desktop Chrome/Edge/Firefox/Chromium push, Brave the local
+  fallback, iPhone via the Home Screen app. The service
   worker always shows a push (generic text if the payload is unreadable),
   only opens same-origin paths, never takes over a wall tab, and re-posts
   a replaced subscription to `POST /push_subscriptions/renew`, authorised

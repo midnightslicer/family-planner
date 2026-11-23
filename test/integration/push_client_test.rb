@@ -47,7 +47,8 @@ class PushClientTest < ActionDispatch::IntegrationTest
     get account_notifications_path
     assert_response :success
     assert_select "[data-controller=push][data-push-known-value*=?]", Digest::SHA256.hexdigest(OLD)
-    assert_select "[data-push-target=state]", 6
+    assert_select "[data-push-target=state]", 7
+    assert_select "[data-state=local] button[data-action='push#testLocal']"
     assert_select "tr[data-push-target=device][data-digest=?]", Digest::SHA256.hexdigest(OLD), text: /Android · Firefox/
     assert_select "button[data-action='push#enable']"
   end

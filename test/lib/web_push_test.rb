@@ -121,6 +121,7 @@ class WebPushTest < ActiveSupport::TestCase
       https://updates.push.services.mozilla.com/wpush/v2/gAAAA
       https://push.services.mozilla.com/wpush/v2/x
       HTTPS://FCM.GOOGLEAPIS.COM/fcm/send/abc
+      https://jmt17.google.com/fcm/send/abc:def
     ].each { |url| assert WebPush.allowed_endpoint?(url), url }
 
     [
@@ -131,6 +132,9 @@ class WebPushTest < ActiveSupport::TestCase
       "https://evilfcm.googleapis.com/x",
       "https://push.apple.com/x",
       "https://evilpush.apple.com/x",
+      "https://google.com/x",
+      "https://evilgoogle.com/x",
+      "https://jmt17.google.com.evil.example/x",
       "https://127.0.0.1/x",
       "https://localhost/x",
       "https://169.254.169.254/latest/meta-data",

@@ -52,7 +52,8 @@ the rest.
 ### Put it on your phone
 
 The app installs from the browser, no app store: on Android open it in
-Chrome and choose **Install app** (or the install icon in the address bar);
+any browser (Chrome, Firefox, Edge, Brave, Samsung Internet) and choose
+**Install app** or **Add to Home screen** from its menu;
 on an iPhone open it in Safari, tap **Share**, then **Add to Home Screen**.
 It opens full screen from its icon. Installing needs https (or
 `http://localhost` while developing).

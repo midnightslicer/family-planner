@@ -42,6 +42,18 @@ class NotifierTest < ActiveSupport::TestCase
     assert_equal "task-5-1", options["topic"]
   end
 
+  test "the toast says whether it may buzz, for browsers without push" do
+    assert_turbo_stream_broadcasts [@member, :notifications], count: 1 do
+      Notifier.notify(@member, category: "pets", title: "Fed Rex", path: "/pets", household: @smiths, tag: "pets")
+    end
+    assert_includes capture_turbo_stream_broadcasts([@member, :notifications]).last.to_html, 'data-toast-alert-value="true"'
+
+    @member.notification_preferences.create!(category: "pets", push: false)
+    @member.notification_preferences.reload
+    Notifier.notify(@member, category: "pets", title: "Fed Rex", path: "/pets", household: @smiths, tag: "pets")
+    assert_includes capture_turbo_stream_broadcasts([@member, :notifications]).last.to_html, 'data-toast-alert-value="false"'
+  end
+
   test "urgent ones ask the phone to wake" do
     add_device(@member)
     Notifier.notify(@member, category: "assigned", title: "Clash", path: "/tasks", household: @smiths, tag: "t", urgent: true)
