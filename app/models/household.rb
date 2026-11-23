@@ -112,11 +112,6 @@ class Household < ApplicationRecord
     ActiveSupport::TimeZone[time_zone] if time_zone
   end
 
-  # Invalidates the old public wall link (e.g. if it was shared too widely).
-  def regenerate_dashboard_token!
-    update!(dashboard_token: SecureRandom.hex(16))
-  end
-
   private
 
   def time_zone_is_known

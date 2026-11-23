@@ -1,6 +1,6 @@
 module Admin
   class HouseholdsController < BaseController
-    before_action :set_household, only: [:edit, :update, :destroy, :regenerate_wall_link]
+    before_action :set_household, only: [:edit, :update, :destroy]
 
     def index
       @households = Household.left_joins(:household_memberships)
@@ -36,11 +36,6 @@ module Admin
     def destroy
       @household.destroy
       redirect_to admin_root_path, notice: "Household deleted.", status: :see_other
-    end
-
-    def regenerate_wall_link
-      @household.regenerate_dashboard_token!
-      redirect_to edit_admin_household_path(@household), notice: "New wall link created. Update any screens using the old one."
     end
 
     private

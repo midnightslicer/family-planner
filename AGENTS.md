@@ -8,8 +8,9 @@ Guide for AI assistants and humans working in this repo.
 Each person has their own Devise account; accounts join **only via email
 invitation** (no open signup). Members manage household-scoped tasks (including
 recurring ones), and everyone sees a live auto-updating dashboard of who's busy.
-A public wall view (`GET /h/:dashboard_token`, no auth) is meant for a
-wall-mounted iPad / browser home page: a section per place someone (or a
+A wall view (`GET /h/:dashboard_token`, sign-in required: a member of that
+household, else 404; the token only names the household) is meant for a
+wall-mounted iPad / browser home page that stays signed in: a section per place someone (or a
 pet) is right now (`Whereabouts`), with their status cards, then
 "Somewhere else"; read-only, and `wall_fit_controller.js` shrinks it to
 fit the screen since it can't scroll. Sign-in: passwords, passkeys
@@ -39,7 +40,7 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
 
 - `app/models/`: `User` (Devise + `handle`, `color`, `admin`, TOTP fields,
   `webauthn_id`), `Passkey` (WebAuthn public keys), `Household`
-  (`dashboard_token` for the public wall; `member_statuses` loads every
+  (`dashboard_token` names it in the wall URL; `member_statuses` loads every
   card's tasks in one query; `broadcast_member_cards`), `HouseholdMembership` (`home`: the house, a household location, they
   live in; `Household#by_house` groups people and pets by it for the
   board),
@@ -99,7 +100,7 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   deletes, whitelisted `return_to`). Anyone in the household can add and edit
   pets and locations; deleting is for whoever added it or an admin.
 - `app/controllers/admin/`: admin-only area (households + wall link and
-  members, invitations, people, settings). `walls_controller.rb`: public wall.
+  members, invitations, people, settings). `walls_controller.rb`: the wall (signed in).
 - `config/initializers/mailer.rb` + `app/mailers/app_mail_delivery.rb`: SMTP
   is read at send time (`:app_smtp` delivery method), so settings changes
   apply without a restart; email links use `AppSettings.url_options`. The
@@ -210,7 +211,7 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   save), `days_off`. Where someone was because of an event comes from the
   task's time, people and `location_id`.
 - **Household scoping is mandatory** on every task query: filter by
-  `Current.household.id` (or the token household on the wall). Non-members get
+  `Current.household.id` (the wall too: the token only picks one of your households). Non-members get
   404, not 403.
 - **Invitations are the only join path.** Devise `:registerable` is off (no
   `/users/sign_up`); accounts come from `InvitationsController#join` or the
@@ -264,7 +265,7 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   allows `data:` but not `blob:` (a blob preview silently shows nothing). There
   is no server-side image library, so no variants and analyzers are off;
   `SmallPhoto` only accepts JPEG/PNG/WebP (sniffed, not trusted) up to 2 MB.
-  Photo URLs are signed blob links, so the public wall can show them.
+  Photo URLs are signed blob links.
 
 - Active Record encryption keys come from credentials if present, otherwise
   they're derived from `SECRET_KEY_BASE` (see `config/application.rb`). So
@@ -275,7 +276,7 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
 - Live updates use Turbo Streams: pages subscribe with
   `turbo_stream_from household, :members` (cards) and
   `turbo_stream_from current_user, :notifications`. Stream names are signed,
-  which is what authorises the anonymous wall. Broadcasts render
+  and Action Cable refuses anonymous connections. Broadcasts render
   synchronously in `after_commit` and never raise into the request.
 - Pet, location and feeding changes call `Household#broadcast_refresh`
   (a debounced Turbo refresh on `[household, :members]`); pages that show

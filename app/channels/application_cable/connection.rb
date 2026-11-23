@@ -1,13 +1,12 @@
 module ApplicationCable
-  # Websocket connection for Turbo Stream broadcasts. Streams are authorised
-  # by their signed names (a dashboard only renders the names its viewer may
-  # see, and the wall's come from its secret token), so anonymous wall
-  # screens can connect too. Signed-in people are identified for the logs.
+  # Websocket connection for Turbo Stream broadcasts. Everything in the app,
+  # the wall included, needs a signed-in person, so anonymous connections are
+  # refused. Streams are still authorised by their signed names.
   class Connection < ActionCable::Connection::Base
     identified_by :current_user
 
     def connect
-      self.current_user = env["warden"]&.user(:user)
+      self.current_user = env["warden"]&.user(:user) || reject_unauthorized_connection
     end
   end
 end

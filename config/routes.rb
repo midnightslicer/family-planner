@@ -24,7 +24,7 @@ Rails.application.routes.draw do
   post "invitations/:token/accept",          to: "invitations#accept",          as: :accept_invitation
   post "invitations/:token/passkey_options", to: "invitations#passkey_options", as: :invitation_passkey_options
 
-  # Household switching + public wall (live updates arrive over Action Cable)
+  # Household switching + the wall (live updates arrive over Action Cable)
   post "switch_household",  to: "households#switch", as: :switch_household
   get  "h/:dashboard_token", to: "walls#show",       as: :wall
 
@@ -87,7 +87,6 @@ Rails.application.routes.draw do
   namespace :admin do
     root to: "households#index", as: :root
     resources :households, only: [:index, :create, :edit, :update, :destroy] do
-      post :regenerate_wall_link, on: :member
       resources :memberships, only: [:update, :destroy]
     end
     resources :invitations, only: [:index, :new, :create, :show, :destroy] do

@@ -57,6 +57,7 @@ class HouseholdTimeZoneTest < ActionDispatch::IntegrationTest
   test "the wall runs on the household's clock" do
     @smiths.update!(time_zone: "Central Time (US & Canada)")
     @member.work_shifts.create!(weekday: 1, from_time: "09:00", until_time: "17:00", place: "Office")
+    sign_in @member
     travel_to Time.utc(2026, 11, 23, 16, 0) do
       get wall_path(@smiths.dashboard_token)
       assert_select "#{card(@member)} .person-now", text: "Work · until 5 PM · Office"

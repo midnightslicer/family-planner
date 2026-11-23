@@ -45,7 +45,7 @@ module ScheduleHelper
 
   # "Meeting · until 3 PM · Town": what's on. A private item reads "Busy ·
   # until 3 PM" to anyone but its people; with no viewer (person cards,
-  # which also go to the public wall) it always does.
+  # which also go to the wall) it always does.
   def now_line(task, viewer = nil)
     visible = task.visible_to?(viewer)
     parts = [task.title_for(viewer)]

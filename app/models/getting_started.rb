@@ -82,7 +82,7 @@ class GettingStarted
     return unless @user.admin?
 
     Step.new(key: :wall, title: "Put the board on a spare tablet (optional)",
-             detail: "The wall page needs no sign-in and updates live. Open it on the tablet and add it to the home screen.",
+             detail: "The wall page updates live. Open it on the tablet, sign in once and add it to the home screen.",
              done: false, link_label: "Get the wall link", path: routes.edit_admin_household_path(@household))
   end
 

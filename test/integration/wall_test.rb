@@ -10,6 +10,8 @@ class WallTest < ActionDispatch::IntegrationTest
     @pool = @smiths.locations.create!(name: "Pool", kind: "pool")
   end
 
+  setup { sign_in @admin }
+
   def wall = get(wall_path(@smiths.dashboard_token))
 
   test "a section for each occupied place, with everyone there and their cards" do

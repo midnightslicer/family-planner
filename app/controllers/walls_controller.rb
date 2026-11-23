@@ -1,11 +1,10 @@
-# Public household wall (kiosk view): no sign-in; the household's secret
-# dashboard token in the URL is the credential. Invalid token -> 404.
+# The household wall (kiosk view) for a wall-mounted tablet. It shows where
+# everyone is, so it needs a signed-in member of the household: the token in
+# the URL only says which household's wall, and is no credential. A
+# wall-mounted tablet stays signed in (remember-me), and signing in sends you
+# back here. Not a member, or an unknown token -> 404.
 class WallsController < ApplicationController
-  skip_before_action :require_setup
-  # Lets the wall be embedded in a home dashboard (Home Assistant, a browser
-  # start page...). It's read-only, so framing can't be abused for clicks.
-  content_security_policy { |policy| policy.frame_ancestors "*" }
-  after_action { response.headers.delete("X-Frame-Options") }
+  before_action :authenticate_user!
 
   def show
     @household = wall_household
@@ -25,7 +24,7 @@ class WallsController < ApplicationController
   def wall_household
     return @wall_household if defined?(@wall_household)
 
-    @wall_household = Household.find_by(dashboard_token: params[:dashboard_token].to_s)
+    @wall_household = current_user&.households&.find_by(dashboard_token: params[:dashboard_token].to_s)
   end
 
   # The wall runs on its household's clock too.

@@ -1,11 +1,10 @@
-<%# The household's public wall (tablet) link. Locals: household. Admins also
-    get "Make a new link", which breaks the old one. Shown on the account
-    page for every member and on Admin > Households. %>
+<%# The household's wall (tablet) link. Locals: household. Shown on the
+    account page for every member and on Admin > Households. %>
 <section class="account-section" id="wall">
   <h2><%= icon(:tablet) %>Wall display<% if local_assigns[:name_household] %>: <%= household.name %><% end %></h2>
   <p class="page-intro">
-    Open this link on a tablet or spare screen and add it to the home screen. It needs no sign-in and
-    updates live, so treat it like a key: anyone with the link can see the board.
+    Open this link on a tablet or spare screen, sign in once and add it to the home screen. It updates
+    live and stays signed in. Only people in this household who are signed in can see it.
   </p>
   <div class="form-card" data-controller="clipboard">
     <div class="copy-field">
@@ -14,11 +13,5 @@
       <button type="button" class="btn" data-clipboard-target="button" data-action="clipboard#copy">Copy</button>
       <%= link_to wall_path(household.dashboard_token), class: "btn btn-quiet", target: "_blank", rel: "noopener" do %><%= icon_label(:external, "Open") %><% end %>
     </div>
-    <% if current_user.admin? %>
-      <div class="form-actions">
-        <%= button_to "Make a new link", regenerate_wall_link_admin_household_path(household), class: "btn btn-quiet btn-small",
-                      form: { data: { turbo_confirm: "The current wall link will stop working. Continue?" } } %>
-      </div>
-    <% end %>
   </div>
 </section>

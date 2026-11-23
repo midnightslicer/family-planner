@@ -110,7 +110,6 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
   test "pets are on the wall, read-only, with where they are and whether they've eaten" do
     LocationReport.create!(household: @smiths, subject: @rex, location: @yard, reported_by: @admin)
     Feeding.create!(household: @smiths, pet: @rex, fed_by: @admin)
-    sign_out @member
     get wall_path(@smiths.dashboard_token)
     assert_response :success
     assert_select ".wall-pet", 2
