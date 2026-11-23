@@ -6,7 +6,7 @@
 <div class="form-card">
   <%= form_with model: @pet do |f| %>
     <%= render "shared/photo_picker", form: f, attribute: :photo, preview: pet_avatar_content(@pet),
-               style: PetsHelper::PET_DISC_STYLE %>
+               style: PetsHelper::PET_DISC_STYLE, autosave: @pet.persisted? %>
     <div class="form-field">
       <%= f.label :name, "Name" %>
       <%= f.text_field :name, required: true, maxlength: 40, placeholder: "e.g. Biscuit", autocomplete: "off" %>
