@@ -23,6 +23,11 @@ class PushSubscription < ApplicationRecord
     failed_at.present?
   end
 
+  # Lets the page tell which row is this browser without echoing endpoints.
+  def endpoint_digest
+    Digest::SHA256.hexdigest(endpoint)
+  end
+
   def p256dh_bytes = WebPush::Base64Url.decode(p256dh)
   def auth_bytes = WebPush::Base64Url.decode(auth)
 

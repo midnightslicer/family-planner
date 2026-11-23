@@ -80,6 +80,7 @@ Rails.application.routes.draw do
     collection do
       post :test
       post :unsubscribe
+      post :renew
     end
   end
 
@@ -93,6 +94,8 @@ Rails.application.routes.draw do
     end
     resource :two_factor, only: [:new, :create, :destroy], controller: "two_factor"
     resource :recovery_codes, only: :create
+    # How you hear about updates: devices, and push/email per kind of update.
+    resource :notifications, only: :show
   end
 
   # Admin namespace (admin check in Admin::BaseController)

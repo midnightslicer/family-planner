@@ -161,6 +161,11 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
     `passkey-signin`, `passkey-choice`, `passkey-hint`, `passkey-add`,
     `setup-steps`, `qr-frame` > `qr-code` (`qr-light`/`qr-dark`, coloured by
     the `--qr-*` tokens), `secret-key`, `recovery-codes`.
+  - notifications: `toast-stack` (the `#notifications` container, fixed
+    bottom corner) > `flash toast` > `toast-body` (household in `small`,
+    then the text), driven by the `toast` Stimulus controller; the
+    Notifications page's `push-panel` (a `form-card` whose states are
+    `[data-push-target=state][data-state=…]`) and `push-steps` lists.
   - icons & motion: `icon(:name)` / `icon_label(:name, "Text")` from
     `IconsHelper` render inline SVG with `icon icon-<name>` (add new icons to
     `IconsHelper::ICONS`); `flash_message` renders a flash with its icon.
@@ -214,6 +219,19 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   (create = upsert by endpoint, moving it to whoever is signed in; test;
   unsubscribe; destroy) only ever touches `current_user`'s devices. Tests
   fake the push services with `FakePushService` (test_helper).
+- Push in the browser: `app/javascript/lib/push.js` (subscribe, sync,
+  unsubscribe; reads the `push-key` / `push-user` metas the app layout
+  prints for signed-in people), the `push` controller (the Notifications
+  page at `/account/notifications`, `Account::NotificationsController`:
+  unavailable / unsupported / iOS-install-first / turn on / blocked / on
+  with "Send a test"), `push-sync` (every page: re-registers after a key
+  change or a different person signing in on the device, never prompts),
+  `push-nudge` (the dashboard and pet banner `shared/_notifications_banner`,
+  hidden until it can help, links to the page) and `toast`. The service
+  worker always shows a push (generic text if the payload is unreadable),
+  only opens same-origin paths, never takes over a wall tab, and re-posts
+  a replaced subscription to `POST /push_subscriptions/renew`, authorised
+  by the old endpoint (no session, no CSRF token in a worker).
 - App icons: `public/icon.svg` is the source; `icon.png`, `icon-192.png`,
   `icon-512.png`, `icon-maskable-512.png` (glyph inside the 80% safe zone,
   solid background) and `apple-touch-icon.png` (180px, opaque) are

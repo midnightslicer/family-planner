@@ -1,0 +1,18 @@
+<% content_for :title, "Notifications" %>
+<div class="page-header">
+  <h1>Notifications</h1>
+  <%= link_to account_root_path, class: "btn btn-quiet" do %><%= icon_label(:user, "Your account") %><% end %>
+</div>
+
+<%# One push controller around both sections, so the device list can mark this browser's row. %>
+<%= tag.div data: push_controller_data(@devices) do %>
+<section class="account-section" id="this-device">
+  <h2><%= icon(:phone) %>This device</h2>
+  <%= render "shared/push_panel", devices: @devices %>
+</section>
+
+<section class="account-section" id="devices">
+  <h2><%= icon(:bell) %>Your devices</h2>
+  <%= render "shared/push_devices", devices: @devices %>
+</section>
+<% end %>

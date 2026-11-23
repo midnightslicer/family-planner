@@ -28,6 +28,7 @@ class PwaController < ActionController::Base
 
   def service_worker
     @version = worker_version
+    @app_name = AppSettings.app_name
     render template: "pwa/service-worker", formats: [:js], layout: false, content_type: "text/javascript"
   end
 

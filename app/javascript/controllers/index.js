@@ -21,11 +21,17 @@ application.register("clipboard", ClipboardController)
 import MenuController from "./menu_controller"
 application.register("menu", MenuController)
 
-import NotificationController from "./notification_controller"
-application.register("notification", NotificationController)
+import PushController from "./push_controller"
+application.register("push", PushController)
 
-import NotificationsController from "./notifications_controller"
-application.register("notifications", NotificationsController)
+import PushNudgeController from "./push_nudge_controller"
+application.register("push-nudge", PushNudgeController)
+
+import PushSyncController from "./push_sync_controller"
+application.register("push-sync", PushSyncController)
+
+import ToastController from "./toast_controller"
+application.register("toast", ToastController)
 
 import PhotoUploadController from "./photo_upload_controller"
 application.register("photo-upload", PhotoUploadController)

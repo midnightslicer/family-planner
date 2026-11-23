@@ -424,6 +424,40 @@ blockquote {
 .flash-alert ul { margin: 0; padding-left: 1.125rem; }
 .flash-alert li { margin: 0.125rem 0; }
 
+/* ---------- Toasts (in-page notifications) ----------
+   Notifier appends one per update into #notifications while the app is
+   open (shared/_notification, toast_controller.js). A flash, floated in the
+   bottom corner so it doesn't push the page around. */
+.toast-stack {
+  position: fixed;
+  z-index: 60;
+  right: var(--gutter-end);
+  bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  width: min(24rem, calc(100vw - var(--gutter-start) - var(--gutter-end)));
+  display: grid;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+.toast-stack:empty { display: none; }
+.toast {
+  pointer-events: auto;
+  box-shadow: var(--shadow-lg);
+  padding: 0.625rem 0.5rem 0.625rem 0.875rem;
+  font-weight: 500;
+  animation: rise-in 420ms var(--ease-spring) backwards;
+}
+.toast > .icon { flex: none; width: 1.25rem; height: 1.25rem; color: var(--accent); }
+.toast-body { flex: 1; min-width: 0; display: grid; line-height: 1.35; overflow-wrap: anywhere; }
+.toast-body small { font-weight: 600; }
+.toast .btn-icon { min-height: 34px; width: 34px; }
+
+/* ---------- Push notifications panel ---------- */
+.push-panel .form-actions { margin-top: 1rem; }
+.push-panel .flash-notice,
+.push-panel .flash-alert { margin-top: 1rem; }
+.push-steps { margin: 0 0 1rem; padding-left: 1.25rem; }
+.push-steps li { margin: 0.25rem 0; }
+
 /* ---------- Household switcher ---------- */
 .household-switch {
   display: flex;

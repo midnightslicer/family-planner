@@ -16,6 +16,11 @@
     <%# Makes the app installable; application.js registers the service worker
         only on pages that have this link (not the wall). %>
     <link rel="manifest" href="<%= pwa_manifest_path %>">
+    <% if user_signed_in? && (push_key = PushKeys.public_key) %>
+      <%# Read by lib/push.js: the key this device subscribes against, and whose device it is. %>
+      <meta name="push-key" content="<%= push_key %>">
+      <meta name="push-user" content="<%= current_user.id %>">
+    <% end %>
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
     <%= action_cable_meta_tag %>
@@ -45,9 +50,10 @@
     </div>
 
     <% if user_signed_in? %>
-      <%# Browser notifications for this person arrive here (see Task#notify_assignee). %>
+      <%# In-page notifications (Notifier) arrive here as toasts while the app is open. %>
       <%= turbo_stream_from current_user, :notifications %>
-      <div id="notifications" hidden></div>
+      <div id="notifications" class="toast-stack" aria-live="polite"></div>
+      <div hidden data-controller="push-sync" data-push-sync-url-value="<%= push_subscriptions_path %>"></div>
     <% end %>
 
     <main class="container">

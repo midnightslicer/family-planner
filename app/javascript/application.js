@@ -1,5 +1,5 @@
 // Entry point for the build script in your package.json
-import "@hotwired/turbo-rails"
+import { Turbo } from "@hotwired/turbo-rails"
 import "./controllers"
 
 // Tell the server which time zone this browser is in, so "fed today" and
@@ -17,5 +17,13 @@ if ("serviceWorker" in navigator && window.isSecureContext && document.querySele
     navigator.serviceWorker.register("/service-worker.js", { scope: "/" }).catch((error) => {
       console.warn("Service worker registration failed", error)
     })
+  })
+
+  // A tapped notification, when the worker couldn't navigate this window
+  // itself (see notificationclick in the worker).
+  navigator.serviceWorker.addEventListener("message", (event) => {
+    if (event.data?.type !== "visit") return
+    const url = new URL(event.data.url, window.location.origin)
+    if (url.origin === window.location.origin) Turbo.visit(url.href)
   })
 }

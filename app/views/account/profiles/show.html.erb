@@ -12,6 +12,12 @@
 
 <%= render "shared/wall_link", household: current_household, name_household: current_user.households.many? if current_household %>
 
+<section class="account-section" id="notifications">
+  <h2>Notifications</h2>
+  <p class="page-intro">Choose which devices buzz when something needs you, and what you hear about.</p>
+  <%= link_to account_notifications_path, class: "btn" do %><%= icon_label(:bell, "Notification settings") %><% end %>
+</section>
+
 <section class="account-section" id="passkeys">
   <h2>Passkeys</h2>
   <p class="page-intro">

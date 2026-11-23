@@ -1,0 +1,30 @@
+<%# Every device that gets this person's pushes. Rows carry a digest of their
+    endpoint so the push controller (when on the same page) can mark this
+    browser's. Locals: devices. %>
+<% if devices.any? %>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Device</th><th>Last notified</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+      <tbody>
+        <% devices.each do |device| %>
+          <tr data-push-target="device" data-digest="<%= device.endpoint_digest %>">
+            <td>
+              <%= device.device_name %>
+              <span class="status-chip status-planned" data-this-device hidden>This device</span>
+              <% if device.failing? %>
+                <span class="status-chip avail-busy" title="<%= device.last_error %>"><%= icon(:alert_circle) %>Last one failed</span>
+              <% end %>
+            </td>
+            <td><%= device.last_used_at ? "#{time_ago_in_words(device.last_used_at)} ago" : "Not yet" %></td>
+            <td class="table-actions">
+              <%= button_to "Remove", push_subscription_path(device), method: :delete, class: "btn btn-danger btn-small",
+                            form: { data: { turbo_confirm: "Stop notifications on #{device.device_name}?" } } %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <p class="empty-hint">None of your devices get notifications yet. Turn them on above, on each phone you use.</p>
+<% end %>

@@ -6,8 +6,13 @@
 // friendly page instead of the browser's error when a navigation fails
 // because the device is offline. It never caches HTML, Turbo responses,
 // /cable or the wall (/h/...).
+//
+// It also shows push notifications (Notifier, SendPushJob): every push is
+// shown, always. iOS cancels subscriptions that receive pushes without
+// showing one, and Chrome shows a generic notice of its own anyway.
 
 const VERSION = "<%= @version %>"
+const APP_NAME = <%= raw @app_name.to_json %>
 const CACHE_PREFIX = "family-status-"
 const CACHE = `${CACHE_PREFIX}${VERSION}`
 const OFFLINE_URL = "/offline.html"
@@ -50,5 +55,82 @@ self.addEventListener("fetch", (event) => {
       if (offline) return offline
       throw error
     }
+  })())
+})
+
+// ---------- Push notifications ----------
+
+// Only this site's own pages, never another origin or a protocol-relative
+// URL, whatever a payload says.
+function safePath(path) {
+  if (typeof path !== "string" || !path.startsWith("/") || path.startsWith("//") || path.includes("\\")) return "/"
+  return path
+}
+
+self.addEventListener("push", (event) => {
+  let data = {}
+  try {
+    data = event.data ? event.data.json() : {}
+  } catch {
+    data = {}
+  }
+  const title = typeof data.title === "string" && data.title ? data.title : APP_NAME
+  const tag = typeof data.tag === "string" && data.tag ? data.tag : undefined
+  const options = {
+    body: typeof data.body === "string" && data.body ? data.body : "You have an update.",
+    icon: "/icon-192.png",
+    badge: "/badge-96.png",
+    data: { path: safePath(data.path) }
+  }
+  // Same tag: replace the older notification but still buzz for the new one.
+  if (tag) Object.assign(options, { tag, renotify: true })
+
+  event.waitUntil(self.registration.showNotification(title, options))
+})
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close()
+  const url = new URL(safePath(event.notification.data && event.notification.data.path), self.location.origin).href
+
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true })
+    // Reuse an open app window, but never take over a wall tab.
+    const open = windows.find((client) => {
+      const where = new URL(client.url)
+      return where.origin === self.location.origin && !where.pathname.startsWith("/h/")
+    })
+    if (open) {
+      await open.focus()
+      try {
+        await open.navigate(url)
+      } catch {
+        // Not controlled by this worker yet: ask the page to go there itself.
+        open.postMessage({ type: "visit", url })
+      }
+      return
+    }
+    if (self.clients.openWindow) await self.clients.openWindow(url)
+  })())
+})
+
+// The push service replaced this browser's subscription (rare; mostly
+// Firefox). Subscribe again with the same key and tell the server, which
+// knows the old endpoint and moves the device over to the new one. If this
+// fails, the page re-registers next time the app is opened.
+self.addEventListener("pushsubscriptionchange", (event) => {
+  event.waitUntil((async () => {
+    const old = event.oldSubscription
+    if (!old || !old.options || !old.options.applicationServerKey) return
+
+    const fresh = event.newSubscription || await self.registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: old.options.applicationServerKey
+    })
+    await fetch("/push_subscriptions/renew", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({ old_endpoint: old.endpoint, subscription: fresh.toJSON() })
+    })
   })())
 })

@@ -1,9 +1,12 @@
-<%# Web notifications opt-in banner. Never auto-prompts. Locals: message (optional). %>
-<div class="invite-banner" data-controller="notifications">
+<%# Nudge towards notifications on this device. Rendered hidden: the
+    push-nudge controller shows it only where it can help, and it only
+    links to the settings (it never asks for permission itself).
+    Locals: message (optional). %>
+<div class="invite-banner" data-controller="push-nudge" hidden>
   <span class="banner-icon"><%= icon(:bell) %></span>
-  <p><%= local_assigns[:message] || "Want a nudge when someone assigns you a task or a status changes?" %></p>
+  <p><%= local_assigns[:message] || "Get a notification on your phone when someone gives you something to do, or answers you, even when the app is closed." %></p>
   <div class="invite-actions">
-    <button type="button" class="btn btn-primary" data-action="notifications#enable"><%= icon_label(:bell, "Enable notifications") %></button>
-    <button type="button" class="btn btn-quiet" data-action="notifications#dismiss">No thanks</button>
+    <%= link_to account_notifications_path, class: "btn btn-primary" do %><%= icon_label(:bell, "Set up notifications") %><% end %>
+    <button type="button" class="btn btn-quiet" data-action="push-nudge#dismiss">No thanks</button>
   </div>
 </div>

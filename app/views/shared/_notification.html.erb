@@ -1,6 +1,15 @@
-<%# Appended into #notifications by a broadcast; the Stimulus controller shows
-    it as a browser notification (if allowed) and removes the element. %>
-<div data-controller="notification"
-     data-notification-title-value="<%= title %>"
-     data-notification-body-value="<%= body %>"
-     data-notification-tag-value="<%= tag %>"></div>
+<%# One in-page notification, appended into #notifications by Notifier while
+    the app is open; the toast controller dismisses it after a while.
+    Locals: title (household name), body, tag, path (optional). %>
+<div class="flash toast" role="status" data-controller="toast" data-tag="<%= tag %>"
+     data-action="mouseenter->toast#hold mouseleave->toast#start focusin->toast#hold focusout->toast#start">
+  <%= icon(:bell) %>
+  <div class="toast-body">
+    <% if title.present? %><small><%= title %></small><% end %>
+    <span><%= body %></span>
+  </div>
+  <% if local_assigns[:path].present? %>
+    <%= link_to "Open", path, class: "btn btn-small" %>
+  <% end %>
+  <button type="button" class="btn btn-quiet btn-icon" data-action="toast#dismiss" aria-label="Dismiss"><%= icon(:x) %></button>
+</div>

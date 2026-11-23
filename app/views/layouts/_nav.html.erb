@@ -32,6 +32,7 @@
           <small>@<%= current_user.handle %></small>
         </div>
         <%= link_to icon_label(:user, "Your account"), account_root_path %>
+        <%= link_to icon_label(:bell, "Notifications"), account_notifications_path %>
         <% if current_user.admin? %>
           <%= link_to icon_label(:shield, "Admin"), admin_root_path %>
         <% end %>

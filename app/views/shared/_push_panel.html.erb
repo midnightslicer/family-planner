@@ -1,0 +1,55 @@
+<%# "This device": turn push on, the iPhone steps, blocked, or on with a
+    test button. Must sit inside the element push_controller_data(devices) puts
+    the push controller on (see account/notifications/show). %>
+<div class="form-card push-panel">
+  <p data-push-target="checking"><small>Checking this device…</small></p>
+
+  <div data-push-target="state" data-state="unavailable" hidden>
+    <p>Push notifications aren't available on this server right now.
+      <%= link_to("Check Admin > Settings.", admin_settings_path) if current_user.admin? %></p>
+  </div>
+
+  <div data-push-target="state" data-state="unsupported" hidden>
+    <p>This browser can't get notifications. On a phone, use Chrome on Android, or Safari on an iPhone or iPad
+      (iOS 16.4 or later). They also need the app's https address.</p>
+  </div>
+
+  <div data-push-target="state" data-state="ios" hidden>
+    <p>On an iPhone or iPad, notifications only work in the app on your Home Screen:</p>
+    <ol class="push-steps">
+      <li>Tap <strong>Share</strong> at the bottom of Safari.</li>
+      <li>Tap <strong>Add to Home Screen</strong>, then <strong>Add</strong>.</li>
+      <li>Open <%= app_name %> from your Home Screen, come back to this page and turn notifications on.</li>
+    </ol>
+  </div>
+
+  <div data-push-target="state" data-state="prompt" hidden>
+    <p>Get a notification on this device when something needs you, even when the app is closed. Your browser will ask
+      to allow them.</p>
+    <div class="form-actions">
+      <button type="button" class="btn btn-primary" data-push-target="button" data-action="push#enable"><%= icon_label(:bell, "Turn on notifications") %></button>
+    </div>
+  </div>
+
+  <div data-push-target="state" data-state="denied" hidden>
+    <p><span class="status-chip status-undone"><%= icon(:bell_off) %>Blocked</span>
+      Notifications for this site are turned off in your browser or phone settings. To turn them back on:</p>
+    <ul class="push-steps">
+      <li><strong>iPhone:</strong> Settings, Notifications, <%= app_name %>, then Allow Notifications.</li>
+      <li><strong>Android:</strong> long-press the app's icon, App info, Notifications.</li>
+      <li><strong>Computer:</strong> click the icon left of the address bar, then allow Notifications.</li>
+    </ul>
+    <p><small>Then reload this page.</small></p>
+  </div>
+
+  <div data-push-target="state" data-state="on" hidden>
+    <p><span class="status-chip status-completed"><%= icon(:check) %>On</span> This device gets notifications.</p>
+    <div class="form-actions">
+      <button type="button" class="btn" data-push-target="button" data-action="push#test"><%= icon_label(:send, "Send a test") %></button>
+      <button type="button" class="btn btn-quiet" data-push-target="button" data-action="push#disable"><%= icon_label(:bell_off, "Turn off on this device") %></button>
+    </div>
+  </div>
+
+  <p class="flash-notice" data-push-target="notice" role="status" hidden></p>
+  <p class="flash-alert" data-push-target="error" role="alert" hidden></p>
+</div>

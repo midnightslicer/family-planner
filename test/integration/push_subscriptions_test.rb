@@ -121,6 +121,17 @@ class PushSubscriptionsTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "a test push to a device the push service has forgotten removes it and says so" do
+    sign_in @member
+    subscribe
+    FakePushService.new("410").install do
+      post test_push_subscriptions_path, params: { endpoint: ENDPOINT }, as: :json
+    end
+    assert_response :gone
+    assert_match(/expired/, response.parsed_body["error"])
+    assert_equal 0, @member.push_subscriptions.count
+  end
+
   test "a test push for a device that isn't subscribed says so" do
     sign_in @member
     post test_push_subscriptions_path, params: { endpoint: ENDPOINT }, as: :json
