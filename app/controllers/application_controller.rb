@@ -53,8 +53,11 @@ class ApplicationController < ActionController::Base
     end
     return unless request.format.html?
 
+    # Squeezed: "//tasks" routes to /tasks, but as a Location it would be
+    # protocol-relative, i.e. another site.
+    path = request.path.squeeze("/")
     query = request.query_parameters.except("household")
-    redirect_to(query.empty? ? request.path : "#{request.path}?#{query.to_query}")
+    redirect_to(query.empty? ? path : "#{path}?#{query.to_query}")
   end
 
   # Every request runs on the household's clock (set by an admin): work

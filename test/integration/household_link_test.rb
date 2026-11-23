@@ -40,6 +40,11 @@ class HouseholdLinkTest < ActionDispatch::IntegrationTest
     assert_equal "Lake House", current_household_name
   end
 
+  test "a doubled slash can't turn the redirect into another site" do
+    get "//tasks?household=#{@lake.id}"
+    assert_equal "/tasks", response.location.delete_prefix("http://www.example.com")
+  end
+
   test "forms that send a household hash aren't affected" do
     sign_in users(:admin)
     patch admin_household_path(@smiths), params: { household: { name: "The Smiths" } }
