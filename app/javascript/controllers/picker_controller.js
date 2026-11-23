@@ -1,6 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Tile pickers (pick pets, pick a place): "All" / "None" shortcuts, and the
+// Tile pickers (pick pets, pick a place): "All" / "None" shortcuts (overall
+// and per pet type), and the
 // submit button counts what's picked ("Feed 2 pets"), so it's clear what
 // will happen before it does. Details (feeding notes) for pets that aren't
 // picked are hidden once anything is picked. Without JS the checkboxes
@@ -10,18 +11,25 @@ export default class extends Controller {
   static values = { verb: String, noun: { type: String, default: "pet" } }
 
   connect() {
-    if (this.hasShortcutsTarget) this.shortcutsTarget.hidden = false
+    this.shortcutsTargets.forEach((shortcuts) => (shortcuts.hidden = false))
     this.update()
   }
 
-  all() {
-    this.optionTargets.forEach((box) => (box.checked = true))
+  // All / None for everything, or for one group (a pet type) when the
+  // button carries data-picker-group-param.
+  all({ params } = {}) {
+    this.within(params).forEach((box) => (box.checked = true))
     this.update()
   }
 
-  none() {
-    this.optionTargets.forEach((box) => (box.checked = false))
+  none({ params } = {}) {
+    this.within(params).forEach((box) => (box.checked = false))
     this.update()
+  }
+
+  within(params) {
+    const group = params?.group
+    return group === undefined ? this.optionTargets : this.optionTargets.filter((box) => box.dataset.group === group)
   }
 
   update() {
