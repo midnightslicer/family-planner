@@ -53,12 +53,18 @@
   </main>
   <script>
     // Served in place of the page that failed, at that page's address, so
-    // reloading tries it again. Also retries by itself once back online.
+    // reloading tries it again. Also retries by itself: when the browser
+    // says it's back online, and every 20 seconds while the page is on
+    // screen, because "online" never fires when Wi-Fi stays connected but
+    // the internet is down (a wall tablet must recover unattended).
     document.getElementById("retry").addEventListener("click", function (event) {
       event.preventDefault()
       location.reload()
     })
     window.addEventListener("online", function () { location.reload() })
+    setInterval(function () {
+      if (document.visibilityState === "visible" && navigator.onLine !== false) location.reload()
+    }, 20000)
   </script>
 </body>
 </html>

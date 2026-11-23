@@ -4,8 +4,9 @@
 // Deliberately small. It caches exactly one thing, the offline page, and
 // answers every request from the network. The only thing it adds is a
 // friendly page instead of the browser's error when a navigation fails
-// because the device is offline. It never caches HTML, Turbo responses,
-// /cable or the wall (/h/...).
+// because the device is offline (on the wall too: the offline page reloads
+// itself when the connection comes back, so a wall tablet recovers on its
+// own). It never caches HTML, Turbo responses or /cable.
 //
 // It also shows push notifications (Notifier, SendPushJob): every push is
 // shown, always. iOS cancels subscriptions that receive pushes without
@@ -43,7 +44,7 @@ self.addEventListener("fetch", (event) => {
   if (request.mode !== "navigate" || request.method !== "GET") return
 
   const url = new URL(request.url)
-  if (url.origin !== self.location.origin || url.pathname.startsWith("/h/")) return
+  if (url.origin !== self.location.origin) return
 
   event.respondWith((async () => {
     try {

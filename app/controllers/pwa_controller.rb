@@ -19,11 +19,29 @@ class PwaController < ActionController::Base
   # manifest can't read CSS, so these are the one place the hexes repeat.
   THEME_COLOR = "#ffffff".freeze
   BACKGROUND_COLOR = "#f4f6f9".freeze
+  # The wall is always dark: body.kiosk's --bg in kiosk.css.
+  WALL_COLOR = "#0d1117".freeze
+  SLUG = /\A[a-z0-9_-]{1,60}\z/
 
   before_action :no_cache
 
   def manifest
     render json: manifest_json, content_type: "application/manifest+json"
+  end
+
+  # GET /h/:slug/manifest.webmanifest: a household's wall as an app of its
+  # own, so a wall tablet can install it, open it full screen and reopen it
+  # from its icon. Scoped to that wall, so it never competes with the main
+  # app for links. It needs no data: the slug is already in the address, and
+  # the household's name is only filled in for a signed-in member (the
+  # layout links it with crossorigin="use-credentials" so the cookie comes
+  # along); anyone else gets the app's name. Unknown slugs aren't revealed.
+  def wall_manifest
+    slug = params[:slug].to_s
+    return head(:not_found) unless slug.match?(SLUG)
+
+    response.headers["Cache-Control"] = "no-store" # varies with who asks: never cached anywhere
+    render json: wall_manifest_json(slug), content_type: "application/manifest+json"
   end
 
   def service_worker
@@ -56,6 +74,28 @@ class PwaController < ActionController::Base
         { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
         { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
         { src: "/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" }
+      ]
+    }
+  end
+
+  def wall_manifest_json(slug)
+    household = current_user&.households&.find_by(slug: slug)
+    name = household&.name || AppSettings.app_name
+    {
+      id: "/h/#{slug}",
+      name: "#{name} wall",
+      short_name: self.class.short_name(name),
+      description: "The family board for a screen on the wall: who's where, and what everyone's up to.",
+      start_url: "/h/#{slug}",
+      scope: "/h/#{slug}",
+      display: "fullscreen",
+      display_override: ["fullscreen", "standalone"],
+      theme_color: WALL_COLOR,
+      background_color: WALL_COLOR,
+      icons: [
+        { src: "/icon-wall-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+        { src: "/icon-wall-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+        { src: "/icon-wall-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" }
       ]
     }
   end

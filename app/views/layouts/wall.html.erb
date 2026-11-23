@@ -8,6 +8,15 @@
     <meta name="referrer" content="no-referrer">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
+    <% if @household %>
+      <%# Installable on its own: full screen, reopens from its icon (PwaController#wall_manifest).
+          use-credentials so the manifest can carry the household's name. %>
+      <link rel="manifest" href="<%= wall_manifest_path(@household.slug) %>" crossorigin="use-credentials">
+      <meta name="apple-mobile-web-app-title" content="<%= PwaController.short_name(@household.name) %>">
+      <meta name="apple-mobile-web-app-status-bar-style" content="black">
+      <%# body.kiosk's --bg (kiosk.css), repeated because a meta can't read CSS. %>
+      <meta name="theme-color" content="#0d1117">
+    <% end %>
     <%# Periodic refreshes morph the grid in place instead of flashing the page. %>
     <%= turbo_refreshes_with method: :morph, scroll: :preserve %>
     <%= csrf_meta_tags %>
@@ -15,7 +24,7 @@
     <%= action_cable_meta_tag %>
     <%= yield :head %>
     <link rel="icon" href="/icon.png" type="image/png">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon-wall.png">
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module" %>
   </head>

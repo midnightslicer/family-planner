@@ -5,8 +5,9 @@ open signup) and can see at a glance what everyone else is doing right now.
 Tasks have a start and an end, some of them repeat, and the dashboard updates
 live without a page reload.
 
-Each household also gets a wall page (`/h/<secret token>`, no login) for a
-wall-mounted tablet or a browser kiosk somewhere in the house.
+Each household also gets a wall page (`/h/<household name>`, for a member
+who stays signed in) for a wall-mounted tablet or a browser kiosk somewhere
+in the house. It installs as an app of its own that opens full screen.
 
 Sign-in supports passkeys (Face ID, fingerprint, device PIN), passwords, and
 optional two-step verification with an authenticator app.
@@ -54,7 +55,13 @@ The app installs from the browser, no app store: on Android open it in
 Chrome and choose **Install app** (or the install icon in the address bar);
 on an iPhone open it in Safari, tap **Share**, then **Add to Home Screen**.
 It opens full screen from its icon. Installing needs https (or
-`http://localhost` while developing). Offline, it shows a short "You're
+`http://localhost` while developing).
+
+For a wall tablet, open the household's wall page (Admin > Households has
+the link), sign in, and install it the same way: it becomes its own app,
+with a dark icon and the household's name, that opens straight to the wall
+in full screen (on Android; iPhones and iPads keep the status bar). If the
+Wi-Fi drops it shows the offline page and comes back by itself. Offline, it shows a short "You're
 offline" page and reloads itself when the connection is back.
 
 ### Notifications

@@ -197,10 +197,18 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   `/service-worker.js` (`app/views/pwa/service-worker.js.erb`), both
   `Cache-Control: no-cache`. The worker precaches only `public/offline.html`
   and answers everything from the network, falling back to the offline page
-  for failed full-page navigations; it never caches HTML, Turbo, `/cable` or
-  `/h/*`. Its cache version is a digest of the worker and the offline page,
-  so editing either ships a new worker. `application.js` registers it only
-  on pages that link the manifest (the `application` layout, not `wall`).
+  for failed full-page navigations (the wall's too); it never caches HTML,
+  Turbo or `/cable`. `offline.html` retries by itself (on `online`, and
+  every 20s while visible) so a wall tablet recovers unattended. Its cache
+  version is a digest of the worker and the offline page, so editing
+  either ships a new worker. `application.js` registers it on pages that
+  link a manifest. The wall is installable on its own:
+  `/h/:slug/manifest.webmanifest` (`PwaController#wall_manifest`, id,
+  start_url and scope `/h/<slug>`, `display: fullscreen`, the dark
+  `icon-wall-*` icons, `Cache-Control: no-store`). It names the household
+  only for a signed-in member (the wall layout links it with
+  `crossorigin="use-credentials"`), else the app; it never looks a slug up
+  for anyone else. The wall gets no push metas, push-sync or toasts.
   The `theme-color` metas, the manifest colours and `offline.html` repeat a
   few token hexes because they can't read CSS: change them with the tokens.
 - Notifications: `Notifier.notify(user, category:, title:, body:, path:,
@@ -263,7 +271,10 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
 - App icons: `public/icon.svg` is the source; `icon.png`, `icon-192.png`,
   `icon-512.png`, `icon-maskable-512.png` (glyph inside the 80% safe zone,
   solid background) and `apple-touch-icon.png` (180px, opaque) are
-  generated from it once and committed (any SVG renderer: `rsvg-convert`,
+  generated from it once and committed. `icon-wall.svg` and the
+  `icon-wall-*` / `apple-touch-icon-wall.png` set are the wall's dark
+  variant, made the same way; `badge-96.png` is the white glyph Android
+  shows in the status bar (any SVG renderer: `rsvg-convert`,
   ImageMagick, or a headless browser screenshot). Nothing renders at runtime.
 - `entrypoint.sh` / `Dockerfile` / `compose.yml` / `config/deploy.yml`:
   production shipping (Kamal 2, Thruster on port 3000 in front of Puma on

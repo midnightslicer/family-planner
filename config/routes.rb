@@ -31,6 +31,8 @@ Rails.application.routes.draw do
   # Household switching + the wall (live updates arrive over Action Cable)
   post "switch_household",  to: "households#switch", as: :switch_household
   get  "h/:slug", to: "walls#show",       as: :wall
+  # The wall as an installable app of its own (PwaController, no sign-in needed).
+  get  "h/:slug/manifest.webmanifest", to: "pwa#wall_manifest", as: :wall_manifest, format: false
 
   # Authenticated app
   root to: "dashboards#show", as: :dashboard_root

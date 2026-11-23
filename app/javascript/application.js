@@ -9,9 +9,9 @@ try {
   if (zone) document.cookie = `tz=${encodeURIComponent(zone)}; path=/; max-age=31536000; samesite=lax`
 } catch {}
 
-// The installable app's service worker (PwaController). Only pages that link
-// the manifest register it, so the wall, which doesn't, never does. Needs a
-// secure context: https, or http://localhost while developing.
+// The service worker (PwaController), shared by the app and the installable
+// wall. Only pages that link a manifest register it. Needs a secure
+// context: https, or http://localhost while developing.
 if ("serviceWorker" in navigator && window.isSecureContext && document.querySelector('link[rel="manifest"]')) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("/service-worker.js", { scope: "/" }).catch((error) => {
