@@ -13,7 +13,11 @@ class LocationReport < ApplicationRecord
   belongs_to :reported_by, class_name: "User", optional: true
 
   validates :subject_type, inclusion: { in: SUBJECT_TYPES }
-  validates :location, presence: true, on: :create
+  # "Off property": a report with no location at all. Only people say it
+  # about themselves (the "I'm at" chips); pets always have a place.
+  attr_accessor :off_property
+
+  validates :location, presence: true, on: :create, unless: :off_property
   SPOTS = %w[inside outside].freeze
 
   validates :comment, length: { maximum: COMMENT_MAX }
@@ -41,6 +45,10 @@ class LocationReport < ApplicationRecord
 
   def self.recent
     order(id: :desc).includes(:location, :reported_by)
+  end
+
+  def off_property?
+    location.nil?
   end
 
   def pennable?

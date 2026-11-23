@@ -14,7 +14,7 @@
       <% if local_assigns[:at] %>
         <span class="day-where"><%= location_icon(at) %><%= at.name %> · until <%= clock(now_task.finishes_at) %></span>
       <% elsif where %>
-        <span class="day-where"><%= location_icon(where.location) %><%= where.location&.name || "Somewhere else" %> · <%= time_tag_ago(where.created_at) %></span>
+        <span class="day-where"><%= location_icon(where.location) %><%= where.location&.name || PetsHelper::OFF_PROPERTY %> · <%= time_tag_ago(where.created_at) %></span>
       <% end %>
     </p>
     <% if where&.comment && !local_assigns[:at] %><p class="report-comment"><%= icon(:message) %><span><%= where.comment %></span></p><% end %>
@@ -56,6 +56,9 @@
         <%= button_to locate_me_path, params: { "location_report[location_id]" => location.id }, method: :post,
                       class: "where-chip#{' is-current' if here}", "aria-pressed": here do %><%= location_icon(location) %><span><%= location.name %></span><% end %>
       <% end %>
+      <% off = where.present? && where.off_property? %>
+      <%= button_to locate_me_path, params: { "location_report[off_property]" => "1" }, method: :post,
+                    class: "where-chip#{' is-current' if off}", "aria-pressed": off do %><%= icon(:external) %><span><%= PetsHelper::OFF_PROPERTY %></span><% end %>
     </div>
     <details class="where-more">
       <summary><%= locations.any? ? "Somewhere else or add a note" : "Say where you are" %></summary>

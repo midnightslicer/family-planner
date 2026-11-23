@@ -45,7 +45,7 @@
   <% elsif here %>
     <p class="person-where">
       <%= location_icon(here.location) %>
-      <span><%= here.location&.name || "Somewhere else" %></span>
+      <span><%= here.location&.name || PetsHelper::OFF_PROPERTY %></span>
       <small><%= time_tag_ago(here.created_at) %></small>
     </p>
     <% if here.comment %><p class="report-comment"><%= icon(:message) %><span><%= here.comment %></span></p><% end %>

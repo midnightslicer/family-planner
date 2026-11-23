@@ -26,6 +26,19 @@ class PeopleLocationTest < ActionDispatch::IntegrationTest
     assert_select ".where-chip.is-current", text: "Yard"
   end
 
+  test "the Off property chip reports you with no location" do
+    get tasks_path
+    assert_select ".where-chips button", text: "Off property"
+
+    post locate_me_path, params: { location_report: { off_property: "1" } }, headers: { "Referer" => tasks_url }
+    assert_nil @member.location_reports.last.location
+    get tasks_path
+    assert_select ".day-where", text: /Off property/
+    assert_select ".where-chip.is-current", text: "Off property"
+    get dashboard_path
+    assert_select ".person-where", text: /Off property/
+  end
+
   test "someone else's day shows where they are but no way to set it" do
     LocationReport.create!(household: @smiths, subject: @admin, location: @yard, reported_by: @admin)
     get tasks_path(person: @admin.id)

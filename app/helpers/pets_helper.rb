@@ -2,6 +2,8 @@
 module PetsHelper
   LOCATION_ICONS = { "house" => :house, "yard" => :trees, "pasture" => :fence, "pool" => :waves, "other" => :map_pin }.freeze
 
+  OFF_PROPERTY = "Off property".freeze
+
   def location_icon(location)
     icon(LOCATION_ICONS.fetch(location&.kind, :map_pin))
   end
@@ -23,11 +25,11 @@ module PetsHelper
     end
   end
 
-  # "Red Brick House · Outside · Penned up", "Back yard", "Somewhere else".
+  # "Red Brick House · Outside · Penned up", "Back yard", "Off property".
   def place_label(report)
     return "Not reported yet" unless report
 
-    [report.location&.name || "Somewhere else", report.spot&.capitalize, ("Penned up" if report.penned?)].compact.join(" · ")
+    [report.location&.name || OFF_PROPERTY, report.spot&.capitalize, ("Penned up" if report.penned?)].compact.join(" · ")
   end
 
   # What goes inside a pet's .person-avatar disc: its photo, else a paw.
