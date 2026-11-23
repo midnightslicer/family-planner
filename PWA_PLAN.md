@@ -1,17 +1,5 @@
 # PWA plan: installable app, push and email notifications, per-user settings
 
-> **Status (Nov 2026):** phases 1 to 5 and the folded-in hardening are
-> built on the `pwa-plan` branch, one commit per phase. What's left is
-> section 6 (the owner's steps) and the manual device checklist in
-> section 5. Small departures from the text below: the Email column's
-> address is shown in the hint under the table (a header that long doesn't
-> fit at 320px); the Notifications page already existed in phase 3, so the
-> temporary account-page section was skipped; a replaced subscription is
-> re-posted to `POST /push_subscriptions/renew`, authorised by the old
-> endpoint, since a service worker has no CSRF token; and
-> `public/icon.svg` is a new mark (the nav's house on the accent colour)
-> because the old one was the Rails placeholder circle.
-
 Goal: people install family-status from their browser onto their phone, it
 behaves like an app (icon, full screen, no browser chrome), and they get
 notifications on the lock screen even when the app is closed. Each person
@@ -469,3 +457,149 @@ Manual device checklist (Android Chrome and iPhone Safari):
   emails alike.
 - **Several households**: every notification names its household and its
   link switches to it.
+
+## 8. Status and handoff (Nov 23, 2026)
+
+For whoever picks this up next. Everything in sections 3 and "Folded in"
+is built on the **`pwa-plan`** branch (pushed), plus an installable wall,
+which wasn't in the original plan. Nothing has been tried on a real phone
+yet: that and section 6 are what's left.
+
+### Commits on `pwa-plan`
+
+| Commit | What |
+| --- | --- |
+| `8c8c840` | Phase 1: manifest, service worker, offline page, icons |
+| `02321fb` | Phase 2: `lib/web_push`, `push_subscriptions`, `PushKeys`, `SendPushJob`, `Notifier` |
+| `7e0200f` | Phase 3: worker push/click/resubscribe, toasts, `/account/notifications` with device panel and list |
+| `0ad86e6` | Phase 4: push/email matrix, quiet hours, pause, `NotificationMailer`, one-click unsubscribe |
+| `1479674` | Phase 5: `ReminderJob`, `reminders_sent`, Admin > Settings health block, invitation phone steps |
+| `8db6d60` | Fix: the `?household=` redirect squeezes `//` so it can't become protocol-relative |
+| `74a9d1a` | The wall as its own installable, full-screen app; offline page retries every 20s |
+
+Each phase updated README.md and AGENTS.md as it went; AGENTS.md is the
+best map of where things live (search it for `Notifier`, `PushKeys`,
+`ReminderJob`, `wall_manifest`).
+
+### Where the main pieces are
+
+- Server: `app/controllers/pwa_controller.rb` (both manifests, worker),
+  `app/views/pwa/service-worker.js.erb`, `public/offline.html`,
+  `lib/web_push/` (encryption, VAPID, client), `app/models/push_keys.rb`,
+  `push_subscription.rb`, `notifier.rb`, `notification_preference.rb`,
+  `notification_unsubscribe.rb`, `reminder_sent.rb`,
+  `app/jobs/send_push_job.rb`, `reminder_job.rb`,
+  `app/mailers/notification_mailer.rb`,
+  `app/controllers/push_subscriptions_controller.rb`,
+  `account/notifications_controller.rb`,
+  `notification_unsubscribes_controller.rb`,
+  `ApplicationController#switch_household_from_link`.
+- Browser: `app/javascript/lib/push.js`, controllers `push`, `push_sync`,
+  `push_nudge`, `toast` (the old `notification` / `notifications`
+  controllers are gone).
+- Migrations: `20261123000000` (push_subscriptions), `20261123010000`
+  (notification_preferences + five `users` columns), `20261123020000`
+  (reminders_sent). `config/recurring.yml` gains `reminders` (production).
+- Icons: `public/icon.svg` and `icon-wall.svg` are the sources for every
+  PNG (rendered with headless Chromium; any SVG renderer works).
+
+### Departures from the plan above
+
+- **New icon.** `public/icon.svg` was the Rails placeholder (a red
+  circle), so there's a new mark: the nav's house on the accent blue. The
+  wall has a dark variant. Owner step 3 (approve the icon) still stands.
+- **Email address** appears in the hint under the matrix, not the Email
+  column header: a header that long doesn't fit at 320px.
+- **The Notifications page arrived in phase 3**, so the temporary
+  account-page section was skipped; the account page links to it.
+- **`pushsubscriptionchange`** re-posts to `POST /push_subscriptions/renew`,
+  authorised by the old endpoint, because a worker has no CSRF token and
+  shouldn't act on the session.
+- **"Known to the server"** (the self-healing check) is a localStorage
+  marker of user id + endpoint: the device re-posts when the server's key
+  changed or someone else signed in on it, and not otherwise, so removing a
+  device elsewhere sticks. The page tells which row is "This device" by a
+  SHA-256 of the endpoint, never echoing endpoints back.
+- **`reminders_sent`** also has `household_id` (one digest per household
+  for people in two) and its unique index uses `COALESCE(task_id, 0)`:
+  SQLite treats NULLs as distinct, so the plain index wouldn't stop a
+  double digest.
+- **Wall (new):** `/h/<slug>/manifest.webmanifest`, `display: fullscreen`,
+  scoped to that wall so its Android WebAPK never captures app links.
+  Served `no-store` and linked with `crossorigin="use-credentials"` so it
+  can carry the household's name for members; anyone else gets the app's
+  name, and unknown slugs answer the same, so nothing is revealed. The
+  offline fallback now covers the wall (the plan had excluded `/h/*` from
+  the worker entirely) and the offline page retries every 20s while on
+  screen, since `online` never fires when Wi-Fi stays connected.
+- **Digest scope:** to-dos due today only (not overdue ones), per the
+  plan's wording. Worth asking the owner.
+
+### What was verified, and how
+
+- `bin/rails test`: 334 runs, green, repeatedly (was 228). Brakeman: no
+  warnings. Rubocop: the same 9 offenses as before this work, ignoring
+  `Layout/SpaceInsideArrayLiteralBrackets`, which the codebase doesn't
+  follow (449 offenses project-wide before this branch).
+- Encryption matches the RFC 8291 appendix vector byte for byte, and the
+  tests decrypt every message from the browser's side. VAPID tokens verify
+  against the public key.
+- In Chromium (Playwright, dev server): zero installability errors for the
+  app and for a wall; the browser fetched the wall manifest with the
+  cookie; offline navigations show the offline page and recover by
+  themselves; pushes delivered to the worker through DevTools
+  (`ServiceWorker.deliverPushMessage`) show with the right title, body,
+  tag, icon and badge, junk payloads still show a generic notice, and a
+  `//evil.example/` path is rewritten to `/`; the full turn on / test /
+  turn off flow on the Notifications page; live toasts in light and dark;
+  the settings page at 320px with no horizontal scroll.
+- A "Send a test" reached the **real** FCM server, which answered
+  `410 Gone` for the stand-in endpoint (FCM checks VAPID before the
+  subscription, so the headers are at least well-formed).
+
+### Not verified (needs real hardware or the real domain)
+
+- A real subscription and a real push arriving on Android Chrome or an
+  iPhone. Chromium can't register with Google's push service in the
+  sandbox, so a stand-in `PushManager` (real P-256 keys, FCM-shaped
+  endpoint) was used for the page flow. Run the section 5 checklist.
+- `notificationclick` (focus or open the right window, never a wall tab):
+  only reviewed, since a system notification can't be clicked headlessly.
+- `pushsubscriptionchange` → `/renew` from a real browser.
+- Mail through a real SMTP server (letter_opener and mailer tests only).
+- Apple's push service accepting the VAPID `sub`. It's `mailto:` the
+  SMTP From address, else the https APP_URL, else `mailto:no-reply@<host>`;
+  Apple has been known to reject `localhost`-ish subjects, so set SMTP From
+  or an https APP_URL before testing on an iPhone.
+
+### Gotchas for the next agent
+
+- Ruby is pinned to 4.0.x (`.ruby-version` says 4.0.10; 4.0.3 works). In
+  rbenv: `RBENV_VERSION=4.0.3`, bundler 4.1.0.
+- Minitest 6 has no `stub`, and the lockfile shouldn't change: push HTTP
+  is faked with `FakePushService` (test_helper) through
+  `PushSubscription.transport`; `PushKeys.stub_unavailable` turns push off
+  for a block. Overriding a `module_function` with `def Mod.x` and then
+  `remove_method` deletes the original too: save `Mod.method(:x)` and put
+  it back with `define_singleton_method`.
+- Tests keep the VAPID key in `tmp/storage/.vapid_key`, not `storage/`.
+- Headless Chromium for push work needs `channel: 'chromium'` (the old
+  headless shell reports notifications as denied) and a persistent context
+  (push is disabled in incognito). In that setup trusted clicks sometimes
+  never reach the page after a navigation; `dispatchEvent('click')` works.
+- Every notification must go through `Notifier.notify` with a category
+  from `NotificationPreference::CATEGORIES` (an unknown one raises) and
+  `task.title_for(recipient)` for titles.
+- `#notifications` is the toast container in the app layout: don't give
+  anything else that id (an admin heading did, briefly).
+
+### Next steps
+
+1. Owner steps in section 6, then the section 5 device checklist on a real
+   Android phone and iPhone, plus installing a wall on a tablet.
+2. Ask the owner about: the icons, the category defaults (owner step 5),
+   whether the digest should include overdue to-dos, and the 12-character
+   short name ("Family Status" becomes "FamilyStatus" under the icon).
+3. Still out of scope (section 4): the phone UX pass, batched email, a
+   "hide details on lock screen" option, pet-not-fed nudges.
+
