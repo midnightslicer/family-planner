@@ -8,3 +8,14 @@ try {
   const zone = Intl.DateTimeFormat().resolvedOptions().timeZone
   if (zone) document.cookie = `tz=${encodeURIComponent(zone)}; path=/; max-age=31536000; samesite=lax`
 } catch {}
+
+// The installable app's service worker (PwaController). Only pages that link
+// the manifest register it, so the wall, which doesn't, never does. Needs a
+// secure context: https, or http://localhost while developing.
+if ("serviceWorker" in navigator && window.isSecureContext && document.querySelector('link[rel="manifest"]')) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/service-worker.js", { scope: "/" }).catch((error) => {
+      console.warn("Service worker registration failed", error)
+    })
+  })
+}

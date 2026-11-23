@@ -183,6 +183,23 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   `color-scheme: light dark` so the UA-drawn parts follow (scrollbars, the
   datetime picker, checkbox glyphs). `body.kiosk` pins `color-scheme: dark`
   and its own token values, so the wall stays dark whatever the OS says.
+- Installable app (PWA): `PwaController` (inherits `ActionController::Base`
+  directly: no setup gate, no sign-in) serves `/manifest.webmanifest`
+  (built in the controller from `AppSettings.app_name`) and
+  `/service-worker.js` (`app/views/pwa/service-worker.js.erb`), both
+  `Cache-Control: no-cache`. The worker precaches only `public/offline.html`
+  and answers everything from the network, falling back to the offline page
+  for failed full-page navigations; it never caches HTML, Turbo, `/cable` or
+  `/h/*`. Its cache version is a digest of the worker and the offline page,
+  so editing either ships a new worker. `application.js` registers it only
+  on pages that link the manifest (the `application` layout, not `wall`).
+  The `theme-color` metas, the manifest colours and `offline.html` repeat a
+  few token hexes because they can't read CSS: change them with the tokens.
+- App icons: `public/icon.svg` is the source; `icon.png`, `icon-192.png`,
+  `icon-512.png`, `icon-maskable-512.png` (glyph inside the 80% safe zone,
+  solid background) and `apple-touch-icon.png` (180px, opaque) are
+  generated from it once and committed (any SVG renderer: `rsvg-convert`,
+  ImageMagick, or a headless browser screenshot). Nothing renders at runtime.
 - `entrypoint.sh` / `Dockerfile` / `compose.yml` / `config/deploy.yml`:
   production shipping (Kamal 2, Thruster on port 3000 in front of Puma on
   3001, Solid Queue inside Puma). The entrypoint generates

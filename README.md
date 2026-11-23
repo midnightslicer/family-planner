@@ -47,6 +47,15 @@ work over https (or on `http://localhost`). On plain http over a LAN the app
 still works with passwords; put Caddy, Traefik or Tailscale in front to get
 the rest.
 
+### Put it on your phone
+
+The app installs from the browser, no app store: on Android open it in
+Chrome and choose **Install app** (or the install icon in the address bar);
+on an iPhone open it in Safari, tap **Share**, then **Add to Home Screen**.
+It opens full screen from its icon. Installing needs https (or
+`http://localhost` while developing). Offline, it shows a short "You're
+offline" page and reloads itself when the connection is back.
+
 ### Deploy with Kamal (a VPS with a domain)
 
 1. Point a DNS name at the server.

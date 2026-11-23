@@ -3,6 +3,10 @@ Rails.application.routes.draw do
   # Can be used by load balancers and uptime monitors.
   get "up" => "rails/health#show", as: :rails_health_check
 
+  # Installable app: manifest and service worker (PwaController, no sign-in).
+  get "manifest.webmanifest", to: "pwa#manifest",       as: :pwa_manifest,       format: false
+  get "service-worker.js",    to: "pwa#service_worker", as: :pwa_service_worker, format: false
+
   # First-run setup (also the target of the first-run gate)
   get  "setup",                 to: "setup#show",            as: :setup
   post "setup",                 to: "setup#create"

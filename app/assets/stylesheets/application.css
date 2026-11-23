@@ -64,6 +64,10 @@
   --tap: 44px;
   --shell: 1040px;
   --gutter: clamp(1rem, 4vw, 2rem);
+  /* The gutter, widened to clear a notch or rounded corner where the
+     installed app draws edge to edge (viewport-fit=cover, landscape). */
+  --gutter-start: max(var(--gutter), env(safe-area-inset-left, 0px));
+  --gutter-end: max(var(--gutter), env(safe-area-inset-right, 0px));
 
   /* QR codes stay dark-on-light in both themes: scanners expect it. */
   --qr-dark: #000000;
@@ -227,7 +231,7 @@ blockquote {
 .nav-inner {
   max-width: var(--shell);
   margin: 0 auto;
-  padding: 0.5rem var(--gutter);
+  padding: 0.5rem var(--gutter-end) 0.5rem var(--gutter-start);
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -367,7 +371,7 @@ blockquote {
 .container {
   max-width: var(--shell);
   margin: 0 auto;
-  padding: 2rem var(--gutter) 4rem;
+  padding: 2rem var(--gutter-end) max(4rem, env(safe-area-inset-bottom, 0px)) var(--gutter-start);
 }
 
 .page-header {
@@ -390,7 +394,7 @@ blockquote {
 .flash-stack {
   max-width: var(--shell);
   margin: 0 auto;
-  padding: 0 var(--gutter);
+  padding: 0 var(--gutter-end) 0 var(--gutter-start);
   display: grid;
   gap: 0.5rem;
 }

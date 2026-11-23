@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <title>You're offline</title>
+  <style>
+    /* Shown by the service worker when a page can't load. Standalone, so
+       the colours repeat the --bg/--surface/--text/--accent tokens from
+       application.css (light, then dark). */
+    :root {
+      color-scheme: light dark;
+      --bg: #f4f6f9; --surface: #ffffff; --text: #16202c; --text-muted: #667487;
+      --border: #e3e8ef; --accent: #4f6ef7; --accent-fg: #ffffff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f141b; --surface: #171d26; --text: #e7edf5; --text-muted: #94a3b8;
+        --border: #28313d; --accent: #8ba4ff; --accent-fg: #0f141b;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 1.5rem;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.55;
+    }
+    main {
+      max-width: 26rem; text-align: center; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 16px; padding: 2rem 1.5rem;
+    }
+    svg { width: 3rem; height: 3rem; color: var(--accent); }
+    h1 { font-size: 1.375rem; margin: 0.75rem 0 0.5rem; }
+    p { margin: 0 0 1.25rem; color: var(--text-muted); }
+    a {
+      display: inline-flex; align-items: center; justify-content: center; min-height: 44px;
+      padding: 0 1.25rem; border-radius: 999px; background: var(--accent); color: var(--accent-fg);
+      font-weight: 600; text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 20h.01"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><path d="M5 12.859a10 10 0 0 1 5.17-2.69"/>
+      <path d="M19 12.859a10 10 0 0 0-2.007-1.523"/><path d="M2 8.82a15 15 0 0 1 4.177-2.643"/>
+      <path d="M22 8.82a15 15 0 0 0-11.288-3.764"/><path d="m2 2 20 20"/>
+    </svg>
+    <h1>You're offline</h1>
+    <p>This page needs a connection to show what everyone's up to. Check your Wi-Fi or signal, then try again.</p>
+    <a href="" id="retry">Try again</a>
+  </main>
+  <script>
+    // Served in place of the page that failed, at that page's address, so
+    // reloading tries it again. Also retries by itself once back online.
+    document.getElementById("retry").addEventListener("click", function (event) {
+      event.preventDefault()
+      location.reload()
+    })
+    window.addEventListener("online", function () { location.reload() })
+  </script>
+</body>
+</html>
