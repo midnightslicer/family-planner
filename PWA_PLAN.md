@@ -1,379 +1,459 @@
-# PWA plan: installable app + real push notifications
+# PWA plan: installable app, push and email notifications, per-user settings
 
 Goal: people install family-status from their browser onto their phone, it
-behaves like an app (icon, full screen, no browser chrome), and they get push
-notifications on the lock screen even when the app is closed. No Android or
-iOS native apps.
+behaves like an app (icon, full screen, no browser chrome), and they get
+notifications on the lock screen even when the app is closed. Each person
+chooses, per kind of update, whether it reaches them by **push**, **email**,
+both or neither. No Android or iOS native apps.
 
-This file has three parts: what's true today, the work for the coding agent
-(phased, each phase shippable on its own), and the steps only the owner can
-do.
+This file has: what's true today, the decisions, the phased work (each phase
+shippable on its own), what's deliberately out of scope, and the steps only
+the owner can do.
 
 ## 1. Where things stand
 
-- Rails 8.1, SQLite, Solid Queue inside Puma (`config/recurring.yml` already
-  runs `ScheduleTickJob` every minute), Kamal behind `proxy: ssl: true`.
+- Rails 8.1, SQLite, Solid Queue inside Puma (`config/recurring.yml` runs
+  `ScheduleTickJob` every minute), Kamal behind `proxy: ssl: true`.
 - `app/views/pwa/manifest.json.erb` and `service-worker.js` are the Rails
-  defaults: the manifest says `theme_color: red` and "FamilyStatus", the
-  service worker is entirely commented out. **Neither is linked** from
-  `layouts/application.html.erb`, and `config/routes.rb` has no `pwa` routes
-  (verify; the Rails default is `get "manifest" => "rails/pwa#manifest"`).
-- The layout already has the `apple-mobile-web-app-capable` and
-  `mobile-web-app-capable` tags, a viewport tag, `/icon.png` (512px) and an
-  apple-touch-icon pointing at the same file.
-- Notifications today: three code paths broadcast a hidden
+  defaults (`theme_color: red`, "FamilyStatus", worker fully commented out).
+  Neither is linked from a layout and `config/routes.rb` has no `pwa` routes.
+- Both layouts have `apple-mobile-web-app-capable`, `mobile-web-app-capable`,
+  a viewport tag, `/icon.png` (512px) as icon and apple-touch-icon, and
+  `public/icon.svg`.
+- Notifications today: **four** code paths broadcast the hidden
   `shared/_notification` partial on `[user, :notifications]`:
-  `TaskAssigner#notify` (assigned / asked, clash), `Task#notify_people`
-  (status changes, follow-ups), `PetCheckIn#notify_subscribers` (followed
-  pets moved or fed). `notification_controller.js` turns it into
-  `new Notification(...)` **only while a tab is open**. There is no Web Push.
-- `notifications_controller.js` is an opt-in banner shown on the dashboard
-  and pet pages. It never auto-prompts, which is correct and should stay.
-- CSP is strict: `default_src :self`, `script_src :self`, `connect_src`
-  `:self` plus the websocket. A service worker served from our own origin and
-  push messages (delivered to the worker, not fetched by the page) need no
-  CSP changes. Check that `worker-src` falls back to `script-src 'self'`
-  (it does).
-- No automated way to send a reminder before something happens; every
-  notification fires on a change, not on the clock.
-- Mobile CSS: one breakpoint (`max-width: 719px`), no safe-area handling, no
-  bottom navigation, nav wraps to several rows on a phone.
+  - `TaskAssigner#notify`: assigned / asked (clash),
+  - `Task#notify_people`: status changes, follow-ups,
+  - `TasksController#respond_to_invite`: someone accepted or declined an item
+    you made,
+  - `PetCheckIn#notify_subscribers`: followed pets moved or fed.
+  `notification_controller.js` turns them into `new Notification(...)` **only
+  while a tab is open**. There is no Web Push and no notification email.
+- `notifications_controller.js` + `shared/_notifications_banner` is an
+  opt-in banner on the dashboard and pet pages. It never auto-prompts; that
+  stays true.
+- CSP: `default_src :self`, `script_src :self`. A same-origin service worker
+  needs no change (`worker-src` falls back to `script-src 'self'`); push
+  messages are delivered to the worker, not fetched by the page.
+- Every notification fires on a change; nothing fires on the clock.
+- Account page (`Account::ProfilesController#show`) is one page of
+  `account-section`s: Profile, Passkeys, Password, Two-step verification.
+- `AppSettings.smtp_configured?` says whether email can be sent; mail goes
+  through `:app_smtp` and links use `AppSettings.url_options`.
+- Tools on the dev machine: `rsvg-convert`, ImageMagick and `vips` are
+  installed; OpenSSL 3.6 (HKDF, P-256 ECDH/ECDSA, AES-128-GCM all present).
 
-## 2. Decisions already made (don't relitigate)
+## 2. Decisions (don't relitigate)
 
 1. **PWA + Web Push, not native apps.**
-2. **One notifier, many channels.** Replace the three copy-pasted
-   `broadcast_append_to ... notifications` blocks with a single
-   `Notifier.notify(user, title:, body:, path:, tag:, kind:, urgency:)` that
-   (a) keeps the existing in-app stream for open tabs and (b) queues a push
-   per subscription. In-app stream stays so the open-tab experience doesn't
-   regress, but must not double-notify (see Phase 3).
-3. **Dependency-free Web Push, per the repo convention** (AGENTS.md: "no auth
-   gems beyond Devise; keep it that way unless the lockfile can be
-   regenerated"). Write `lib/web_push/` (RFC 8030 delivery, RFC 8291
-   `aes128gcm` encryption, RFC 8292 VAPID ES256 JWT) on OpenSSL + `Net::HTTP`,
-   with tests in `test/lib`, like `lib/web_authn`. The `web-push` gem is the
-   acceptable fallback if the agent finds that hand-rolling is taking
-   disproportionately long; the latest commit shows the lockfile can be
-   regenerated, so it's allowed, but say so in the PR.
-4. **Notification preferences are part of "done".** Pushing every pet
-   feeding to every follower would get the app muted within a week.
-5. **Email is the fallback channel**, not a separate product (Phase 6).
+2. **One notifier, several channels.** The four broadcast blocks become one
+   call: `Notifier.notify(user, category:, title:, body:, path:, household:,
+   tag:, urgent: false)`. It shows an in-page toast in open tabs, queues a
+   push per subscribed device, and queues an email, each according to the
+   user's settings (Phase 4).
+3. **Dependency-free Web Push, no gem.** Write `lib/web_push/` (RFC 8030
+   delivery, RFC 8291 `aes128gcm`, RFC 8292 VAPID ES256 JWT) on OpenSSL +
+   `Net::HTTP`, tested in `test/lib` like `lib/web_authn`, including the
+   RFC 8291 appendix known-answer vector. No `web-push` gem fallback.
+4. **Push endpoints are allowlisted, not resolved-and-checked.** Only
+   `https` URLs whose host is a known push service:
+   `fcm.googleapis.com`, `*.push.apple.com`, `*.notify.windows.com`,
+   `updates.push.services.mozilla.com` (plus `push.services.mozilla.com`).
+   Anything else is rejected at subscribe time and again at send time.
+   Resolving DNS and refusing private addresses has a rebinding race; an
+   allowlist is simpler and stronger.
+5. **No duplicate notifications, no focus guessing.** The service worker
+   **always** calls `showNotification` for a push (iOS revokes subscriptions
+   that don't; Chrome shows its own generic notice anyway). The old in-tab
+   `new Notification(...)` path is removed. Open tabs get a small in-page
+   toast from the existing Turbo stream instead. A focused tab may see both
+   the toast and the system notification; that's acceptable and consistent.
+6. **Quiet hours drop non-urgent pushes; they aren't held or summarised.**
+   Urgent ones (a clash request waiting for your OK) always go through.
+   Quiet hours don't affect email (it doesn't buzz).
+7. **Email sends one message per update**, immediately (through Solid Queue),
+   except the to-do reminder, which is one morning digest. No batching or
+   throttling in this round; email defaults are conservative instead (see
+   Phase 4). Every email has a one-click unsubscribe for its category.
+8. **Settings are per person, not per household.** Someone in two households
+   has one set of choices. Each notification names its household and its
+   link switches to that household on open.
+9. **Icons are generated once on the dev machine and committed** (from
+   `public/icon.svg` with `rsvg-convert`/`magick`). No image gem, nothing at
+   runtime.
+10. **Docs ship with each phase**: README and AGENTS.md (new files, tables,
+    env vars, the "no Web Push" gotcha) are updated in the phase that
+    changes them, not saved for the end.
 
-## 3. Phased work for the coding agent
+## 3. Phased work
 
-Each phase ends with `bin/rails test` green and a short manual check. Keep
-commits per phase. Follow AGENTS.md: tokens-only CSS, reuse the existing
-class vocabulary, household scoping on every query, no user text interpolated
-into HTML, register new Stimulus controllers in
-`app/javascript/controllers/index.js`, add icons to `IconsHelper::ICONS`.
+Each phase ends with `bin/rails test` green, Brakeman and rubocop clean, and a
+short manual check. Commit per phase on a feature branch. Follow AGENTS.md:
+tokens-only CSS, reuse the class vocabulary, household scoping on every
+query, no user text interpolated into HTML, Stimulus controllers registered
+in `app/javascript/controllers/index.js`, icons in `IconsHelper::ICONS`.
 
 ### Phase 1: Installable app shell
 
-Make it a real PWA with no push yet.
-
-- Routes: `get "manifest" => "rails/pwa#manifest", as: :pwa_manifest` and
-  `get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker`.
-  Both must be reachable **without signing in** and must be excluded from the
-  first-run gate redirect in `ApplicationController` (a browser fetches them
-  before it has a session). Check the setup gate and Devise's authenticate
-  don't redirect them.
-- Layout (both `application` and `wall`): `<link rel="manifest">`,
-  `<meta name="theme-color">` (with light/dark variants via `media`
-  attributes, values from the CSS tokens, not new hexes), `viewport-fit=cover`
-  on the viewport tag.
-- Manifest: make it an ERB that uses `app_name` (`AppSettings`), a real
-  `description`, `start_url: "/?source=pwa"` (so the dashboard knows it's
-  running installed), `scope: "/"`, `display: "standalone"`, `id: "/"`,
-  `theme_color`/`background_color` matching the app's tokens (not `red`).
-- Icons: 192, 512, a **maskable** 512 with proper safe-zone padding (the
-  current manifest reuses one image for both, which gets cropped), plus a
-  180px `apple-touch-icon`. Generate from `public/icon.svg`. Check whether
-  an image tool is installed; if not, ask the owner to supply the PNGs (see
-  owner steps) rather than adding a gem.
-- Service worker: minimal and **safe**. Precache only an offline fallback
-  page (`/offline.html` in `public/`, styled with inline CSS). Network-first
-  for navigations, fall back to the offline page. Never cache HTML of
-  authenticated pages, `/cable`, or anything under `/h/` (the wall must
-  always be live). No runtime caching of API/Turbo responses. Version the
-  worker (a constant) and call `skipWaiting` / `clients.claim` deliberately.
-- Register the worker from `application.js` after `load`, only in a secure
-  context, only when `navigator.serviceWorker` exists. Not on the wall layout.
-- Offline behaviour of actions: do **not** build offline queues. When the
-  network is down show the offline page; say so in the UI instead of
-  pretending.
-- Tests: manifest and worker are served unauthenticated with the right
-  content types; manifest JSON parses and has required keys; layout contains
-  the link tags.
-- Manual check: Chrome DevTools > Application > Manifest shows no errors and
-  "installable"; Lighthouse PWA audit passes.
+- `PwaController` of our own (inherits `ActionController::Base` directly,
+  so no setup gate, no Devise, no household context), with `manifest` and
+  `service_worker` actions rendering `app/views/pwa/*`. Routes
+  `get "manifest.webmanifest"` and `get "service-worker.js"`. Responses carry
+  `Cache-Control: no-cache` so updates ship past Thruster and browsers. Use
+  our own controller because the manifest needs `AppSettings.app_name`.
+- Layouts: `<link rel="manifest">` in `application` (not `wall`: the wall
+  iPad is a bookmark, not an install); `<meta name="theme-color">` with light
+  and dark `media` variants matching the `--bg`/nav tokens (the values are
+  copied from the token block, the one allowed exception, with a comment
+  pointing back to it); `viewport-fit=cover`.
+- Manifest: `name`/`short_name` from `app_name` (short name capped for iOS),
+  a real `description`, `id: "/"`, `start_url: "/?source=pwa"`, `scope: "/"`,
+  `display: "standalone"`, `theme_color`/`background_color` matching tokens.
+- Icons: `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` (mark
+  inside the 80% safe zone on a solid background), `apple-touch-icon.png`
+  (180px, no transparency). Layout's apple-touch-icon points at the 180px.
+- Service worker, small and safe: versioned constant; precache only
+  `/offline.html` (new, in `public/`, inline CSS, light/dark via
+  `prefers-color-scheme`); network-only for everything, falling back to the
+  offline page for failed **navigations** only. Never caches HTML, `/cable`,
+  `/h/*` or Turbo responses. `skipWaiting` + `clients.claim` on install /
+  activate; old caches deleted on activate.
+- Register from `application.js` after `load`, only if
+  `navigator.serviceWorker` exists and `isSecureContext`. The wall layout
+  doesn't load it.
+- No offline action queue. Offline means the offline page, honestly.
+- Tests: manifest and worker served signed-out, before setup, with the right
+  content types and `no-cache`; manifest JSON parses with the required keys
+  and icon sizes; layout has the link and meta tags; wall doesn't.
+- Manual: Chrome DevTools > Application > Manifest shows installable, no
+  errors; going offline shows the offline page.
 
 ### Phase 2: Push plumbing (server)
 
 - Migration `push_subscriptions`: `user_id` (FK, index), `endpoint` (text,
-  unique index), `p256dh`, `auth` (encrypted with `encrypts`, like TOTP
-  secrets), `user_agent` (string, for the "your devices" list), `last_used_at`,
-  `last_error`, `failed_at` (nullable), timestamps. A user has many.
-- VAPID keys: generate a P-256 keypair on first use and persist it the way
-  `entrypoint.sh` persists `.secret_key_base` (file under `storage/`), with
-  ENV override (`VAPID_PRIVATE_KEY`, `VAPID_PUBLIC_KEY`). Never put the
-  private key in the DB unencrypted or in git. Add `rake push:keys`
-  (prints the public key) next to `setup:code`. The subject claim comes from
-  the app's mail-from address or `APP_URL`, from `AppSettings`.
-- `lib/web_push/`: `Vapid` (ES256 JWT, 12h expiry, audience from endpoint
-  origin), `Encryption` (RFC 8291: ECDH, HKDF, `aes128gcm`, 4096-byte record,
-  padding), `Client` (POST with `TTL`, `Urgency`, `Topic`, `Content-Encoding`,
-  `Authorization: vapid t=..., k=...`; returns a result object: ok /
-  gone (404, 410) / retry (429, 5xx, timeouts) / failed). Include the RFC
-  8291 appendix test vector in `test/lib` so the encryption is proven correct
-  against a known answer, not just self-consistent.
-- Endpoint safety: only POST to `https` endpoints, and refuse hosts that
-  resolve to private, loopback or link-local addresses (SSRF: a user could
-  otherwise register `http://169.254.169.254/...`). Optionally allowlist known
-  push hosts (`fcm.googleapis.com`, `*.push.apple.com`,
-  `*.notify.windows.com`, `updates.push.services.mozilla.com`) and log
-  others.
-- `PushSubscriptionsController` (`create`, `destroy`, `test`), sign-in
-  required, scoped to `current_user`. `create` upserts by endpoint so a phone
-  that re-subscribes doesn't duplicate, and so one endpoint can't remain
-  attached to a previous user on a shared phone (re-home it to the current
-  user). Rate-limit like the existing resets.
-- `SendPushJob(subscription_id, payload, urgency, ttl)`: sends, on `gone`
-  deletes the subscription, on `retry` retries with backoff (a few attempts),
-  on other failure records `last_error`/`failed_at` and stops. Never raises
-  into the request that caused it. Queue `background`.
-- `Notifier` (see decision 2) fans out to subscriptions. Payload is small
-  JSON: `title`, `body`, `path` (same-origin path only), `tag`, `icon`,
-  `badge`. No secrets or full task contents; private tasks must use
-  `Task#title_for` so a private item never leaks into a lock screen. Add a
-  test for that.
-- Tests: encryption vector, VAPID signature verifies, job deletes on 410,
-  controller scoping (can't touch another user's subscription), endpoint
-  SSRF rejection, private-task title redaction.
+  unique), `p256dh`, `auth` (both `encrypts`), `user_agent`,
+  `last_used_at`, `last_error`, `failed_at`, timestamps. `User has_many`.
+- VAPID keys: P-256 keypair generated on first use into
+  `storage/.vapid_key` (like `.secret_key_base`), `VAPID_PRIVATE_KEY` /
+  `VAPID_PUBLIC_KEY` ENV override. Never in git or the DB. `rake push:keys`
+  prints the public key. VAPID `sub` is `mailto:` the mail-from address, else
+  `APP_URL`.
+- `lib/web_push/`:
+  - `Vapid`: ES256 JWT (raw r||s signature, not DER), 12h expiry, `aud` from
+    the endpoint origin; header `Authorization: vapid t=..., k=...`.
+  - `Encryption`: RFC 8291 (ECDH with an ephemeral key, HKDF with the
+    `WebPush: info` and `Content-Encoding: aes128gcm` infos, single 4096-byte
+    record, `0x02` delimiter padding).
+  - `Client`: POST with `TTL`, `Urgency`, `Topic`, `Content-Encoding:
+    aes128gcm`; checks the endpoint against the allowlist (decision 4);
+    returns `ok` / `gone` (404, 410) / `retry` (429, 5xx, timeouts) /
+    `failed`.
+- `PushSubscriptionsController` (`create`, `destroy`, `test`), signed in,
+  scoped to `current_user`. `create` upserts by endpoint and **re-homes** an
+  existing endpoint to the current user (shared phone, new sign-in).
+  Rate-limited like the password resets. Signing out doesn't delete the
+  subscription (the browser keeps it) but the next sign-in re-homes it.
+- `SendPushJob(subscription_id, payload, urgency:, ttl:)` on `background`:
+  `gone` deletes the subscription; `retry` retries with backoff (3 tries);
+  other failures set `last_error`/`failed_at` and stop. Never raises into a
+  request.
+- `Notifier` (decision 2), push and toast channels only in this phase (every
+  category on, as today). Payload: `title`, `body`, `path` (same-origin,
+  starts with `/`, carries `?household=<id>` so the tap switches household),
+  `tag`, `icon`, `badge`. Private items use `Task#title_for`, so a private
+  title never reaches a lock screen.
+- `ApplicationController`: honour a `household` param that names one of the
+  user's households by switching `session[:current_household_id]` (then
+  redirect to the clean URL). Non-members: ignored.
+- Replace the four broadcast blocks with `Notifier.notify` calls, each with
+  its category (Phase 4's list) and `urgent:` where it's a clash request.
+- Tests: RFC 8291 vector, VAPID signature verifies with the public key, job
+  deletes on 410 and retries on 503, allowlist rejects other hosts and
+  `http`, controller scoping and re-homing, private-title redaction in the
+  payload, household switch from the param.
 
-### Phase 3: Push plumbing (client) and the opt-in flow
+### Phase 3: Push client and devices
 
-- Service worker: add `push` (parse JSON, always call `showNotification`,
-  because iOS revokes subscriptions that receive a push without showing one,
-  even if the payload is malformed: fall back to a generic message) and
-  `notificationclick` (focus an existing window and navigate to
-  `data.path`, else `openWindow`; validate the path is same-origin and
-  starts with `/`). Use `tag` + `renotify` so repeats collapse.
-  `pushsubscriptionchange`: resubscribe and POST the new subscription.
-- Replace `notifications_controller.js` with a `push` controller that:
-  - detects the platform state and renders the right instruction:
-    1. unsupported browser,
-    2. **iOS Safari not installed to the Home Screen** (detect iOS + not
-       `display-mode: standalone` + no `PushManager`): show "Tap Share, then
-       Add to Home Screen, then open it from your Home Screen and turn
-       notifications on" with a small illustration or the icon,
-    3. permission `default`: an **Enable notifications** button (user
-       gesture required; never auto-prompt),
-    4. permission `denied`: explain how to re-enable in system settings,
-    5. subscribed: show on, with a **Send me a test** button.
-  - subscribes with `pushManager.subscribe({ userVisibleOnly: true,
-    applicationServerKey })`, the public key delivered in a data attribute,
-    and POSTs the subscription to the server.
-  - verifies on every app load that the browser's subscription still exists
-    server-side and re-registers if not (self-healing).
-- Dedupe: when a tab is open **and visible**, the in-app stream already
-  shows the notification; the server must not also push. Simplest rule:
-  `Notifier` always pushes, and the service worker's `push` handler checks
-  `clients.matchAll({ type: "window" })` for a **focused** client and skips
-  `showNotification` only if it posts a message to that client instead.
-  But because iOS requires a visible notification on every push, on iOS
-  always show it. Pick the approach, write down why, test both.
-  (Alternative: drop the in-app `new Notification` path entirely and have
-  open tabs show a small in-page toast; simpler and consistent.
-  Recommended.)
-- Account page section **Notifications**: this device's state and toggle, a
-  list of the user's registered devices (parsed `user_agent` -> "iPhone,
-  Safari", last used) each with Remove, and the test button.
-- Tests: controller flow with stubbed `Notifier`; JS is verified manually
-  (see checks).
-- Manual check on a real Android phone first, then a real iPhone.
+- Service worker:
+  - `push`: parse JSON; on any error show a generic "You have an update";
+    always `showNotification` (decision 5), with `tag` and `renotify`.
+  - `notificationclick`: validate `data.path` is same-origin and starts with
+    `/`; focus an open window and navigate it, else `openWindow`.
+  - `pushsubscriptionchange`: resubscribe and POST the new subscription.
+- Remove `notification_controller.js`'s `new Notification(...)`; the
+  `shared/_notification` partial now renders an in-page toast (reuse
+  `flash-stack`/`flash-notice` styling, auto-dismiss).
+- Replace `notifications_controller.js` with a `push` controller showing one
+  of five states:
+  1. unsupported browser;
+  2. iOS, not installed (iOS + not `display-mode: standalone` + no
+     `PushManager`): "Tap Share, then Add to Home Screen, then open it from
+     your Home Screen and turn notifications on";
+  3. permission `default`: **Turn on notifications** button (user gesture,
+     never auto-prompts);
+  4. permission `denied`: how to re-enable in system settings;
+  5. on: shown as on, with **Send a test**.
+  Subscribes with `userVisibleOnly: true` and the public key from a data
+  attribute; POSTs the subscription. On every app load it checks that the
+  browser's subscription is known to the server and re-posts it if not
+  (self-healing after a key loss or a re-home).
+- The dashboard/pet banner stays as a nudge that links to the Notifications
+  page (Phase 4) instead of prompting itself; it hides once this device is
+  subscribed.
+- Device list and test button land on the Notifications page (Phase 4); in
+  this phase they can sit in a temporary `account-section` on the account
+  page if Phase 4 isn't shipped together.
+- Tests: controller flow with a stubbed `Client`. JS verified by hand.
+- Manual: desktop Chrome on localhost first, then a real Android phone, then
+  a real iPhone (needs the real domain, owner step 1).
 
-### Phase 4: Notification preferences
+### Phase 4: Notification settings screen (push and/or email per category)
 
-- Table or columns for per-user settings, defaults chosen sensibly:
-  - `assigned_to_me` (assignments and clash requests): on, urgent
-  - `status_changes` (changes on items I'm on or follow up): on
-  - `followed_pets` (moved or fed): on
-  - `reminders` (Phase 5): on
-  - `quiet_hours_start` / `quiet_hours_end` (household time zone): off by
-    default. During quiet hours, non-urgent pushes are **held and delivered as
-    one summary** when it ends, or simply dropped if that proves too complex
-    (decide and say which in the PR). Clash requests that need action are
-    never held.
-  - Master switch: pause everything for N hours ("I'm on a plane").
-- `Notifier` consults the preferences by `kind`. Add the settings UI to the
-  same account Notifications section, using the existing `inline-check` /
-  chip styles.
-- Per pet follow (`PetSubscription`) keeps working as today; the
-  `followed_pets` toggle is the global gate on top of it.
-- Tests per kind and per quiet-hours boundary, in the household time zone.
+A page where each person decides how they hear about each kind of update.
+
+#### Categories
+
+| Key | Label on screen | What sends it | Urgent | Push default | Email default |
+| --- | --- | --- | --- | --- | --- |
+| `assigned` | Things for me | Someone gives you an item, or asks you to take one that clashes with your schedule | clash requests | on | on |
+| `replies` | Answers to my requests | Someone accepts or declines an item you made for them | no | on | off |
+| `task_updates` | Changes to my items | An item you're on, or following up, is started, done or skipped | no | on | off |
+| `pets` | Pets I follow | A pet you follow is moved or fed | no | on | off |
+| `event_reminders` | Event reminders | An event you've accepted starts soon (Phase 5) | no | on | off |
+| `todo_digest` | Today's to-dos | One morning list of to-dos due today (Phase 5) | no | off | off |
+
+Email defaults are mostly off because email sends one message per update
+(decision 7); `assigned` defaults on so people who never install still hear
+about the things that need them. Owner can change these defaults (owner
+step 5). The pet row still only covers pets you follow: following a pet
+(`PetSubscription`) picks *which* pets, this row picks *how*.
+
+#### Data
+
+- `notification_preferences`: `user_id` (FK), `category` (string, validated
+  against `NotificationPreference::CATEGORIES`), `push` (bool), `email`
+  (bool), timestamps; unique index on `[user_id, category]`. A missing row
+  means the defaults above, so existing users need no backfill and new
+  categories get their defaults automatically.
+- On `users`: `reminder_lead_minutes` (integer, default 15; 5/15/30/60),
+  `digest_hour` (integer, default 7), `quiet_hours_start` /
+  `quiet_hours_end` (integer minutes after midnight, nullable = off),
+  `notifications_paused_until` (datetime, nullable).
+- `User#notification_preference(category)` returns the row or an unsaved one
+  with defaults. `NotificationPreference.matrix_for(user)` returns all
+  categories in display order for the form.
+
+#### Screen: `/account/notifications`
+
+Route `resource :notifications, only: [:show, :update]` in the `account`
+namespace (`Account::NotificationsController < Account::BaseController`).
+Linked from the user menu (bell icon, "Notifications"), from the account page,
+and from the dashboard/pet nudge banner. Sections, top to bottom, using
+existing classes (`page-header`, `account-section`, `form-card`,
+`table-wrap`, `inline-check`, `form-hint`, `form-actions`, `btn`):
+
+1. **This device**: the Phase 3 `push` controller's panel (turn on, iOS
+   steps, blocked, or on + **Send a test**).
+2. **What you hear about**: one form, a table:
+
+   ```
+                              Push    Email
+   Things for me              [x]     [x]
+     New items for you and requests that need your OK
+   Answers to my requests     [x]     [ ]
+     When someone accepts or declines something you made
+   Changes to my items        [x]     [ ]
+   Pets I follow              [x]     [ ]
+   Event reminders            [x]     [ ]    15 minutes before ▾
+   Today's to-dos             [ ]     [ ]    at 7:00 ▾
+   ```
+
+   - Each checkbox has an accessible name ("Push: Things for me"), via a
+     `visually-hidden` label, since the column header alone isn't announced
+     per cell everywhere. The row label is a `th scope="row"`.
+   - The Email column header shows where it goes ("Email to
+     jo@example.com"), so people know which address.
+   - The reminder lead time and digest hour are selects in their rows.
+   - The table must fit at 320px wide: descriptions wrap under the label,
+     the two checkbox columns stay narrow. No horizontal scroll.
+   - One **Save** button; redirect back with a notice. No autosave, because
+     a half-ticked matrix shouldn't apply as you click.
+3. **Quiet hours and pause**:
+   - Quiet hours: off, or from/to time selects. Hint: "No pushes
+     between these times, except requests that need your OK. Email isn't
+     affected." Times are in the household's time zone,
+     the same clock as the rest of the app.
+   - Pause: "Pause pushes for 1 hour / 8 hours / 1 day" buttons, or "Paused
+     until 18:00. Resume now" when paused.
+4. **Your devices**: each subscribed device (from `user_agent`: "iPhone ·
+   Safari", "Android · Chrome", "Windows · Edge"), last used, an error
+   marker if its last send failed, and **Remove**. "This device" is marked.
+
+States the screen must handle:
+
+- **Email not set up on the server** (`!AppSettings.smtp_configured?`): the
+  Email column's checkboxes are `disabled` with a hint "Email isn't set up on
+  this server" (admins also get a link to Admin > Settings). The update
+  action must **not touch** stored `email` values in this state (disabled
+  inputs don't submit, so treating them as unticked would wipe everyone's
+  email choices).
+- **No devices subscribed**: the Push column still saves, with a hint "None
+  of your devices get pushes yet. Turn them on above, on each phone."
+- **Push unavailable on the server** (no VAPID key could be generated): Push
+  column disabled with a hint; same don't-touch rule.
+
+Controller rules: `update` permits only known categories and the two
+booleans each, plus the scalar settings within their allowed values; acts on
+`current_user` only (never a user id from params; admins don't manage other
+people's notifications, like sign-in security).
+
+#### Delivery
+
+- `Notifier.notify` looks up the preference for `category`, then:
+  - toast: always, to open tabs;
+  - push: if `push` is on, not paused, and (`urgent` or outside quiet hours):
+    a `SendPushJob` per subscription;
+  - email: if `email` is on and SMTP is configured:
+    `NotificationMailer.update(user, category:, ...).deliver_later`.
+- `NotificationMailer` (html + text): subject "[Household] title", the body
+  line, a button to the item, a footer saying why they got it ("You get
+  emails about *Things for me*") with **Change notification settings** and
+  **Unsubscribe from these emails**. Private items use `title_for`. All links
+  from `AppSettings.url_options`, never the request host.
+- Unsubscribe: `GET`/`POST /notifications/unsubscribe/:token`, a
+  `signed_id`-style token (`Rails.application.message_verifier`, purpose
+  `:unsubscribe`, carrying user id + category). No sign-in needed. GET shows a
+  confirm page with one button (mail scanners prefetch GETs); POST flips that
+  category's `email` off. Also send `List-Unsubscribe` and
+  `List-Unsubscribe-Post: List-Unsubscribe=One-Click` headers (RFC 8058)
+  pointing at the POST, so mail apps show their own unsubscribe button.
+
+#### Tests
+
+- Defaults when no row exists; saving the matrix creates/updates rows.
+- Unknown categories and other users are ignored; scalar values outside the
+  allowed set are rejected.
+- SMTP not configured: email values survive an update untouched; push
+  likewise when VAPID is unavailable.
+- `Notifier`: push only, email only, both, neither; pause; quiet hours at
+  both boundaries and across midnight, in the household time zone; urgent
+  bypasses quiet hours.
+- Mailer: private title redacted, links use `url_options`, headers present.
+- Unsubscribe: GET doesn't change anything, POST turns off only that
+  category, tampered token is rejected, works signed out.
 
 ### Phase 5: Reminders (notifications on the clock)
 
-This is the part that makes the feature actually useful, and it doesn't
-exist at all today.
+- A recurring job next to `ScheduleTickJob` (every minute):
+  - **Event reminders**: events starting within each user's
+    `reminder_lead_minutes`, for **accepted** assignees only, category
+    `event_reminders`.
+  - **To-do digest**: at each user's `digest_hour` in the household time
+    zone, one notification listing undone to-dos due today, category
+    `todo_digest`. Skipped if there are none.
+- Idempotency: `reminders_sent` with a unique index on
+  `(user_id, task_id, kind, occurrence_starts_at)` (digest uses the date and
+  no task). Recurring events key on the occurrence, not the task. Insert
+  first; only notify if the insert succeeded.
+- Private items use `title_for`; declined or pending assignments get nothing;
+  household time zone throughout.
+- Not built until asked: "pet not fed by…" nudges.
+- Tests with `travel_to`: exactly N minutes before, double tick, recurring
+  occurrence, declined/pending assignee, lead-time change, DST change day,
+  digest with nothing due.
 
-- Extend `ScheduleTickJob` (or add a sibling recurring job) to find events
-  starting in N minutes (default 15, per-user setting 5/15/30/60/off) and
-  to-dos due today that aren't done (one morning digest at a user-chosen
-  hour, off by default), for **accepted** assignees only.
-- Idempotency is the whole game: a `reminders_sent` record keyed by
-  (task, user, kind, occurrence start) with a unique index so a retry or a
-  double tick never sends twice. Recurring events must key on the occurrence,
-  not the task id.
-- Respect private tasks (`title_for`), declined or pending assignments (no
-  reminders), and the household time zone.
-- Optional later: "pet not fed by <time>" nudge, driven by `meals_per_day`.
-  Don't build until asked.
-- Tests with time travel: boundary at exactly N minutes, double tick,
-  recurring occurrence, declined assignee, DST change day.
+### Folded in from the old hardening phase
 
-### Phase 6: Email fallback
+- **Admin > Settings** gets a small Notifications block: push configured
+  (and the public key), number of subscribed devices, last send error, and
+  whether email is available. Lets the owner diagnose without logs.
+- Losing `storage/.vapid_key` invalidates every subscription; the
+  self-healing check re-subscribes each device next time it opens the app.
+  Documented in README.
+- Invitation email gets the one-time phone steps (see owner step 7).
 
-- For people who never install or who denied permission: optional per-user
-  daily digest email and an "important only" email (clash request) using the
-  existing mailer and SMTP settings. Off by default; one-click unsubscribe
-  link (signed token, no login) in every message. Links come from
-  `AppSettings.url_options`, per AGENTS.md.
-- Skip entirely if SMTP isn't configured; hide the toggles then.
+## 4. Out of scope for this round
 
-### Phase 7: Phone UX pass
+- **Phone UX pass** (bottom tab bar, safe-area insets, 44px targets, 16px
+  inputs, `visibilitychange` reconnect). Its own project after this ships;
+  `viewport-fit=cover` from Phase 1 is the only piece done now, and it needs
+  a check that nothing sits under the notch.
+- **Batched or throttled email** (an hourly roundup instead of one email per
+  update). Revisit if anyone turns on email for pets and regrets it.
+- **"Hide details on lock screen"** option. Easy to add later as a user
+  column the payload builder checks.
+- Offline action queues.
 
-The site "works" on mobile CSS-wise; this phase makes it good in a thumb.
-
-- Audit on real devices and in Chrome device mode at 360x640, 390x844 and
-  a small-phone 320 width, writing findings in the PR before fixing.
-- Likely work: a bottom tab bar (Home, Schedule, Pets, Account) shown only
-  below the breakpoint and only when installed/standalone is **not** a
-  requirement (works in the browser too), replacing the 3-row wrapping nav;
-  safe-area insets (`env(safe-area-inset-*)`) for the notch and home
-  indicator, including the sticky action bars; 44px minimum tap targets;
-  `input` font size at least 16px to stop iOS zoom on focus;
-  `overscroll-behavior` and tap highlight tuning; standalone-mode
-  (`@media (display-mode: standalone)`) tweaks such as hiding anything that
-  tells people to "install the app".
-- The fast actions are the phone's job: confirm "I'm at...", **Fed**, mark
-  done and accept/decline are reachable in one or two taps from the home
-  screen, and that Turbo/Action Cable reconnect cleanly when the app returns
-  from the background (listen for `visibilitychange` and refresh).
-- Dark/light follows the OS (already tokenised); verify the theme-color meta
-  matches in both.
-- No horizontal scroll anywhere at 320px.
-
-### Phase 8: Deploy, docs and hardening
-
-- README and AGENTS.md: new files, new tables, new env vars (`VAPID_*`),
-  the iOS Home Screen requirement, HTTPS requirement, and the updated
-  "Gotchas" line (currently says there's no Web Push).
-- Admin > Settings: a small "Notifications" status block (VAPID configured?
-  public key, count of subscriptions, last send error) so the owner can
-  diagnose without logs.
-- Make sure `storage/` persistence covers the VAPID key (it's in the Kamal
-  volume already). Losing it invalidates **all** subscriptions: devices must
-  re-subscribe. Document this; the self-healing client check in Phase 3
-  means they re-subscribe the next time the app opens, which is acceptable.
-- `config/deploy.yml`: nothing new expected beyond the correct real
-  `proxy.host` and `APP_URL` (owner step). The service worker path must be
-  served by the app, not Thruster's static cache with long max-age: confirm
-  `service-worker` and `manifest` responses are sent with
-  `Cache-Control: no-cache` so updates ship.
-- Brakeman and rubocop clean. `bin/rails test` green.
-
-## 4. Test plan summary
+## 5. Test plan summary
 
 | Layer | How |
 | --- | --- |
 | Encryption and VAPID | Known-answer vectors in `test/lib` |
-| Server flow | Integration tests with a fake push endpoint (local `TCPServer` or stubbed `Client`) |
-| Preferences, reminders | Model tests with `travel_to` |
-| Install and push on devices | Manual, on real hardware (checklist below) |
+| Push delivery | Stubbed `WebPush::Client`; job tests for 410/503 |
+| Settings and routing | Controller and `Notifier` tests per channel and category |
+| Email | Mailer tests; unsubscribe integration tests |
+| Reminders | Model/job tests with `travel_to` |
+| Install and push on devices | Manual, real hardware (below) |
 
-Manual device checklist (run for Android Chrome and iPhone Safari):
+Manual device checklist (Android Chrome and iPhone Safari):
 
-1. Open the site, sign in, confirm the install prompt or the Add to Home
-   Screen path works and the icon and name look right.
-2. Open from the Home Screen icon: no browser chrome, status bar colour is
-   right, back and forward feel normal.
-3. Enable notifications, send the test: arrives with the app in the
-   foreground, in the background, and with the phone locked.
-4. Have another account assign a task: push arrives, tap opens the task.
-5. Mark the phone Do Not Disturb: arrives silently in the shade, no sound.
-6. Turn off Wi-Fi: offline page, not a blank screen. Turn back on: recovers.
-7. Remove the device from the Notifications list on the account page: pushes
-   stop. Re-enable: they resume.
-8. Sign out and sign in as a different user on the same phone: the first
-   user's pushes stop arriving there.
+1. Open the site, sign in, install (Install prompt, or Share > Add to Home
+   Screen). Icon and name look right.
+2. Open from the icon: no browser chrome, status bar colour right in light
+   and dark.
+3. Notifications page: turn on, send a test. Arrives with the app open,
+   in the background and with the phone locked.
+4. Another account assigns you an item: push arrives, tap opens it, in the
+   right household.
+5. Untick Push for that category: next one doesn't arrive. Tick Email:
+   email arrives; its unsubscribe link works.
+6. Quiet hours covering now: a pet feed doesn't push, a clash request does.
+7. Wi-Fi off: offline page, not a blank screen. On again: recovers.
+8. Remove the device on the Notifications page: pushes stop. Turn back on:
+   they resume.
+9. Sign out, sign in as someone else on the same phone: the first person's
+   pushes stop arriving there.
 
-## 5. What you (the owner) need to do
+## 6. What you (the owner) need to do
 
-These can't be done by the agent. Roughly in the order you'll hit them.
+1. **Real domain with HTTPS** before testing on phones (localhost is enough
+   for building and desktop testing). Set `proxy.host` and `APP_URL` in
+   `config/deploy.yml`, point DNS, confirm the Let's Encrypt cert. Phones and
+   the wall iPad use this address; passkeys are bound to it.
+2. **Deploy once and confirm `/up`** over https before testing push.
+3. **Approve the icon.** The agent generates the PNGs from
+   `public/icon.svg`. If that isn't the final mark, supply an SVG (or a
+   1024px PNG) with breathing room around it.
+4. **App name under the icon**: under about 12 characters or iOS truncates
+   it. Currently "FamilyStatus" in the manifest vs "family-status" in the app.
+5. **Check the defaults** in the Phase 4 category table (push on for all but
+   the to-do digest; email on only for "Things for me"; reminders 15 minutes
+   before; digest at 7:00; quiet hours off).
+6. **SMTP**, if you want the Email column to work: Admin > Settings, with a
+   sender your domain is allowed to send from (SPF/DKIM) or mail lands in
+   spam. Without it the column shows as unavailable.
+7. **Real phones**: Android with Chrome, and an iPhone on **iOS 16.4+**,
+   installed to the Home Screen (Safari tabs can't receive push).
+8. **Tell the family the one-time steps.** iPhone: open the link in Safari,
+   Share, Add to Home Screen, open from the icon, Notifications page, turn
+   on. Android: open in Chrome, Install, then turn on.
+9. **Back up `storage/`** (database and VAPID key).
+10. **Review each phase.** Phase 1 is safe alone. Phases 2–4 should ship
+    together (push without settings would over-notify). Phase 5 can follow.
 
-1. **Pick a real domain with HTTPS before anything else.** Service workers,
-   push and passkeys all need a secure context, and a certificate for a bare
-   LAN IP won't do. Set `proxy.host` and `APP_URL` in `config/deploy.yml`
-   (currently `status.example.com` placeholders), point DNS at the server,
-   and confirm Kamal's proxy gets a Let's Encrypt cert. Your wall iPad and
-   everyone's phones should all use this same address. Passkeys are bound to
-   the hostname, so changing it later means re-registering them.
-2. **Deploy once with the current code and confirm** `/up` is healthy over
-   https. Don't start testing push on a broken deploy.
-3. **Supply or approve the icon.** Decide whether `public/icon.svg` is the
-   final brand. If you want a different one, give the agent an SVG or a
-   1024x1024 PNG with a plain background and some breathing room around the
-   mark (maskable icons get cropped to a circle or rounded square).
-4. **Confirm the app name** (shown under the icon; keep it under about 12
-   characters or it truncates on iOS). Currently the manifest says
-   "FamilyStatus" while the app says "family-status".
-5. **Decide the notification defaults** the agent will ship with (Phase 4):
-   which kinds are on by default, whether quiet hours exist, and the default
-   reminder lead time (suggested 15 minutes).
-6. **Test on real phones, not just a desktop.** Phases 3 and 7 are not
-   verifiable by automated tests. You need:
-   - an Android phone with Chrome,
-   - an iPhone running **iOS 16.4 or later** (check Settings > General >
-     About). Older iPhones can't get web push at all.
-   Install from the Home Screen on iPhone; remember that Safari tabs can't
-   receive push.
-7. **Tell your family the one-time steps.** On iPhone: open the link in
-   Safari, tap Share, Add to Home Screen, open it from the icon, tap Enable
-   notifications. On Android: open the link in Chrome, tap Install or Add to
-   Home screen, then Enable notifications. Put these steps in the invitation
-   email text if you like (the agent can add them in Phase 8).
-8. **Back up `storage/`** (the database and the generated VAPID key live
-   there). If it's lost, everyone has to re-enable notifications.
-9. **Optional: SMTP.** Only if you want the Phase 6 email fallback. Set it
-   in Admin > Settings. Use a sender address your domain is allowed to send
-   from (SPF/DKIM) or digests land in spam.
-10. **Review and merge each phase's PR.** Phase 1 is safe to ship alone and
-    gives you installable icons immediately; push (2 and 3) should ship
-    together; 4 should follow quickly after, before you invite anyone who
-    isn't you.
+## 7. Risks
 
-## 6. Risks and things to watch
-
-- **iOS is the weak link.** Install friction and platform quirks are the
-  likeliest reasons a family member says "I never got it". Invest in the
-  instructions in Phase 3 and keep email as a fallback.
-- **Over-notifying** gets the app muted or uninstalled. Ship preferences
-  with push, not after.
-- **Subscription rot.** Phones come and go; handle 404/410 by deleting, and
-  keep the self-healing client check.
-- **Service worker caching bugs are nasty** (users stuck on an old version).
-  Keep the worker tiny, never cache authenticated HTML, and make updates
-  immediate.
-- **SQLite and one instance.** Push sends go through Solid Queue in the same
-  container; a big household with many devices is fine, but sends must stay
-  in the background job, never in the request or an `after_commit`
-  callback's critical path.
-- **Privacy on lock screens.** Private tasks must stay redacted
-  (`title_for`), and consider a per-user "hide details on lock screen"
-  option (generic "You have an update") if anyone cares.
-- **Single-household assumptions.** Notifications from a user who belongs to
-  several households should name the household (the existing title already
-  does); make sure the tap path switches household context (see
-  `session[:current_household_id]`) or the link will 404.
+- **iOS is the weak link**: install friction and quirks. The iOS steps in
+  the push panel and the email column are the mitigation.
+- **Over-notifying** gets the app muted. Settings ship with push, not after.
+- **Email volume**: one per update can be a lot for pets; defaults are off
+  and every email has one-click unsubscribe.
+- **Subscription rot**: 404/410 deletes; the client re-registers itself.
+- **Service worker caching bugs**: the worker caches one static page, is
+  served `no-cache`, and takes over immediately.
+- **SQLite, one instance**: all sends go through Solid Queue jobs, never in
+  the request or an `after_commit` critical path.
+- **Privacy**: private items stay redacted (`title_for`) in pushes and
+  emails alike.
+- **Several households**: every notification names its household and its
+  link switches to it.
