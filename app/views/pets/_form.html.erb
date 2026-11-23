@@ -12,12 +12,19 @@
       <%= f.text_field :name, required: true, maxlength: 40, placeholder: "e.g. Biscuit", autocomplete: "off" %>
     </div>
     <div class="form-row">
-      <div class="form-field">
+      <%# "New type…" reveals a name box (CSS, no page change). On a failed save
+          the typed name comes back as the species, so keep it selected. %>
+      <% typed_kind = @new_species.present? %>
+      <div class="form-field new-place-host">
         <%= f.label :species, "What kind of pet?" %>
-        <%= f.text_field :species, maxlength: 30, placeholder: "Dog, cat, horse…", list: "pet-species" %>
-        <datalist id="pet-species">
-          <% %w[Dog Cat Horse Rabbit Bird Chicken Goat Fish].each do |kind| %><option value="<%= kind %>"><% end %>
-        </datalist>
+        <%= f.select :species, options_for_select([["Not set", ""]] + Pet.kinds_for(current_household, @pet.species).map { |kind| [kind, kind] } + [["New type…", Pet::NEW_KIND]],
+                                                  typed_kind ? Pet::NEW_KIND : @pet.species) %>
+        <div class="new-place-field">
+          <%= label_tag "pet_new_species", "Name of the new type" %>
+          <%= text_field_tag "pet[new_species]", @new_species, id: "pet_new_species",
+                             maxlength: 30, placeholder: "e.g. Alpaca, Guinea pig", autocomplete: "off" %>
+          <small>It's added to the menu for everyone in your household.</small>
+        </div>
       </div>
       <div class="form-field">
         <%= f.label :birthday, "Birthday (optional)" %>

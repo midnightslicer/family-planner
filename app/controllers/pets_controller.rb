@@ -26,6 +26,7 @@ class PetsController < ApplicationController
 
   def create
     @pet = current_household.pets.new(pet_params.merge(created_by: current_user))
+    choose_species
     choose_home
     if @pet.save
       redirect_to pet_path(@pet), notice: "Added #{@pet.name}.", status: :see_other
@@ -39,6 +40,7 @@ class PetsController < ApplicationController
 
   def update
     @pet.assign_attributes(pet_params)
+    choose_species
     choose_home
     if @pet.save
       redirect_to pet_path(@pet), notice: "Saved.", status: :see_other
@@ -73,6 +75,12 @@ class PetsController < ApplicationController
 
   def pet_params
     params.require(:pet).permit(:name, :species, :birthday, :meals_per_day, :feeding_notes, :photo, :remove_photo, :visitor)
+  end
+
+  # The type menu's "New type…" takes the name typed beside it.
+  def choose_species
+    @new_species = params.dig(:pet, :new_species)
+    @pet.species = @new_species if @pet.species == Pet::NEW_KIND
   end
 
   # "Sleeps at" is an existing location, nothing, or a new house typed in

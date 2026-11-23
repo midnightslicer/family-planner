@@ -36,6 +36,17 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "a pet can have a custom type that then joins the menu" do
+    post pets_path, params: { pet: { name: "Alma", species: Pet::NEW_KIND, new_species: "Alpaca", meals_per_day: 1 } }
+    assert_equal "Alpaca", Pet.find_by!(name: "Alma").species
+
+    get new_pet_path
+    assert_select "select[name='pet[species]'] option", text: "Alpaca"
+    assert_select "select[name='pet[species]'] option", text: "New type…"
+    get edit_pet_path(Pet.find_by!(name: "Alma"))
+    assert_select "select[name='pet[species]'] option[selected]", text: "Alpaca"
+  end
+
   test "anyone can add a pet with feeding notes" do
     post pets_path, params: { pet: { name: "Bella", species: "Horse", birthday: "2020-04-02", meals_per_day: 3,
                                      feeding_notes: "Hay morning and night", home_id: @house.id } }

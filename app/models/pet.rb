@@ -4,6 +4,9 @@ class Pet < ApplicationRecord
   include SmallPhoto
 
   MAX_MEALS = 8
+  KINDS = %w[Dog Cat Horse Rabbit Bird Chicken Goat Fish].freeze
+  # The type menu's "New type…" value; the name comes in a box beside it.
+  NEW_KIND = "new".freeze
 
   belongs_to :household
   belongs_to :created_by, class_name: "User", optional: true
@@ -36,6 +39,13 @@ class Pet < ApplicationRecord
 
   after_create { visits.create!(household: household, arrived_at: created_at) }
   after_commit { household.broadcast_refresh }
+
+  # The type menu: the usual ones, then whatever else this household has
+  # added (custom types), plus `current` so editing never drops a type.
+  def self.kinds_for(household, current = nil)
+    used = household.all_pets.where.not(species: [nil, ""]).distinct.pluck(:species)
+    (KINDS + [*used, current].compact_blank).uniq { |kind| kind.downcase }.sort_by(&:downcase)
+  end
 
   # For the dashboard and pet cards, everything in a few queries instead of a
   # few per pet: { pet_id => PetStatus }.
