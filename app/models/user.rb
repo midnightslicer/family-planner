@@ -1,7 +1,7 @@
 class User < ApplicationRecord
   # No :registerable: accounts come only from the setup wizard (first admin)
   # and invitations, so there is no public sign-up route at all.
-  devise :database_authenticatable, :recoverable, :rememberable, :validatable, :timeoutable
+  devise :database_authenticatable, :recoverable, :rememberable, :validatable
 
   HANDLE_FORMAT = /\A[a-z0-9_]+\z/
   RECOVERY_CODE_COUNT = 10

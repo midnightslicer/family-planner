@@ -191,10 +191,9 @@ Devise.setup do |config|
   # to give user feedback and not to assert the e-mail validity.
   config.email_regexp = /\A[^@\s]+@[^@\s]+\z/
 
-  # ==> Configuration for :timeoutable
-  # The time you want to timeout the user session without activity. After this
-  # time the user will be asked for credentials again. Default is 30 minutes.
-  # config.timeout_in = 30.minutes
+  # ==> :timeoutable is deliberately not enabled on User. This is a family
+  # board on trusted devices; the 30-minute idle logout kept signing people
+  # out. Sessions last until sign-out, or 30 days via remember-me.
 
   # ==> Configuration for :lockable
   # Defines which strategy will be used to lock an account.
