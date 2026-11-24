@@ -105,7 +105,10 @@ code. Mail opens in the browser via letter_opener.
 names `stardrift` and `novacore` (bare or `.ts.net`), so a phone on the
 tailnet can open http://stardrift:3000. Add others to `config.hosts` in
 `config/environments/development.rb`. Passkeys, push and installing the app
-need https, so over plain http use a password.
+need https: `tailscale serve --bg 3000` puts the dev server at
+https://<machine>.<tailnet>.ts.net (tailnet only; `tailscale serve --https=443 off`
+stops it). Passkeys belong to the address they were made on, so add one
+there; ones made on localhost don't carry over.
 
 Tests: `bin/rails test`
 
