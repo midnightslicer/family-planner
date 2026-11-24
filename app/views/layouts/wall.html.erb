@@ -14,7 +14,8 @@
       <link rel="manifest" href="<%= wall_manifest_path(@household.slug) %>" crossorigin="use-credentials">
       <meta name="apple-mobile-web-app-title" content="<%= PwaController.short_name(@household.name) %>">
       <meta name="apple-mobile-web-app-status-bar-style" content="black">
-      <%# body.kiosk's --bg (kiosk.css), repeated because a meta can't read CSS. %>
+      <%# body.kiosk's starting --bg (kiosk.css), repeated because a meta can't
+          read CSS; wall_drift_controller.js keeps it in step after that. %>
       <meta name="theme-color" content="#0d1117">
     <% end %>
     <%# Periodic refreshes morph the grid in place instead of flashing the page. %>
@@ -29,7 +30,10 @@
     <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module" %>
   </head>
 
-  <body class="kiosk">
+  <%# wall-drift: the slow colour, tone and position drift that keeps the
+      screen from burning in, tinted with each member's profile colour. %>
+  <body class="kiosk" data-controller="wall-drift"
+        data-wall-drift-colors-value="<%= (@members || []).map(&:color).uniq.to_json %>">
     <%= yield %>
   </body>
 </html>

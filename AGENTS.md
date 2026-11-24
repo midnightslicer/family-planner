@@ -189,8 +189,26 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   else — never put a colour rule inside it, and never hard-code a hex outside
   the token block, or one theme will be wrong. `:root` also declares
   `color-scheme: light dark` so the UA-drawn parts follow (scrollbars, the
-  datetime picker, checkbox glyphs). `body.kiosk` pins `color-scheme: dark`
-  and its own token values, so the wall stays dark whatever the OS says.
+  datetime picker, checkbox glyphs).
+- **Each person's colour themes the app for them.** `ColorTheme` (OKLCH
+  maths, `ColorTheme::Oklch`) turns `current_user.color` into the accent
+  tokens (their hue, lightness moved until it reads at 4.5:1 or better)
+  and faintly tinted neutrals, light and dark; `ThemeHelper#theme_tokens_tag`
+  prints them as a `<style id="theme-tokens">` token block after the
+  stylesheet, and `theme_surface` feeds the `theme-color` metas. Signed-out
+  pages keep application.css's defaults. It's still tokens only: never
+  style a component by the user's colour outside `--user-color` and these.
+- **The wall never stands still** (burn-in): `wall_drift_controller.js` on
+  the wall's `<body>` writes `--drift-*` tokens and `data-wall-tone` to
+  `<html>` (Turbo's morph refreshes leave `<html>` alone) every 10s, all
+  computed from the clock (`app/javascript/lib/oklch.js`): surfaces tinted
+  with each member's colour in turn (20 min each, gliding), a dark⇄light
+  ease every hour (dark 21:00–07:00), text and chips switching token sets
+  with the tone, two wandering background glows, and the board orbiting
+  ±8px. kiosk.css reads them with dark fallbacks; transitions as long as
+  the tick make it continuous. New wall colours go in kiosk.css's two tone
+  token sets (`body.kiosk`, `html[data-wall-tone="light"] body.kiosk`),
+  never as fixed hexes on a component.
 - Installable app (PWA): `PwaController` (inherits `ActionController::Base`
   directly: no setup gate, no sign-in) serves `/manifest.webmanifest`
   (built in the controller from `AppSettings.app_name`) and
@@ -209,7 +227,7 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   only for a signed-in member (the wall layout links it with
   `crossorigin="use-credentials"`), else the app; it never looks a slug up
   for anyone else. The wall gets no push metas, push-sync or toasts.
-  The `theme-color` metas, the manifest colours and `offline.html` repeat a
+  The manifest colours, the wall's starting `theme-color` and `offline.html` repeat a
   few token hexes because they can't read CSS: change them with the tokens.
 - Notifications: `Notifier.notify(user, category:, title:, body:, path:,
   household:, tag:, urgent:)` is the only way to tell someone something

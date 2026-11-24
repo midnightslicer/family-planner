@@ -37,6 +37,14 @@ class WallTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "the wall drifts through the family's colours" do
+    @member.update!(color: @admin.color)
+    wall
+    assert_select "body.kiosk[data-controller='wall-drift']"
+    colours = JSON.parse(css_select("body").first["data-wall-drift-colors-value"])
+    assert_equal [@admin.color], colours # each colour once
+  end
+
   test "an event at a place puts its person in that place's section" do
     LocationReport.create!(household: @smiths, subject: @admin, location: @yard, reported_by: @admin)
     Task.create!(household: @smiths, title: "Client call", place: "Big house", assigned_to: @admin,
