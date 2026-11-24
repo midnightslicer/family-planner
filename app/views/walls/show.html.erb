@@ -5,7 +5,7 @@
     (kiosk.css). Any change anywhere refreshes it live. %>
 <div class="wall-board" data-controller="auto-refresh wall-fit" data-auto-refresh-interval-value="60">
   <% @sections.each do |section| %>
-    <section class="wall-place">
+    <section class="wall-place" id="<%= section.location ? dom_id(section.location, :wall_place) : "wall_place_elsewhere" %>">
       <header class="wall-place-header">
         <% if section.location %>
           <%= location_picture(section.location) %>

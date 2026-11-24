@@ -48,10 +48,12 @@ body.kiosk {
   --handle-contrast: #ffffff;
   --handle-mix: 55%;
   --wall-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  /* Text and icons change tone over a few seconds; surfaces move with the
-     drift's tick, linearly, so its steps join into one continuous change. */
-  --wall-fade: 4s ease;
-  --wall-drift: var(--drift-tick, 10s) linear; /* the drift's tick, shorter at ?speed= */
+  /* Colours move with the drift's tick, linearly, so its steps join into
+     one continuous change; a tone switch shortens the tick to a quick fade
+     (wall_drift_controller.js). Text uses the same timing as the surfaces
+     behind it, so the two can never pass each other mid-fade. */
+  --wall-fade: var(--drift-tick, 10s) linear;
+  --wall-drift: var(--drift-tick, 10s) linear;
 
   margin: 0;
   min-height: 100vh;
@@ -176,8 +178,13 @@ body.kiosk h1, body.kiosk h2 { font-size: 2rem; }
 body.kiosk .person-now { font-size: clamp(1.125rem, 1.6vw, 1.375rem); }
 body.kiosk .person-next { font-size: 1.125rem; }
 
-/* Names link to profiles in the app; the wall is read-only, so they're inert here. */
-body.kiosk .person-card a { pointer-events: none; color: inherit; }
+/* Names link to profiles in the app; the wall is read-only, so they're inert
+   here. They take the text colour as is, without a fade of their own: a
+   visited link's colour transition can stall on its old value, which left
+   names dark on dark cards. */
+body.kiosk .person-card a,
+body.kiosk .person-card a:visited { pointer-events: none; color: inherit; }
+html.wall-drift body.kiosk .person-card a { transition: none; }
 body.kiosk .person-where { font-size: 1.125rem; }
 
 /* The board: a band per place someone is, top to bottom. The place's name

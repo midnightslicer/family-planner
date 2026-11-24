@@ -7,10 +7,12 @@ import { hexToOklab, oklch } from "../lib/oklch"
 //
 // - Colour: the background, cards and borders are tinted with one family
 //   member's profile colour at a time, gliding to the next every 20 minutes.
-// - Tone: about every hour the board eases from dark to light (or back)
-//   over six minutes, and the text flips from light to dark as the cards
-//   pass mid-grey. At night (21:00–07:00 on the tablet's clock) it stays
-//   dark so it doesn't light up the room.
+// - Tone: about every hour the board switches between dark and light in a
+//   quick fade (TONE_FADE), text and cards together, because in between,
+//   on mid-grey cards, neither light nor dark text reads. Within a tone it
+//   only breathes a little, always staying where its text reads well. At
+//   night (21:00–07:00 on the tablet's clock) it stays dark so it doesn't
+//   light up the room.
 // - Position: the board orbits a few pixels, so every edge and line of
 //   text wanders, and two soft glows wander across the background.
 //
@@ -20,8 +22,9 @@ import { hexToOklab, oklch } from "../lib/oklch"
 // as long as the tick make each step continuous.
 const TICK = 10 * 1000
 const MINUTE = 60 * 1000
-const TONE_PERIOD = 120 * MINUTE // dark, ease to light, light, ease to dark
-const TONE_EASE = 6 * MINUTE
+const TONE_PERIOD = 120 * MINUTE // an hour dark, an hour light
+const TONE_FADE = 3000 // ms: the switch, fast enough never to sit unreadable
+const BREATHE = 17 * MINUTE // the slow lightness swing within a tone
 const COLOUR_HOLD = 20 * MINUTE // per member colour, the last quarter a glide
 const NIGHT_FROM = 21 * 60
 const NIGHT_UNTIL = 7 * 60
@@ -71,24 +74,28 @@ export default class extends Controller {
   }
 
   apply(now = this.now()) {
-    const light = this.lightness(now)
+    const tone = this.tone(now)
+    const light = tone === "light" ? 1 : 0
+    // Within a tone, a slow swing of lightness (0–1) that keeps pixels
+    // changing but never leaves the range where that tone's text reads.
+    const b = 0.5 + 0.5 * wave(now, BREATHE)
     const { C, h, next } = this.colour(now)
     // How much of the family colour shows: none for a grey, all of it from
     // a properly saturated colour on.
     const strength = Math.min(1, C / 0.12)
 
-    const surfaceL = lerp(0.215, 0.988, light)
-    // Flip the text where light and dark text read equally well on the cards.
-    const tone = surfaceL > 0.57 ? "light" : "dark"
-    const bgL = lerp(0.165, 0.952, light)
+    // Dark cards 0.19–0.26 and light 0.93–0.985 (OKLCH L): body and muted
+    // text both clear 4.5:1 on them throughout.
+    const surfaceL = light ? lerp(0.985, 0.93, b) : lerp(0.19, 0.26, b)
+    const bgL = light ? lerp(0.955, 0.9, b) : lerp(0.15, 0.2, b)
 
     const props = {
       "--drift-bg": oklch(bgL, lerp(0.03, 0.02, light) * strength, h),
       "--drift-surface": oklch(surfaceL, lerp(0.028, 0.008, light) * strength, h),
-      "--drift-surface-sunken": oklch(lerp(0.255, 0.965, light), lerp(0.03, 0.012, light) * strength, h),
-      "--drift-accent-soft": oklch(lerp(0.3, 0.93, light), Math.min(C, 0.15) * 0.4, h),
-      "--drift-border": oklch(lerp(0.3, 0.895, light), 0.03 * strength, h),
-      "--drift-border-strong": oklch(lerp(0.38, 0.84, light), 0.035 * strength, h),
+      "--drift-surface-sunken": oklch(light ? surfaceL - 0.03 : surfaceL + 0.04, lerp(0.03, 0.012, light) * strength, h),
+      "--drift-accent-soft": oklch(light ? 0.93 : 0.32, Math.min(C, 0.15) * 0.4, h),
+      "--drift-border": oklch(light ? surfaceL - 0.09 : surfaceL + 0.085, 0.03 * strength, h),
+      "--drift-border-strong": oklch(light ? surfaceL - 0.15 : surfaceL + 0.165, 0.035 * strength, h),
       "--drift-accent": oklch(tone === "light" ? 0.5 : 0.8, Math.min(C, 0.15), h),
       "--drift-glow": oklch(lerp(bgL + 0.09, bgL - 0.02, light), lerp(0.09, 0.07, light) * strength, h, 0.6),
       "--drift-glow-2": oklch(lerp(bgL + 0.08, bgL - 0.02, light), lerp(0.08, 0.06, light) * Math.min(1, next.C / 0.12), next.h, 0.45),
@@ -99,20 +106,23 @@ export default class extends Controller {
       "--drift-x": `${(8 * wave(now, 37 * MINUTE)).toFixed(2)}px`,
       "--drift-y": `${(6 * wave(now, 23 * MINUTE, 1)).toFixed(2)}px`
     }
-    props["--drift-accent-fg"] = tone === "light" ? "#ffffff" : props["--drift-bg"]
+    props["--drift-accent-fg"] = tone === "light" ? "#ffffff" : oklch(0.16, 0.02, h)
+
+    // A tone switch fades quickly, everything at once; other ticks glide
+    // over the whole tick so they join into one slow change.
+    const switching = this.lastTone && this.lastTone !== tone
+    this.lastTone = tone
+    props["--drift-tick"] = `${switching ? TONE_FADE : TICK / this.speed}ms`
 
     for (const [name, value] of Object.entries(props)) this.root.style.setProperty(name, value)
     this.root.dataset.wallTone = tone
     this.themeMeta?.setAttribute("content", props["--drift-bg"])
   }
 
-  // 0 = dark, 1 = light: mostly resting at one end, easing between them.
-  lightness(now) {
-    const at = now % TONE_PERIOD
-    const half = TONE_PERIOD / 2
-    const rising = smooth((at - (half - TONE_EASE)) / TONE_EASE)
-    const falling = smooth((at - (TONE_PERIOD - TONE_EASE)) / TONE_EASE)
-    return Math.max(0, rising - falling) * this.daylight(new Date(now))
+  // The first half of each period dark, the second light; dark all night.
+  tone(now) {
+    const lightHalf = now % TONE_PERIOD >= TONE_PERIOD / 2
+    return lightHalf && this.daylight(new Date(now)) === 1 ? "light" : "dark"
   }
 
   // 1 by day, 0 by night, with ten-minute ramps so dusk is a fade too.

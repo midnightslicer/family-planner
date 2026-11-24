@@ -1,7 +1,7 @@
 <%# A pet on the wall: who, where, fed today. No actions (nobody's signed
     in). Locals: pet, status (PetStatus). %>
 <% report = status.report %>
-<div class="wall-pet">
+<div class="wall-pet" id="<%= dom_id(pet, :wall_pet) %>">
   <span class="person-avatar" style="<%= PetsHelper::PET_DISC_STYLE %>" aria-hidden="true"><%= pet_avatar_content(pet) %></span>
   <div class="wall-pet-body">
     <span class="person-name"><%= pet.name %><%= icon(:cake, label: "Birthday today", class: "birthday-cake") if birthday_today?(pet.birthday) %></span>
