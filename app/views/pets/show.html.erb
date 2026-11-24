@@ -29,7 +29,8 @@
     <% else %>
       <%= button_to pet_subscription_path(@pet), method: :post, class: "btn", title: "Get a notification when #{@pet.name} is moved or fed" do %><%= icon_label(:bell, "Follow") %><% end %>
     <% end %>
-    <% unless @pet.away? %>
+    <%# Only pets we sit come and go; our own just live here. %>
+    <% if @pet.visitor? && !@pet.away? %>
       <%= button_to away_pet_path(@pet), method: :post, class: "btn btn-quiet", title: "#{@pet.name} has gone home for now (dog-sitting): hide them until they're back" do %><%= icon_label(:log_out, "Not here right now") %><% end %>
     <% end %>
     <%= link_to edit_pet_path(@pet), class: "btn btn-quiet btn-icon", title: "Edit", "aria-label": "Edit #{@pet.name}" do %><%= icon(:pencil) %><% end %>

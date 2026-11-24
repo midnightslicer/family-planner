@@ -98,7 +98,21 @@ export default class extends Controller {
 
     this.showPreview(canvas.toDataURL("image/png"))
     this.dialogTarget.close()
-    if (this.autosaveValue) this.element.closest("form").requestSubmit()
+    if (this.autosaveValue) this.autosave()
+  }
+
+  // Saves the form for the photo alone, and says so (photo_autosave=1), so
+  // the save can leave you on the page you were editing.
+  autosave() {
+    const form = this.element.closest("form")
+    if (!form.querySelector('input[name="photo_autosave"]')) {
+      const flag = document.createElement("input")
+      flag.type = "hidden"
+      flag.name = "photo_autosave"
+      flag.value = "1"
+      form.append(flag)
+    }
+    form.requestSubmit()
   }
 
   // ---- Dragging, zooming, nudging ----

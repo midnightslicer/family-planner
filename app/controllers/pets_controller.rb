@@ -43,7 +43,12 @@ class PetsController < ApplicationController
     choose_species
     choose_home
     if @pet.save
-      redirect_to pet_path(@pet), notice: "Saved.", status: :see_other
+      # A photo saves as soon as it's cropped: stay on the form you're editing.
+      if params[:photo_autosave].present?
+        redirect_to edit_pet_path(@pet), notice: "Photo saved.", status: :see_other
+      else
+        redirect_to pet_path(@pet), notice: "Saved.", status: :see_other
+      end
     else
       render :edit, status: :unprocessable_content
     end
@@ -51,7 +56,12 @@ class PetsController < ApplicationController
 
   # POST /pets/:id/away: not here for now (a dog we sit went home). Kept,
   # with its history, under Away on the pets page.
+  # Only for pets we sit: our own pets don't come and go.
   def away
+    unless @pet.visitor?
+      return redirect_to pet_path(@pet), alert: "Only pets you sit can be marked away.", status: :see_other
+    end
+
     @pet.leave!
     redirect_to pets_path, notice: "#{@pet.name} is marked away. Find them under Away when they're back.", status: :see_other
   end

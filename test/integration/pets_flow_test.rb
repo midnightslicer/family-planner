@@ -158,7 +158,20 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     assert_nil @rex.status.report.spot
   end
 
+  test "only pets we sit get \"Not here right now\"" do
+    get pet_path(@rex)
+    assert_select "form[action='#{away_pet_path(@rex)}']", count: 0
+    post away_pet_path(@rex)
+    assert_redirected_to pet_path(@rex)
+    assert_not @rex.reload.away?
+
+    @rex.update!(visitor: true)
+    get pet_path(@rex)
+    assert_select "form[action='#{away_pet_path(@rex)}']", 1
+  end
+
   test "a pet that isn't here is off the board, the wall and the pickers, and comes back with one tap" do
+    @rex.update!(visitor: true)
     post away_pet_path(@rex)
     assert @rex.reload.away?
 
@@ -270,6 +283,15 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     post pets_path, params: { pet: { name: "Bella", meals_per_day: 2, home_id: "",
                                      photo: fixture_file_upload("avatar.png", "image/png") } }
     assert Pet.find_by!(name: "Bella").photo_saved?
+  end
+
+  test "a photo saved on crop stays on the edit page; saving the form goes to the pet" do
+    patch pet_path(@rex), params: { photo_autosave: "1", pet: { photo: fixture_file_upload("avatar.png", "image/png") } }
+    assert_redirected_to edit_pet_path(@rex)
+    assert @rex.reload.photo_saved?
+
+    patch pet_path(@rex), params: { pet: { name: "Rex" } }
+    assert_redirected_to pet_path(@rex)
   end
 
   test "following a pet notifies you when someone else feeds or moves it" do
