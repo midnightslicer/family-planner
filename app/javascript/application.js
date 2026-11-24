@@ -2,6 +2,21 @@
 import { Turbo } from "@hotwired/turbo-rails"
 import "./controllers"
 
+// On a visit to a page seen before, Turbo paints its cached copy at once
+// (the preview: phones never prefetch, so this is what makes a tap feel
+// instant) and then the fresh page. Replacing the preview would play every
+// entrance animation a second time, a jitter; morphing the fresh page into
+// it keeps the elements, so they animate once and only what changed updates.
+let previewShown = false
+document.addEventListener("turbo:visit", () => { previewShown = false })
+document.addEventListener("turbo:before-render", (event) => {
+  const isPreview = document.documentElement.hasAttribute("data-turbo-preview")
+  if (!isPreview && previewShown && event.detail.renderMethod === "replace") {
+    event.detail.render = (currentBody, newBody) => Turbo.morphBodyElements(currentBody, newBody)
+  }
+  previewShown = isPreview
+})
+
 // Tell the server which time zone this browser is in, so "fed today" and
 // times on screen follow the viewer's clock (ApplicationController#use_browser_time_zone).
 try {
