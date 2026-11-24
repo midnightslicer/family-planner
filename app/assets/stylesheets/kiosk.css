@@ -180,57 +180,55 @@ body.kiosk .person-next { font-size: 1.125rem; }
 body.kiosk .person-card a { pointer-events: none; color: inherit; }
 body.kiosk .person-where { font-size: 1.125rem; }
 
-/* The board: a section per place someone is, with who's there and their
-   cards. Sections flow into columns to fill the screen. */
-/* Columns pack sections of different heights without gaps; fit-screen
-   (wall_fit_controller.js) shrinks the board if a big family still
-   overflows, since the wall can't scroll. */
+/* The board: a band per place someone is, top to bottom. The place's name
+   sits in a fixed column on the left; its people and pets follow as
+   same-size tiles, --tiles across (the same in every band, so tiles line up
+   down the whole board), wrapping onto more rows when a place is busy.
+   wall_fit_controller.js picks --tiles and the scale that fill the screen. */
 body.kiosk .wall-board {
-  /* At most one column per place (--places), so shrinking to fit never
-     leaves empty columns. */
-  columns: 340px var(--places, 4);
-  column-gap: clamp(1rem, 2vw, 1.5rem);
-  padding: clamp(1rem, 2vw, 1.5rem);
+  --wall-gap: clamp(0.75rem, 1.5vw, 1.125rem);
+  display: grid;
+  align-content: start;
+  gap: var(--wall-gap);
+  padding: var(--wall-gap);
   transform-origin: top left;
 }
 body.kiosk .wall-place {
-  break-inside: avoid;
-  margin-bottom: clamp(1rem, 2vw, 1.5rem);
   display: grid;
-  gap: 0.875rem;
-  padding: clamp(0.875rem, 1.5vw, 1.25rem);
+  grid-template-columns: 11rem minmax(0, 1fr);
+  gap: var(--wall-gap);
+  align-items: start;
+  padding: var(--wall-gap);
   background: color-mix(in srgb, var(--surface) 45%, transparent);
   border: 1px solid var(--border);
   border-radius: 24px;
 }
-body.kiosk .wall-place-header { display: flex; align-items: center; gap: 0.875rem; min-width: 0; }
+body.kiosk .wall-place-header { display: grid; justify-items: start; gap: 0.5rem; min-width: 0; padding-top: 0.25rem; }
 body.kiosk .wall-place-header .place-photo { width: 3rem; border-radius: 12px; }
 body.kiosk .wall-place-header .place-photo > .icon { width: 50%; height: 50%; }
-/* Long place names wrap rather than being cut off. */
+/* Long place names wrap between words, never inside one. */
 body.kiosk .wall-place-header h2 {
-  flex: 1;
-  min-width: 0;
   margin: 0;
-  font-size: clamp(1.375rem, 2vw, 1.75rem);
+  font-size: clamp(1.25rem, 1.8vw, 1.5rem);
   line-height: 1.2;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  hyphens: manual;
 }
-body.kiosk .wall-here { display: inline-flex; flex: none; }
-body.kiosk .wall-here .person-avatar {
-  width: 2.25rem;
-  height: 2.25rem;
-  font-size: 0.8125rem;
-  box-shadow: 0 0 0 3px var(--bg);
-}
-body.kiosk .wall-here .person-avatar + .person-avatar { margin-left: -0.625rem; }
+body.kiosk .wall-count { font-size: 0.9375rem; font-weight: 600; color: var(--text-muted); }
+/* The tiles say who's here; the header's avatar stack only crowds it. */
+body.kiosk .wall-here { display: none; }
 
-body.kiosk .wall-cards { display: grid; gap: 0.75rem; }
+body.kiosk .wall-cards {
+  display: grid;
+  grid-template-columns: repeat(var(--tiles, 4), minmax(0, 1fr));
+  gap: 0.75rem;
+}
 /* Cards inside a place are compact so a whole family fits one screen: the
    section names the place, so the card drops its place line (keeping any
    note) and the @handle.
    People and pets share one shape so a column reads as a tidy list: the
-   photo in a fixed column with the name centred beside it, then chips and
-   a detail line lined up under the name. Both cards' wrappers become
+   photo with the name centred beside it, then chips and a detail line
+   across the card's full width beneath. Both cards' wrappers become
    `display: contents` so their children sit straight on this grid. */
 body.kiosk .wall-place .person-card,
 body.kiosk .wall-pet {
@@ -241,6 +239,7 @@ body.kiosk .wall-pet {
   column-gap: 0.875rem;
   row-gap: 0.4375rem;
   align-items: start;
+  align-content: start; /* a tile stretched to its row keeps its lines at the top */
   padding: 0.875rem 1.125rem 1rem 1.375rem;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -256,11 +255,11 @@ body.kiosk .wall-cards .person-avatar {
   height: 2.75rem;
   font-size: 1rem;
 }
+/* Below the name row, chips and details use the card's full width. */
 body.kiosk .wall-place .person-card > *,
+body.kiosk .wall-pet-body > * { grid-column: 1 / -1; margin: 0; }
 body.kiosk .wall-place .person-meta,
-body.kiosk .wall-pet-body > * { grid-column: 2; margin: 0; }
-body.kiosk .wall-place .person-meta,
-body.kiosk .wall-pet .person-name { grid-row: 1; align-self: center; }
+body.kiosk .wall-pet .person-name { grid-column: 2; grid-row: 1; align-self: center; margin: 0; }
 body.kiosk .wall-place .person-identity .birthday-cake { grid-column: 2; grid-row: 1; justify-self: end; align-self: center; }
 body.kiosk .wall-place .person-name,
 body.kiosk .wall-pet .person-name { font-size: clamp(1.125rem, 1.6vw, 1.375rem); }

@@ -1,10 +1,9 @@
 <%= turbo_stream_from @household, :members %>
-<%# A section per place someone is right now: the place, who's there, then
-    their status cards (people, then pets). Anyone whose place isn't known
+<%# A band per place someone is right now: the place, then same-size tiles
+    for who's there (people, then pets). Anyone whose place isn't known
     goes in "Somewhere else". Read-only: no buttons, links inert
     (kiosk.css). Any change anywhere refreshes it live. %>
-<div class="wall-board" data-controller="auto-refresh wall-fit" data-auto-refresh-interval-value="60"
-     style="--places: <%= [@sections.size, 1].max %>">
+<div class="wall-board" data-controller="auto-refresh wall-fit" data-auto-refresh-interval-value="60">
   <% @sections.each do |section| %>
     <section class="wall-place">
       <header class="wall-place-header">
@@ -14,6 +13,7 @@
           <span class="place-photo"><%= icon(:map_pin) %></span>
         <% end %>
         <h2><%= section.location&.name || "Somewhere else" %></h2>
+        <small class="wall-count"><%= section.everyone.size %> here</small>
         <span class="wall-here" aria-label="Here: <%= section.everyone.map { |who| who.is_a?(Pet) ? who.name : who.display_name }.to_sentence %>">
           <% section.people.each do |member| %>
             <span class="person-avatar" style="--user-color: <%= member.color %>; --user-fg: <%= contrast_color(member.color) %>" aria-hidden="true"><%= avatar_content(member) %></span>

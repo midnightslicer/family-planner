@@ -12,8 +12,11 @@ A wall view (`GET /h/:slug`, sign-in required: a member of that
 household, else 404; the slug only names the household) is meant for a
 wall-mounted iPad / browser home page that stays signed in: a section per place someone (or a
 pet) is right now (`Whereabouts`), with their status cards, then
-"Somewhere else"; read-only, and `wall_fit_controller.js` shrinks it to
-fit the screen since it can't scroll. Sign-in: passwords, passkeys
+"Somewhere else", each a full-width band (`wall-place`: the name and
+`wall-count` in a fixed left column, then same-size tiles, `--tiles`
+across in every band so they line up); read-only, and
+`wall_fit_controller.js` picks `--tiles` and the scale (up to 1.5×) that
+fill the screen, since it can't scroll. Sign-in: passwords, passkeys
 (WebAuthn), and optional TOTP two-step verification. Deploy: Docker + Kamal.
 
 Stack: Rails 8.1, propshaft (raw CSS, no CSS framework), esbuild via
