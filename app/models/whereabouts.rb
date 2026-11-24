@@ -4,7 +4,9 @@
 # locations, always last. A person is where their current
 # event or work hours put them, unless they've said where they are since
 # it started (Household#member_statuses drops :at then); a pet where it
-# was last reported.
+# was last reported. `sections(first: person)` puts the section that
+# person is in on top (the dashboard: where you are, then the rest),
+# "Somewhere else" included.
 #
 #   Whereabouts.new(household.places, members:, statuses:, pets:, pet_statuses:).sections
 #   # => [Section(location, people, pets), ..., Section(nil, people, pets)]
@@ -22,7 +24,15 @@ class Whereabouts
     @pet_statuses = pet_statuses
   end
 
-  def sections
+  def sections(first: nil)
+    all = ordered
+    mine = first && all.index { |section| section.people.include?(first) }
+    mine ? [all[mine], *all[0...mine], *all[(mine + 1)..]] : all
+  end
+
+  private
+
+  def ordered
     people = @members.group_by { |member| person_location_id(member) }
     pets = @pets.group_by { |pet| pet_location_id(pet) }
 
@@ -37,8 +47,6 @@ class Whereabouts
                             @pets.reject { |p| known.include?(pet_location_id(p)) })
     elsewhere.everyone.empty? ? placed : placed + [elsewhere]
   end
-
-  private
 
   def person_location_id(member)
     status = @statuses[member.id]

@@ -28,21 +28,47 @@ class HousesTest < ActionDispatch::IntegrationTest
     assert_select "select#home_id", count: 0
   end
 
-  test "you pick the house you live in, and the board groups by house" do
+  test "you pick the house you live in" do
     patch account_profile_path, params: profile_params(home_id: @ours.id)
     assert_equal @ours, @me.home_in(@smiths)
-    @smiths.pets.create!(name: "Rex", home: @brick)
+  end
+
+  def report(who, location = nil, off_property: false)
+    LocationReport.create!(household: @smiths, subject: who, reported_by: who.is_a?(Pet) ? @me : who,
+                           location: location, off_property: off_property)
+  end
+
+  def board_titles
+    css_select(".house-title").map { |title| title.children.select(&:text?).map(&:text).join.strip }
+  end
+
+  test "the board puts where you are on top, then the busiest places, then somewhere else" do
+    report(@admin, @brick)
+    report(@smiths.pets.create!(name: "Rex"), @brick)
+    report(@me, @ours)
 
     get dashboard_path
-    assert_select ".house-title", text: /Our House/
-    assert_select ".house-title", text: /Red Brick House/
-    assert_select ".house-title", text: /No house set/
-    assert_select ".house-group", text: /Our House/ do
-      assert_select ".person-card", 1
-    end
-    assert_select ".house-group", text: /Red Brick House/ do
-      assert_select ".pet-card", 1
-    end
+    assert_equal ["Our House", "Red Brick House"], board_titles
+    assert_select ".house-group:first-child .house-here", text: "You're here"
+    assert_select "#board_place_elsewhere", count: 0
+  end
+
+  test "somewhere else stays at the bottom for everyone else" do
+    report(@admin, @brick)
+    report(@me, off_property: true)
+    sign_in @admin
+
+    get dashboard_path
+    assert_equal ["Red Brick House", "Somewhere else"], board_titles
+  end
+
+  test "somewhere else comes first when that's where you are" do
+    report(@admin, @brick)
+    report(@me, off_property: true)
+
+    get dashboard_path
+    assert_equal ["Somewhere else", "Red Brick House"], board_titles
+    assert_select "#board_place_elsewhere .person-card", 1
   end
 
   test "a new house can be added right from the account page" do

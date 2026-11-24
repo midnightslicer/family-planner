@@ -11,7 +11,9 @@ class DashboardsController < ApplicationController
     @checklist = GettingStarted.new(current_user, @household, members: @members)
     @pets = @household.pets.here.by_name.with_attached_photo.to_a
     @pet_statuses = Pet.statuses(@household, @pets)
-    @groups = @household.by_house(@members, @pets, places)
+    # Where everyone is, with where you are on top.
+    @sections = Whereabouts.new(places, members: @members, statuses: @statuses, pets: @pets, pet_statuses: @pet_statuses)
+                           .sections(first: current_user)
   end
 
   # POST /dashboard/dismiss_checklist

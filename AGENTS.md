@@ -51,8 +51,10 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   with work hours, days off and photos, and the places, with photos, once per
   page: pass them to `member_statuses(members:, places:)`, `by_house`,
   `Whereabouts` and `PersonSchedule` rather than letting each query again), `HouseholdMembership` (`home`: the house, a household location, they
-  live in; `Household#by_house` groups people and pets by it for the
-  board),
+  live in; `Household#by_house` groups people by it for the family
+  view; the dashboard instead groups by `Whereabouts`, with
+  `sections(first: current_user)` putting the viewer's section, even
+  "Somewhere else", on top),
   `Invitation` (SHA-256 token digest, expiry, optional email, atomic
   `accept!`), `Task` (a schedule item: a *to-do* with no time, optionally
   `due_on` a day, or an *event* with `starts_at`/`ends_at` and a `place`;

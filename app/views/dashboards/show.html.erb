@@ -18,27 +18,30 @@
   </div>
 <% end %>
 
-<%# Grouped by house once anyone has one; one plain board until then.
-    Refreshes each minute too, so cards flip as events start and end. %>
-<% grouped = @groups.any? { |house, _, _| house } %>
+<%# A section per place people (or pets) are right now (Whereabouts): the
+    one you're in on top, then busiest first, "Somewhere else" last unless
+    that's where you are. One plain board until anyone is at a place.
+    Refreshes each minute too, so cards move as events start and end. %>
+<% grouped = @sections.any?(&:location) %>
 <div class="house-groups" data-controller="auto-refresh" data-auto-refresh-interval-value="60">
-  <% @groups.each do |house, people, pets| %>
-    <section class="house-group">
+  <% @sections.each do |section| %>
+    <section class="house-group" id="<%= section.location ? dom_id(section.location, :board_place) : "board_place_elsewhere" %>">
       <% if grouped %>
         <h2 class="house-title">
-          <% if house %><%= location_picture(house) %><%= house.name %><% else %><span class="place-photo"><%= icon(:map_pin) %></span>No house set<% end %>
+          <% if section.location %><%= location_picture(section.location) %><%= section.location.name %><% else %><span class="place-photo"><%= icon(:map_pin) %></span>Somewhere else<% end %>
+          <% if section.people.include?(current_user) %><small class="house-here">You're here</small><% end %>
         </h2>
       <% end %>
-      <% if people.any? %>
+      <% if section.people.any? %>
         <div class="dashboard-grid">
-          <% people.each do |member| %>
+          <% section.people.each do |member| %>
             <%= render "shared/person_card", user: member, household: @household, status: @statuses[member.id] %>
           <% end %>
         </div>
       <% end %>
-      <% if pets.any? %>
+      <% if section.pets.any? %>
         <div class="pet-grid">
-          <% pets.each do |pet| %>
+          <% section.pets.each do |pet| %>
             <%= render "pets/pet_card", pet: pet, status: @pet_statuses.fetch(pet.id) %>
           <% end %>
         </div>
