@@ -145,7 +145,13 @@ server; see `Backup` below).
   - shell: `nav`/`nav-inner`/`nav-brand`/`nav-links`/`nav-user`, the account
     menu `user-menu` > `user-menu-button` (> `nav-avatar`) + `user-menu-panel`
     (> `user-menu-header`), closed by the `menu` Stimulus controller,
-    `container`, `page-header`, `page-intro`, `household-switch`
+    `container`, `page-header`, `page-intro`, `household-switch`; on a phone
+    (< 720px) `nav-links` give way to the `tab-bar` along the bottom
+    (`layouts/_tab_bar`, `tab-bar-link` > `tab-bar-icon` + `tab-bar-label`;
+    both lists come from `nav_pages`), which the `tab-bar` controller slides
+    away while you scroll down (`tab-bar-hidden` on `<html>`); pages with
+    `sticky-actions` don't show it, and `--tab-bar-h` lifts the container's
+    end and the toasts above it
   - messages: `flash-stack` (the always-present `#flash` container that
     flashes render into, inside `overlay-stack` with the toasts, so flashes
     float over the page instead of pushing it down), `flash-notice toast`,

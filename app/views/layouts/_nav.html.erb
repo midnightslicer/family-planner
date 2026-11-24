@@ -1,11 +1,12 @@
-<%# The brand is the way to the dashboard; there's no separate Dashboard tab. %>
+<%# The brand is the way to the dashboard (on a phone, so is the tab bar's Home). %>
 <%= link_to (user_signed_in? ? root_path : new_user_session_path), class: "nav-brand", title: ("Dashboard" if user_signed_in?),
             "aria-current": ("page" if user_signed_in? && current_page?(root_path)) do %><%= icon(:house) %><span><%= app_name %></span><% end %>
 <% if current_user %>
+  <%# On a phone these move to the tab bar along the bottom (layouts/_tab_bar). %>
   <div class="nav-links">
-    <%= link_to icon_label(:calendar, "Schedule"), tasks_path, "aria-current": ("page" if request.path.start_with?("/tasks")) %>
-    <%= link_to icon_label(:paw, "Pets"), pets_path, "aria-current": ("page" if request.path.start_with?("/pets")) %>
-    <%= link_to icon_label(:map_pin, "Locations"), locations_path, "aria-current": ("page" if request.path.start_with?("/locations")) %>
+    <% nav_pages.drop(1).each do |label, icon_name, path, current| %>
+      <%= link_to icon_label(icon_name, label), path, "aria-current": ("page" if current) %>
+    <% end %>
   </div>
   <% households = current_user.households.order(:name).to_a %>
   <% if households.size > 1 %>

@@ -59,3 +59,6 @@ application.register("passkey-signup", PasskeySignupController)
 
 import WallDriftController from "./wall_drift_controller"
 application.register("wall-drift", WallDriftController)
+
+import TabBarController from "./tab_bar_controller"
+application.register("tab-bar", TabBarController)

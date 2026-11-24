@@ -68,5 +68,7 @@
     <main class="container">
       <%= yield %>
     </main>
+
+    <%= render "layouts/tab_bar" if user_signed_in? %>
   </body>
 </html>

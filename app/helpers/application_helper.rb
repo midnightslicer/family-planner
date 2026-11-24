@@ -45,4 +45,15 @@ module ApplicationHelper
     (@photo_tags ||= {})[attachment.blob_id] ||=
       image_tag(rails_blob_path(attachment, only_path: true), alt: "", loading: "lazy", decoding: "async")
   end
+
+  # The app's main pages, for the top nav (desktop) and the tab bar (phone):
+  # [label, icon, path, current?]. Home is the brand on desktop.
+  def nav_pages
+    [
+      ["Home", :house, root_path, current_page?(root_path)],
+      ["Schedule", :calendar, tasks_path, request.path.start_with?("/tasks")],
+      ["Pets", :paw, pets_path, request.path.start_with?("/pets")],
+      ["Locations", :map_pin, locations_path, request.path.start_with?("/locations")]
+    ]
+  end
 end

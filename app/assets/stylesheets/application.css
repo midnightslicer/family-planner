@@ -291,6 +291,58 @@ blockquote {
   margin-left: auto;
 }
 
+/* The phone's tab bar (layouts/_tab_bar): the nav links, along the bottom.
+   Low profile, translucent like the top bar, and it slides away while you
+   scroll down (tab_bar_controller.js puts .tab-bar-hidden on <html>). The
+   gesture bar below it is painted in --surface too (the manifest's
+   theme_color), so the two read as one. Hidden above phone width. */
+.tab-bar { display: none; }
+@media (max-width: 719px) {
+  :root { --tab-bar-h: 3.25rem; }
+  .nav-links { display: none; }
+  .tab-bar {
+    position: fixed;
+    z-index: 50;
+    inset: auto 0 0;
+    display: flex;
+    padding: 0 var(--gutter-end) env(safe-area-inset-bottom, 0px) var(--gutter-start);
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    backdrop-filter: saturate(180%) blur(12px);
+    border-top: 1px solid var(--border);
+    transition: transform 260ms var(--ease-out);
+  }
+  .tab-bar-hidden .tab-bar:not(:focus-within) { transform: translateY(100%); }
+  /* A page with its own bottom bar (Feed, Report where) keeps the bottom to it. */
+  body:has(.sticky-actions) { --tab-bar-h: 0px; }
+  body:has(.sticky-actions) .tab-bar { display: none; }
+}
+.tab-bar-link {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+  height: var(--tab-bar-h);
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  -webkit-tap-highlight-color: transparent;
+}
+.tab-bar-link:hover { text-decoration: none; color: var(--text); }
+.tab-bar-icon {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 1.75rem;
+  border-radius: var(--radius-pill);
+  transition: background var(--fast) ease, transform var(--medium) var(--ease-spring);
+}
+.tab-bar-icon .icon { width: 1.25rem; height: 1.25rem; }
+.tab-bar-link:active .tab-bar-icon { transform: scale(0.9); }
+.tab-bar-link[aria-current="page"] { color: var(--accent); }
+.tab-bar-link[aria-current="page"] .tab-bar-icon { background: var(--accent-soft); }
+
 /* Account menu: your avatar opens it. */
 .user-menu { position: relative; }
 .user-menu-button {
@@ -430,7 +482,7 @@ blockquote {
   position: fixed;
   z-index: 60;
   right: var(--gutter-end);
-  bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  bottom: calc(max(1rem, env(safe-area-inset-bottom, 0px)) + var(--tab-bar-h, 0px));
   width: min(24rem, calc(100vw - var(--gutter-start) - var(--gutter-end)));
   display: grid;
   gap: 0.5rem;
@@ -2291,12 +2343,11 @@ form[aria-busy="true"] .btn {
     padding-top: 0.625rem;
     padding-bottom: 0.625rem;
   }
-  .nav-links { order: 3; width: 100%; }
   .nav-user { gap: 0.25rem; }
   .household-switch { order: 4; width: 100%; }
   .household-switch select { width: 100%; }
 
-  .container { padding-top: 1.5rem; padding-bottom: 3rem; }
+  .container { padding-top: 1.5rem; padding-bottom: calc(3rem + var(--tab-bar-h, 0px) + env(safe-area-inset-bottom, 0px)); }
 
   /* A phone has no width to spare for boxes in boxes: a slimmer card, and
      the fieldsets in it lose their own box (the legend still heads them). */

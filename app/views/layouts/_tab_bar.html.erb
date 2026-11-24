@@ -1,0 +1,11 @@
+<%# Phone only (CSS): the main pages along the bottom, like an app's tab
+    bar. Slides away while you scroll down and back when you scroll up
+    (tab_bar_controller.js); pages with their own bottom bar
+    (.sticky-actions) don't show it. %>
+<nav class="tab-bar" aria-label="Pages" data-controller="tab-bar">
+  <% nav_pages.each do |label, icon_name, path, current| %>
+    <%= link_to path, class: "tab-bar-link", "aria-current": ("page" if current) do %>
+      <span class="tab-bar-icon"><%= icon(icon_name) %></span><span class="tab-bar-label"><%= label %></span>
+    <% end %>
+  <% end %>
+</nav>
