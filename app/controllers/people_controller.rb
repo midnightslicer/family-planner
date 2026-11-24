@@ -9,6 +9,20 @@ class PeopleController < ApplicationController
     redirect_to tasks_path(person: (person.id unless person == current_user))
   end
 
+  # POST /people/me/status: the "I'm" chips on your day. Your own status
+  # only (never a person from params); it wins over work and events for
+  # StatusUpdate::LASTS.
+  def set_status
+    update = current_user.status_updates.new(availability: params[:availability].to_s)
+    message =
+      if update.save
+        current_user.broadcast_card
+        { notice: "You're #{ScheduleHelper::AVAILABILITY.fetch(update.availability).first.downcase} until #{update.expires_at.strftime('%-l:%M %p')}." }
+      else { alert: "Pick how reachable you are." }
+      end
+    redirect_back_or_to tasks_path, **message, status: :see_other, allow_other_host: false
+  end
+
   # POST /people/me/location: from the "I'm at" chips on your day (one tap,
   # including "Off property", a report with no location)
   # or the fuller form under them (a comment, or a new place).

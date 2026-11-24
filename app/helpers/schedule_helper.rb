@@ -1,8 +1,9 @@
 # Times, days and availability as the schedule and person cards say them.
 module ScheduleHelper
   # [label, icon, css] for each availability: how reachable someone is.
+  # These three are the only statuses a person ever shows.
   AVAILABILITY = {
-    "free" => ["Free to call", :phone, "avail-free"],
+    "free" => ["Free", :sun, "avail-free"],
     "text" => ["Text only", :message, "avail-text"],
     "busy" => ["Do not disturb", :bell_off, "avail-busy"]
   }.freeze
@@ -14,8 +15,21 @@ module ScheduleHelper
     "busy" => "Don't call or text"
   }.freeze
 
+  # What says how reachable someone is now, from their member status: a
+  # status they set by hand (StatusUpdate) wins over whatever they're on.
+  def reachability(status)
+    status[:set] || status[:current]
+  end
+
+  # Someone's status chip from their member status: what they set by hand,
+  # else what they're on, else Free.
+  def reach_chip(status)
+    availability_chip(reachability(status) || "free")
+  end
+
+  # The chip for a task, a StatusUpdate, or a bare availability ("free").
   def availability_chip(task, prefix: nil)
-    label, icon_name, css = AVAILABILITY.fetch(task.availability)
+    label, icon_name, css = AVAILABILITY.fetch(task.respond_to?(:availability) ? task.availability : task.to_s)
     tag.span(safe_join([icon(icon_name), [prefix, label].compact.join(" ")]), class: "status-chip #{css}")
   end
 

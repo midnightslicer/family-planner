@@ -22,7 +22,10 @@ class TasksController < ApplicationController
       @task = current_household.tasks.new
       @assignee_ids = [@person.id]
       @where = LocationReport.latest_for(current_household, "User", [@person.id])[@person.id]
-      @locations = current_household.locations.in_display_order.with_attached_photo if @person == current_user
+      if @person == current_user
+        @locations = current_household.locations.in_display_order.with_attached_photo
+        @status_set = StatusUpdate.active_for_user(current_user)
+      end
     end
   end
 

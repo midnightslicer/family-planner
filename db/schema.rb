@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_23_020000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_24_000000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -238,6 +238,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_020000) do
     t.index ["key"], name: "index_settings_on_key", unique: true
   end
 
+  create_table "status_updates", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.string "availability", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "created_at", null: false
+    t.index ["user_id", "id"], name: "index_status_updates_on_user_id_and_id"
+    t.index ["user_id"], name: "index_status_updates_on_user_id"
+  end
+
   create_table "task_assignments", force: :cascade do |t|
     t.integer "task_id", null: false
     t.integer "user_id", null: false
@@ -366,6 +375,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_020000) do
   add_foreign_key "residences", "households"
   add_foreign_key "residences", "locations"
   add_foreign_key "residences", "users"
+  add_foreign_key "status_updates", "users", on_delete: :cascade
   add_foreign_key "task_assignments", "tasks"
   add_foreign_key "task_assignments", "users"
   add_foreign_key "tasks", "households"

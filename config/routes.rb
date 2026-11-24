@@ -76,6 +76,7 @@ Rails.application.routes.draw do
     resource :profile, only: [:edit, :update], controller: "person_profiles"
   end
   post "people/me/location", to: "people#locate", as: :locate_me
+  post "people/me/status", to: "people#set_status", as: :status_me
 
   # Devices that get push notifications (always the signed-in person's own).
   resources :push_subscriptions, only: [:create, :destroy] do

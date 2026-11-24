@@ -72,6 +72,9 @@ class Household < ApplicationRecord
       status[:off] = user.day_off_on(now.to_date)
       statuses.delete(user.id) if status.compact.empty?
     end
+    StatusUpdate.active_for(users.select(:id), now).each do |user_id, update|
+      statuses[user_id][:set] = update
+    end
     LocationReport.latest_for(self, "User", users.select(:id)).each do |user_id, report|
       statuses[user_id][:location] = report
     end

@@ -21,13 +21,11 @@
           <span class="person-name"><%= member.display_name %></span>
         <% end %>
         <div class="family-now">
+          <%= reach_chip(status) %>
           <% if status[:current] %>
-            <%= availability_chip(status[:current]) %>
             <p class="person-now"><%= now_line(status[:current], current_user) %></p>
           <% elsif status[:off] %>
-            <span class="status-chip avail-free"><%= icon(:sun) %>Day off<%= " · #{status[:off].note}" if status[:off].note %></span>
-          <% else %>
-            <span class="status-chip avail-free"><%= icon(:sun) %>Free</span>
+            <p class="person-now">Day off<%= " · #{status[:off].note}" if status[:off].note %></p>
           <% end %>
         </div>
         <% if schedule.today.any? %>
@@ -57,7 +55,7 @@
 <% else %>
   <% me = @person == current_user
      s = @schedule %>
-  <%= render "tasks/person_header", person: @person, where: @where, at: @schedule.at, now_task: @schedule.now, locations: @locations, schedule: @schedule %>
+  <%= render "tasks/person_header", person: @person, where: @where, at: @schedule.at, now_task: @schedule.now, locations: @locations, schedule: @schedule, status_set: @status_set %>
 
   <% if s.now %>
     <div class="now-banner <%= "is-#{s.now.availability}" %>">

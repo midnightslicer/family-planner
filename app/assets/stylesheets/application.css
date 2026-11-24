@@ -1707,7 +1707,7 @@ fieldset.picker-field { margin-top: 0; margin-bottom: 1.25rem; }
 
 
 /* ---------- Schedule ----------
- * Availability is the first thing a card says: green "Free to call", amber
+ * Availability is the first thing a card says: green "Free", amber
  * "Text only", red "Do not disturb". Built from the status/danger tokens.
  */
 .avail-free { color: var(--status-completed);   background: var(--status-completed-bg);   border-color: var(--status-completed-border); }
@@ -2119,6 +2119,15 @@ form:has(.work-days) { max-width: 860px; }
 .where-chip:hover { border-color: var(--accent); transform: translateY(-1px); }
 .where-chip:active { transform: scale(0.95); }
 .where-chip.is-current { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+/* "I'm" free / text only / do not disturb: each chip's icon in its own
+   colour, and the one in force filled with it. */
+.status-bar .where-chip.avail-free .icon { color: var(--status-completed); }
+.status-bar .where-chip.avail-text .icon { color: var(--status-in_progress); }
+.status-bar .where-chip.avail-busy .icon { color: var(--danger); }
+.status-bar .where-chip.avail-free.is-current { color: var(--status-completed); background: var(--status-completed-bg); border-color: var(--status-completed); }
+.status-bar .where-chip.avail-text.is-current { color: var(--status-in_progress); background: var(--status-in_progress-bg); border-color: var(--status-in_progress); }
+.status-bar .where-chip.avail-busy.is-current { color: var(--danger); background: var(--danger-bg); border-color: var(--danger); }
+.status-until { flex-basis: 100%; }
 .where-more { flex-basis: 100%; }
 .where-more > summary { display: inline-block; cursor: pointer; font-size: 0.875rem; font-weight: 600; color: var(--accent); }
 .where-more[open] > summary { margin-bottom: 0.75rem; }

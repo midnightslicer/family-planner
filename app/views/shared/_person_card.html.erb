@@ -9,8 +9,9 @@
    next_event = status[:next]
    here = status[:location]
    at = status[:at]
-   reachable = current_task.nil? || current_task.availability_free? %>
-<div class="person-card<%= ' is-busy' unless reachable %><%= " is-#{current_task.availability}" if current_task %>"
+   reach = reachability(status) # a status they set by hand, else what they're on
+   reachable = reach.nil? || reach.availability_free? %>
+<div class="person-card<%= ' is-busy' unless reachable %><%= " is-#{reach.availability}" if reach %>"
      id="<%= dom_id(user, :person_card) %>"
      data-user-id="<%= user.id %>"
      style="--user-color: <%= user.color %>; --user-fg: <%= contrast_color(user.color) %>">
@@ -23,14 +24,12 @@
     <%= icon(:cake, label: "Birthday today", class: "birthday-cake") if birthday_today?(user.birthday) %>
   </div>
   <div class="person-status">
+    <%# One of three: Free, Text only or Do not disturb. Then what they're doing. %>
+    <%= reach_chip(status) %>
     <% if current_task %>
-      <%= availability_chip(current_task) %>
       <p class="person-now"><%= icon(:briefcase) if current_task.work? %><%= now_line(current_task) %></p>
     <% elsif status[:off] %>
-      <span class="status-chip avail-free"><%= icon(:sun) %>Day off</span>
-      <% if status[:off].note %><p class="person-now"><%= status[:off].note %></p><% end %>
-    <% else %>
-      <span class="status-chip avail-free"><%= icon(:sun) %>Free</span>
+      <p class="person-now">Day off<%= " · #{status[:off].note}" if status[:off].note %></p>
     <% end %>
   </div>
   <% if next_event %>

@@ -357,6 +357,14 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
 - **Never interpolate user text into HTML strings**; build markup with
   `tag`/`content_tag` or partials (task titles once reached turbo stream
   flashes unescaped).
+- **A person shows one of three statuses**: Free (sun), Text only, Do not
+  disturb (`ScheduleHelper::AVAILABILITY`, drawn by `reach_chip` /
+  `availability_chip`, never by hand). A status set from the "I'm" chips
+  on your own day (`StatusUpdate`, append-only, `PeopleController#set_status`,
+  your own only) wins over work hours and events for 12 hours
+  (`StatusUpdate::LASTS`); `member_statuses[:set]` carries it and
+  `reachability(status)` picks it first. A day off is Free with "Day off"
+  as the detail line.
 - Status colors: blue planned, amber in_progress, gray undone, green
   completed, set via `--status-*` custom properties in application.css.
   Availability reuses them: green free, amber text only, red (danger)
