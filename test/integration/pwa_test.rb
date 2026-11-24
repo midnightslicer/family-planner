@@ -6,7 +6,7 @@ class PwaTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_equal "/manifest.webmanifest", pwa_manifest_path
     assert_equal "application/manifest+json", response.media_type
-    assert_equal "no-cache", response.headers["Cache-Control"]
+    assert_equal "no-store", response.headers["Cache-Control"] # varies with who asks
 
     manifest = JSON.parse(response.body)
     %w[id name short_name description start_url scope display theme_color background_color icons].each do |key|
@@ -22,6 +22,25 @@ class PwaTest < ActionDispatch::IntegrationTest
     assert icons[["512x512", "any"]]
     assert icons[["512x512", "maskable"]]
     manifest["icons"].each { |icon| assert Rails.public_path.join(icon["src"].delete_prefix("/")).file?, "#{icon['src']} is missing" }
+  end
+
+  test "the manifest's colours, which Android paints the system bars in, follow your theme and dark mode" do
+    get pwa_manifest_path
+    assert_equal PwaController::THEME_COLORS[:light], JSON.parse(response.body)["theme_color"]
+
+    cookies[:scheme] = "dark"
+    get pwa_manifest_path
+    manifest = JSON.parse(response.body)
+    assert_equal PwaController::THEME_COLORS[:dark], manifest["theme_color"]
+    assert_equal PwaController::BACKGROUND_COLORS[:dark], manifest["background_color"]
+
+    user = users(:member)
+    sign_in user
+    get pwa_manifest_path
+    theme = ColorTheme.for(user.color)
+    manifest = JSON.parse(response.body)
+    assert_equal theme.surface(:dark), manifest["theme_color"]
+    assert_equal theme.dark["--bg"], manifest["background_color"]
   end
 
   test "the manifest names the board" do

@@ -519,11 +519,12 @@ blockquote {
 
 /* ---------- Forms ---------- */
 .form-card {
+  --card-pad: clamp(1.25rem, 3vw, 1.75rem); /* .sticky-actions bleeds over it */
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
-  padding: clamp(1.25rem, 3vw, 1.75rem);
+  padding: var(--card-pad);
   max-width: 520px;
 }
 
@@ -1680,9 +1681,9 @@ fieldset.picker-field { margin-top: 0; margin-bottom: 1.25rem; }
   position: sticky;
   bottom: 0;
   z-index: 5;
-  margin-inline: calc(-1 * clamp(1.25rem, 3vw, 1.75rem));
-  margin-bottom: calc(-1 * clamp(1.25rem, 3vw, 1.75rem));
-  padding: 0.875rem clamp(1.25rem, 3vw, 1.75rem);
+  margin-inline: calc(-1 * var(--card-pad));
+  margin-bottom: calc(-1 * var(--card-pad));
+  padding: 0.875rem var(--card-pad);
   background: color-mix(in srgb, var(--surface) 92%, transparent);
   backdrop-filter: blur(8px);
   border-top: 1px solid var(--border);
@@ -2297,7 +2298,11 @@ form[aria-busy="true"] .btn {
 
   .container { padding-top: 1.5rem; padding-bottom: 3rem; }
 
-  .form-card { max-width: none; }
+  /* A phone has no width to spare for boxes in boxes: a slimmer card, and
+     the fieldsets in it lose their own box (the legend still heads them). */
+  .form-card { max-width: none; --card-pad: 1rem; }
+  .form-card fieldset.form-field { border: 0; border-radius: 0; padding: 0; background: none; }
+  .form-card fieldset.form-field > legend { padding: 0; margin-bottom: 0.5rem; }
 
   .invite-actions { margin-left: 0; width: 100%; }
   .invite-actions .btn { flex: 1; }

@@ -14,18 +14,26 @@ class PwaController < ActionController::Base
   # iOS cuts the name under the Home Screen icon at about 12 characters.
   SHORT_NAME_MAX = 12
 
-  # Copied from the light token block in application.css (--surface for the
-  # status bar, --bg for the splash screen) and the brand --accent. The
-  # manifest can't read CSS, so these are the one place the hexes repeat.
-  THEME_COLOR = "#ffffff".freeze
-  BACKGROUND_COLOR = "#f4f6f9".freeze
+  # Copied from the token blocks in application.css (--surface for the
+  # system bars, --bg for the splash screen), light then dark. The manifest
+  # can't read CSS, so these are the one place the hexes repeat. Signed in,
+  # the person's own theme (ColorTheme) is used instead.
+  THEME_COLORS = { light: "#ffffff", dark: "#171d26" }.freeze
+  BACKGROUND_COLORS = { light: "#f4f6f9", dark: "#0f141b" }.freeze
   # The wall is always dark: body.kiosk's --bg in kiosk.css.
   WALL_COLOR = "#0d1117".freeze
   SLUG = /\A[a-z0-9_-]{1,60}\z/
 
   before_action :no_cache
 
+  # Android paints an installed app's system bars (the gesture bar at the
+  # bottom too) in the manifest's theme_color, not the page's, so it carries
+  # the colours you see: your theme, in the scheme your device is in (the
+  # "scheme" cookie, set by application.js; the layout links the manifest
+  # with credentials so the cookie comes along). Varies with who asks, so
+  # never cached.
   def manifest
+    response.headers["Cache-Control"] = "no-store"
     render json: manifest_json, content_type: "application/manifest+json"
   end
 
@@ -68,8 +76,8 @@ class PwaController < ActionController::Base
       start_url: "/?source=pwa",
       scope: "/",
       display: "standalone",
-      theme_color: THEME_COLOR,
-      background_color: BACKGROUND_COLOR,
+      theme_color: theme_color,
+      background_color: background_color,
       icons: [
         { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
         { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
@@ -77,6 +85,18 @@ class PwaController < ActionController::Base
       ]
     }
   end
+
+  def scheme = cookies[:scheme] == "dark" ? :dark : :light
+
+  def theme
+    return @theme if defined?(@theme)
+
+    @theme = current_user && ColorTheme.for(current_user.color)
+  end
+
+  def theme_color = theme ? theme.surface(scheme) : THEME_COLORS.fetch(scheme)
+
+  def background_color = theme ? theme.public_send(scheme).fetch("--bg") : BACKGROUND_COLORS.fetch(scheme)
 
   def wall_manifest_json(slug)
     household = current_user&.households&.find_by(slug: slug)

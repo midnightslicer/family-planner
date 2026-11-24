@@ -13,8 +13,9 @@
     <meta name="theme-color" content="<%= theme_surface(:light) %>" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="<%= theme_surface(:dark) %>" media="(prefers-color-scheme: dark)">
     <%# Makes the app installable; application.js registers the service worker
-        only on pages that have this link (not the wall). %>
-    <link rel="manifest" href="<%= pwa_manifest_path %>">
+        only on pages that have this link (not the wall). use-credentials, so
+        the manifest's colours can follow your theme (PwaController#manifest). %>
+    <link rel="manifest" href="<%= pwa_manifest_path %>" crossorigin="use-credentials">
     <% if user_signed_in? && (push_key = PushKeys.public_key) %>
       <%# Read by lib/push.js: the key this device subscribes against, and whose device it is. %>
       <meta name="push-key" content="<%= push_key %>">

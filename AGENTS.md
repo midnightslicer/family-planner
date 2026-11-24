@@ -255,9 +255,12 @@ server; see `Backup` below).
   never as fixed hexes on a component.
 - Installable app (PWA): `PwaController` (inherits `ActionController::Base`
   directly: no setup gate, no sign-in) serves `/manifest.webmanifest`
-  (built in the controller from `AppSettings.app_name`) and
-  `/service-worker.js` (`app/views/pwa/service-worker.js.erb`), both
-  `Cache-Control: no-cache`. The worker precaches only `public/offline.html`
+  (built in the controller from `AppSettings.app_name`; `Cache-Control:
+  no-store`, since its `theme_color`, which Android paints an installed app's
+  status and gesture bars in, follows the signed-in person's `ColorTheme` and
+  the `scheme` cookie `application.js` sets from `prefers-color-scheme`; the
+  layout links it with `crossorigin="use-credentials"`) and
+  `/service-worker.js` (`app/views/pwa/service-worker.js.erb`, `Cache-Control: no-cache`). The worker precaches only `public/offline.html`
   and answers everything from the network, falling back to the offline page
   for failed full-page navigations (the wall's too); it never caches HTML,
   Turbo or `/cable`. `offline.html` retries by itself (on `online`, and

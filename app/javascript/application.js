@@ -24,6 +24,15 @@ try {
   if (zone) document.cookie = `tz=${encodeURIComponent(zone)}; path=/; max-age=31536000; samesite=lax`
 } catch {}
 
+// And whether it's in dark mode, so the installed app's manifest can match
+// its system bars to the page (PwaController#manifest).
+const darkMode = window.matchMedia("(prefers-color-scheme: dark)")
+const rememberScheme = () => {
+  document.cookie = `scheme=${darkMode.matches ? "dark" : "light"}; path=/; max-age=31536000; samesite=lax`
+}
+rememberScheme()
+darkMode.addEventListener("change", rememberScheme)
+
 // The service worker (PwaController), shared by the app and the installable
 // wall. Only pages that link a manifest register it. Needs a secure
 // context: https, or http://localhost while developing.
