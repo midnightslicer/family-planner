@@ -47,6 +47,23 @@ class ProfileTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test "the app takes its accent from the signed-in person's colour" do
+    get account_root_path
+    theme = ColorTheme.for("#22c55e")
+    assert_select "style#theme-tokens", text: /--accent:#{theme.light["--accent"]}.*prefers-color-scheme: dark.*--accent:#{theme.dark["--accent"]}/
+    assert_select "meta[name=theme-color][content='#{theme.surface(:dark)}']"
+
+    @member.update!(color: "#ec4899")
+    get account_root_path
+    assert_select "style#theme-tokens", text: /--accent:#{ColorTheme.for("#ec4899").light["--accent"]}/
+  end
+
+  test "signed-out pages keep the default colours" do
+    sign_out @member
+    get new_user_session_path
+    assert_select "style#theme-tokens", count: 0
+  end
+
   test "picking a swatch changes the colour" do
     patch account_profile_path, params: profile_params(color: "#ec4899", custom_color: "")
     assert_redirected_to account_root_path
