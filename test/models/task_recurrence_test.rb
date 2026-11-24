@@ -96,7 +96,7 @@ class TaskRecurrenceTest < ActiveSupport::TestCase
   end
 
   test "assignee must belong to the task's household" do
-    outsider = User.create!(email: "outsider@example.com", handle: "outsider",
+    outsider = User.create!(email: "outsider@example.com",
                             display_name: "Outsider", password: "secret123")
     task = Task.new(household: @household, title: "Bad assignee", assigned_to: outsider)
     assert_not task.valid?

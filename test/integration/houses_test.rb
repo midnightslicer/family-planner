@@ -11,7 +11,7 @@ class HousesTest < ActionDispatch::IntegrationTest
   end
 
   def profile_params(**extra)
-    { user: { display_name: @me.display_name, handle: @me.handle, color: @me.color, custom_color: "" } }.merge(extra)
+    { user: { display_name: @me.display_name, color: @me.color, custom_color: "" } }.merge(extra)
   end
 
   test "the board stays one group until someone has a house" do

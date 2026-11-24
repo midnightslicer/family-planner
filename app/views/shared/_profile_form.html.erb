@@ -1,4 +1,4 @@
-<%# The profile form: photo, name, handle, birthday, house, colour. Used on
+<%# The profile form: photo, name, birthday, house, colour. Used on
     your account page and, by admins, on someone else's Manage profile page
     (ProfileUpdate saves both). Locals: user, url. %>
 <% me = user == current_user %>
@@ -10,11 +10,6 @@
       <div class="form-field">
         <%= f.label :display_name, "Name" %>
         <%= f.text_field :display_name, required: true, maxlength: 60, autocomplete: "name" %>
-      </div>
-      <div class="form-field">
-        <%= f.label :handle, "Handle" %>
-        <%= f.text_field :handle, required: true, pattern: "[a-z0-9_]+", autocapitalize: "none", spellcheck: false %>
-        <small>Shown as @<%= user.handle_was.presence || user.handle %> on the board. Lowercase letters, numbers and underscores.</small>
       </div>
       <div class="form-field">
         <%= f.label :birthday, "Birthday (optional)" %>

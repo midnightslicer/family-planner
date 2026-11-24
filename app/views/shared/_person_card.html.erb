@@ -24,7 +24,6 @@
     <span class="person-avatar" aria-hidden="true"><%= avatar_content(user) %></span>
     <span class="person-meta">
       <%= link_to user.display_name, tasks_path(person: user.id), class: "person-name" %>
-      <span class="person-handle">@<%= user.handle %></span>
     </span>
     <%= icon(:cake, label: "Birthday today", class: "birthday-cake") if birthday_today?(user.birthday) %>
   </div>

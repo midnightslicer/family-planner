@@ -25,7 +25,7 @@ class PersonScheduleTest < ActiveSupport::TestCase
         own = PersonSchedule.new(@smiths, member, viewer: @admin)
         batched = family.fetch(member)
         %i[today todos later done].each do |list|
-          assert_equal own.public_send(list).map(&:title), batched.public_send(list).map(&:title), "#{member.handle} #{list}"
+          assert_equal own.public_send(list).map(&:title), batched.public_send(list).map(&:title), "#{member.display_name} #{list}"
         end
         assert_equal [own.now&.title, own.work&.starts_at], [batched.now&.title, batched.work&.starts_at]
       end

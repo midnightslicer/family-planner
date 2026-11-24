@@ -30,7 +30,6 @@
       <div class="user-menu-panel">
         <div class="user-menu-header">
           <strong><%= current_user.display_name %></strong>
-          <small>@<%= current_user.handle %></small>
         </div>
         <%= link_to icon_label(:user, "Your account"), account_root_path %>
         <%= link_to icon_label(:bell, "Notifications"), account_notifications_path %>

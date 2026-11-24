@@ -55,7 +55,6 @@ class SetupFlowTest < ActionDispatch::IntegrationTest
 
     user = User.sole
     assert user.admin?
-    assert_equal "alex_smith", user.handle
     assert_equal ["The Smiths"], user.households.map(&:name)
     assert_equal "The Smiths", AppSettings.app_name
     assert_equal "http://www.example.com", Setting.get("app_url")

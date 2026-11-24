@@ -18,12 +18,12 @@ class AdminManagesProfilesTest < ActionDispatch::IntegrationTest
     assert_select ".managing-banner", text: /managing Member User's details/
     assert_select "input[name='user[current_password]']", count: 0
 
-    patch person_profile_path(@member), params: { user: { display_name: "Mom", handle: "mom", color: "#ec4899", custom_color: "",
+    patch person_profile_path(@member), params: { user: { display_name: "Mom", color: "#ec4899", custom_color: "",
                                                           birthday: "1960-03-02", avatar: fixture_file_upload("avatar.png", "image/png") },
                                                   home_id: @house.id }
     assert_redirected_to edit_person_profile_path(@member)
     @member.reload
-    assert_equal ["Mom", "mom", Date.new(1960, 3, 2)], [@member.display_name, @member.handle, @member.birthday]
+    assert_equal ["Mom", Date.new(1960, 3, 2)], [@member.display_name, @member.birthday]
     assert @member.avatar_saved?
     assert_equal @house, @member.home_in(@smiths)
   end

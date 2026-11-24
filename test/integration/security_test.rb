@@ -89,7 +89,7 @@ class SecurityTest < ActionDispatch::IntegrationTest
     assert_response :not_found
     sign_out @admin
 
-    outsider = User.create!(email: "outsider@example.com", password: "password123", display_name: "Outsider", handle: "outsider")
+    outsider = User.create!(email: "outsider@example.com", password: "password123", display_name: "Outsider")
     Household.create!(name: "Others").household_memberships.create!(user: outsider)
     sign_in outsider
     get wall_path(@household.slug)

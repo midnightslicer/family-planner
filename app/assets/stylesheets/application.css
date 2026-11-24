@@ -51,10 +51,6 @@
   --backdrop: rgba(15, 23, 42, 0.45);
   --crop-shade: rgba(255, 255, 255, 0.6);
   --swatch-ring: rgba(15, 23, 42, 0.08);
-  /* Mixed into a user's colour to keep @handles legible on the card. Dark
-     mode needs more of the contrast colour, not less, so both are tokens. */
-  --handle-contrast: #1f2933;
-  --handle-mix: 75%;
 
   --radius-sm: 8px;
   --radius: 12px;
@@ -137,8 +133,6 @@
     --backdrop: rgba(0, 0, 0, 0.6);
     --crop-shade: rgba(15, 20, 27, 0.65);
     --swatch-ring: rgba(255, 255, 255, 0.16);
-    --handle-contrast: #ffffff;
-    --handle-mix: 55%;
   }
 }
 
@@ -963,16 +957,6 @@ tbody tr:hover { background: var(--surface-sunken); }
   overflow-wrap: anywhere;
 }
 
-.person-handle {
-  align-self: flex-start;
-  max-width: 100%;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: color-mix(in srgb, var(--user-color) var(--handle-mix), var(--handle-contrast));
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
 .person-status {
   display: grid;

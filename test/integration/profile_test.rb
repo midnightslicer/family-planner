@@ -125,6 +125,6 @@ class ProfileTest < ActionDispatch::IntegrationTest
   private
 
   def profile_params(**user)
-    { user: { display_name: @member.display_name, handle: @member.handle }.merge(user) }
+    { user: { display_name: @member.display_name }.merge(user) }
   end
 end

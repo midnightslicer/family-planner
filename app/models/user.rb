@@ -3,7 +3,6 @@ class User < ApplicationRecord
   # and invitations, so there is no public sign-up route at all.
   devise :database_authenticatable, :recoverable, :rememberable, :validatable
 
-  HANDLE_FORMAT = /\A[a-z0-9_]+\z/
   RECOVERY_CODE_COUNT = 10
   PALETTE = %w[
     #6366f1 #8b5cf6 #ec4899 #f43f5e #ef4444 #f97316 #f59e0b #eab308
@@ -17,9 +16,6 @@ class User < ApplicationRecord
   small_photo :avatar
   serialize :otp_recovery_codes, coder: JSON
 
-  validates :handle, presence: true,
-                     uniqueness: { case_sensitive: false },
-                     format: { with: HANDLE_FORMAT, message: "may only contain lowercase letters, numbers, and underscores" }
   validates :display_name, presence: true, length: { maximum: 60 }
   validates :color, format: { with: /\A#[0-9a-fA-F]{6}\z/, message: "must be a 6-digit hex color" }
   validate :birthday_not_in_future
@@ -67,8 +63,6 @@ class User < ApplicationRecord
 
   before_validation :apply_custom_color
   before_validation :normalize_color
-  before_validation :normalize_handle
-  before_validation :ensure_handle, if: -> { handle.blank? }
 
   # A colour from the palette nobody in the household is using yet, so new
   # people get a distinct card without having to pick one.
@@ -261,24 +255,5 @@ class User < ApplicationRecord
   def normalize_color
     self.color = color.to_s.strip.downcase.presence || PALETTE.first
     self.color = "##{color}" unless color.start_with?("#")
-  end
-
-  def normalize_handle
-    self.handle = handle.to_s.strip.downcase.presence
-  end
-
-  # Handles are derived from the display name unless someone picks one; the
-  # join and setup forms don't ask for it.
-  def ensure_handle
-    base = display_name.to_s.downcase.gsub(/[^a-z0-9_]/, "_").squeeze("_").delete_prefix("_").delete_suffix("_")
-    base = "user" if base.blank?
-    base = base[0, 20]
-    candidate = base
-    suffix = 1
-    while User.where.not(id: id).exists?(handle: candidate)
-      suffix += 1
-      candidate = "#{base}_#{suffix}"
-    end
-    self.handle = candidate
   end
 end

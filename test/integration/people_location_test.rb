@@ -87,7 +87,7 @@ class PeopleLocationTest < ActionDispatch::IntegrationTest
   end
 
   test "birthdays save on the account page and ages show on your day" do
-    patch account_profile_path, params: { user: { display_name: @member.display_name, handle: @member.handle,
+    patch account_profile_path, params: { user: { display_name: @member.display_name,
                                                   color: @member.color, custom_color: "", birthday: "1990-05-04" } }
     assert_equal Date.new(1990, 5, 4), @member.reload.birthday
     get tasks_path

@@ -45,7 +45,7 @@ server; see `Backup` below).
 
 ## Where things live
 
-- `app/models/`: `User` (Devise + `handle`, `color`, `admin`, TOTP fields,
+- `app/models/`: `User` (Devise + `color`, `admin`, TOTP fields,
   `webauthn_id`), `Passkey` (WebAuthn public keys), `Household`
   (`slug`, from its name and editable by an admin, is its wall URL; `member_statuses` loads every
   card's tasks in one query; `broadcast_member_cards`, batched per request by
@@ -160,7 +160,7 @@ server; see `Backup` below).
     `btn` + `btn-primary`/`btn-danger`/`btn-quiet`/`btn-small`, `devise-links`
   - tables: `table-wrap` (scroll container) + bare `table`, `table-actions`
   - components: `dashboard-grid`, `person-card` > `person-identity` >
-    `person-avatar` + `person-meta` > `person-name` + `person-handle`, then
+    `person-avatar` + `person-meta` > `person-name`, then
     `person-status` (> `person-now`), `person-next`; `status-chip status-*`
     and `status-chip avail-free|avail-text|avail-busy` (availability);
     `task-meta`, `task-recurrence`, `task-actions`; the schedule:

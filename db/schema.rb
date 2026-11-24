@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_24_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_24_200000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -296,7 +296,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_24_010000) do
     t.string "display_name"
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
-    t.string "handle"
     t.datetime "onboarding_dismissed_at"
     t.datetime "otp_enabled_at"
     t.integer "otp_last_used_step"
@@ -318,7 +317,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_24_010000) do
     t.datetime "notifications_paused_until"
     t.index ["admin"], name: "index_users_on_admin"
     t.index ["email"], name: "index_users_on_email", unique: true
-    t.index ["handle"], name: "index_users_on_handle", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["webauthn_id"], name: "index_users_on_webauthn_id", unique: true
   end

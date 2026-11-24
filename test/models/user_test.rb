@@ -1,13 +1,6 @@
 require "test_helper"
 
 class UserTest < ActiveSupport::TestCase
-  test "handles are derived from the display name and kept unique" do
-    first = User.create!(display_name: "Sam Smith", email: "sam1@example.com", password: "long enough pw")
-    second = User.create!(display_name: "Sam Smith", email: "sam2@example.com", password: "long enough pw")
-    assert_equal "sam_smith", first.handle
-    assert_equal "sam_smith_2", second.handle
-  end
-
   test "a password is required unless signing up with a passkey" do
     user = User.new(display_name: "Kid", email: "kid@example.com")
     assert_not user.valid?
