@@ -26,7 +26,8 @@ docker compose logs web | grep -A2 "setup code"
 ```
 
 Open http://localhost:3000 (or the machine's address), enter the setup code
-from the log, then name your household and create your account. That's all
+from the log, then name your household and create your account (or, moving
+from another server, restore its backup zip instead: see [Backups](#backups)). That's all
 the configuration there is: secrets are generated on first boot and kept in
 the `storage` volume with the database.
 
@@ -104,13 +105,41 @@ Tests: `bin/rails test`
 
 ## Backups
 
-Everything lives in the `storage` volume: the SQLite databases, the
-generated `.secret_key_base` and the push notification key `.vapid_key`.
-Losing `.vapid_key` stops pushes to every device until each one opens the
-app again (it re-subscribes itself). Keep them together; encrypted settings (the
-SMTP password, two-step verification secrets) can't be read without that
-secret. To back up, stop the app and copy the volume, or use
-`sqlite3 storage/production.sqlite3 ".backup backup.sqlite3"` while it runs.
+**Admin > Backup** downloads the whole app as one zip: every household,
+account, schedule, pet, place and photo. From a shell,
+`bin/rails backup:create` writes the same zip into `storage/backups`
+(`bin/kamal backup` on Kamal, `docker compose exec web bin/rails backup:create`
+with Compose); give it a path to write somewhere else:
+`bin/rails "backup:create[/path/to/family.zip]"`.
+
+To restore, start a fresh server, enter its setup code, and choose **Restore
+a backup** on the setup page instead of creating an account (or run
+`bin/rails "backup:restore[/path/to/family.zip]"`). It only works while the
+server has no accounts, so it can't overwrite a board in use. Backups from an
+older version of the app are brought up to date as they're restored; one
+from a newer version asks you to update the server first.
+
+Everyone then signs in with their usual email and password. What doesn't
+come along, because it stays encrypted to the old server and never leaves it
+in the clear:
+
+- Two-step verification is turned off for anyone who had it; they set it up
+  again from their account.
+- The email (SMTP) password needs entering again in Admin > Settings.
+- Each device turns notifications back on by itself the next time it opens
+  the app.
+- Passkeys keep working only if the new server has the same address.
+
+Restoring onto the same server, or one that kept the old `storage/.secret_key_base`
+(or `SECRET_KEY_BASE`), keeps two-step verification and the SMTP password.
+
+The zip holds everything the board knows (including password hashes and
+where everyone has been): keep it as safe as the server.
+
+Under the hood everything lives in the `storage` volume: the SQLite
+databases, the generated `.secret_key_base` and the push notification key
+`.vapid_key`. Copying the whole volume while the app is stopped is also a
+complete backup, secrets included.
 
 ## Locked out?
 

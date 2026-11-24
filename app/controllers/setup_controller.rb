@@ -1,5 +1,6 @@
 # First-run setup: one page that names the household and creates the first
-# (admin) account. Email/SMTP is optional and lives in Admin > Settings.
+# (admin) account, or restores a backup zip from another server (Backup)
+# instead. Email/SMTP is optional and lives in Admin > Settings.
 #
 # A fresh server is open to whoever reaches it first, so outside development
 # the page asks for the setup code printed in the server's log at boot (see
@@ -10,6 +11,9 @@ class SetupController < ApplicationController
   skip_before_action :require_setup
   before_action :require_no_users!
   before_action :require_unlocked, except: :unlock
+  rate_limit to: 5, within: 5.minutes, only: :restore, with: -> {
+    redirect_to setup_path, alert: "Too many restores. Wait a few minutes and try again."
+  }
   rate_limit to: 10, within: 5.minutes, only: :unlock, with: -> {
     redirect_to setup_path, alert: "Too many attempts. Wait a few minutes and try again."
   }
@@ -46,7 +50,34 @@ class SetupController < ApplicationController
     end
   end
 
+  # POST /setup/restore: a backup zip from Admin > Backup on another server.
+  # Replaces this (empty) server's data; everyone then signs in as before.
+  def restore
+    file = params[:backup]
+    unless file.respond_to?(:path)
+      redirect_to setup_path, alert: "Choose a backup zip to restore."
+      return
+    end
+
+    result = Backup.restore(file.path)
+    session.delete(:setup_unlocked)
+    # Emailed links should point here now, as on a fresh setup.
+    Setting.set("app_url", request.base_url) unless ENV["APP_URL"].present?
+    redirect_to new_user_session_path, notice: restore_notice(result)
+  rescue Backup::Invalid => error
+    redirect_to setup_path, alert: error.message
+  end
+
   private
+
+  def restore_notice(result)
+    [
+      "Restored #{helpers.pluralize(result.people, 'person')} in #{helpers.pluralize(result.households, 'household')}. Sign in as usual.",
+      ("#{helpers.pluralize(result.missing_files, 'photo')} weren't in the backup." if result.missing_files.positive?),
+      ("Two-step verification was turned off for #{helpers.pluralize(result.two_factor_reset, 'person')}; set it up again in your account." if result.two_factor_reset.positive?),
+      ("Enter the email (SMTP) password again in Admin > Settings." if result.smtp_password_cleared)
+    ].compact.join(" ")
+  end
 
   def create_first_account
     created = false

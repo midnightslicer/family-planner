@@ -40,6 +40,8 @@ creates the first admin (the only account creation path besides invitations).
 Outside development it first asks for a setup code printed in the server log
 at boot (`bin/rails setup:code` prints it again), so whoever finds a fresh
 server can't claim it. SMTP is optional and lives in Admin > Settings.
+The setup page can instead restore a backup zip (Admin > Backup on another
+server; see `Backup` below).
 
 ## Where things live
 
@@ -75,6 +77,19 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   later / done / waiting for their OK / following up; `PersonSchedule.for_family`
   loads every member's day in one query for the family view), `Setting` (encrypted key/value, cached per request in `Current`),
   `AppSettings` (app name/URL, SMTP and setup code, Setting then ENV),
+  `Backup` (the whole app as a zip: `manifest.json`, `database.sqlite3`
+  copied with SQLite's online backup API, and `files/<blob key>` for every
+  Active Storage file; `Backup.write(path)` / `Backup.restore(path)`.
+  Restore only runs with no users, checks the zip (sizes, integrity, no
+  migrations newer than this code), copies the database into the live
+  connection, migrates, then clears what this server can't decrypt:
+  encrypted columns stay encrypted to the old server's SECRET_KEY_BASE and
+  are never written to the zip in the clear, so on new keys two-step is
+  turned off, unreadable settings (SMTP password) are deleted, and push
+  subscriptions always go, since `storage/.vapid_key` isn't in the zip.
+  A new encrypted column needs handling in `clear_unreadable_secrets`.
+  `bin/rails backup:create[path]` / `backup:restore[path]` in
+  `lib/tasks/backup.rake`),
   `GettingStarted` (the dashboard checklist), and the pets feature:
   `Location` (a place: house/yard/pasture/pool/other, with a photo),
   `Pet` (species, birthday, `meals_per_day`, `feeding_notes`, `home` =
@@ -112,8 +127,12 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   deletes, whitelisted `return_to`). Anyone in the household can add and edit
   pets and locations; deleting is for whoever added it or an admin.
 - `app/controllers/admin/`: admin-only area (households + wall link and
-  members, invitations, people, settings; Settings also shows whether push
-  and email work, the device count and the last failed push). `walls_controller.rb`: the wall (signed in).
+  members, invitations, people, settings, backup; Settings also shows whether push
+  and email work, the device count and the last failed push; Backup
+  (`BackupsController#create`) builds the zip in `tmp/backups`, deleting
+  ones over an hour old, and sends it). `SetupController#restore` takes a
+  zip on the setup page (behind the setup code, rate limited) and sends
+  everyone to sign in. `walls_controller.rb`: the wall (signed in).
 - `config/initializers/mailer.rb` + `app/mailers/app_mail_delivery.rb`: SMTP
   is read at send time (`:app_smtp` delivery method), so settings changes
   apply without a restart; email links use `AppSettings.url_options`. The
@@ -178,7 +197,8 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
     `inline-form`, `inline-check`, `code-input`, `help-details`,
     `passkey-signin`, `passkey-choice`, `passkey-hint`, `passkey-add`,
     `setup-steps`, `qr-frame` > `qr-code` (`qr-light`/`qr-dark`, coloured by
-    the `--qr-*` tokens), `secret-key`, `recovery-codes`.
+    the `--qr-*` tokens), `secret-key`, `recovery-codes`; backups:
+    `restore-card` (the setup page's restore `details`), `backup-notes`.
   - notifications: `toast-stack` (the `#notifications` container,
     `data-turbo-permanent` so morph refreshes keep it, in the fixed
     bottom-corner `overlay-stack`) > `flash toast` > `toast-body` (household in `small`,
@@ -356,8 +376,9 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   `Current.household.id` (the wall too: the token only picks one of your households). Non-members get
   404, not 403.
 - **Invitations are the only join path.** Devise `:registerable` is off (no
-  `/users/sign_up`); accounts come from `InvitationsController#join` or the
-  setup wizard (first admin only).
+  `/users/sign_up`); accounts come from `InvitationsController#join`, the
+  setup wizard (first admin only), or a restored backup (only onto a server
+  with no accounts).
 - **Admins can manage other members' details** (profile, house, work
   schedule, days off) through `concerns/manages_person.rb`: those pages
   act on `managed_person`, yourself unless an admin passes `person_id` for
@@ -468,3 +489,8 @@ docker compose up --build   # smoke: setup page on localhost:3000, code in the l
 `test/support/fake_authenticator.rb` is a software passkey that signs real
 WebAuthn responses; `register_passkey` / `sign_in_with_passkey` in
 `test_helper.rb` drive the endpoints with it.
+`test/integration/backup_test.rb` runs without transactions (a restore
+replaces the whole database): it wipes the tables to stand in for a fresh
+server and resets the fixture cache in teardown so the next test reloads
+them. It fakes "another server" with
+`ActiveRecord::Encryption.with_encryption_context(key_provider:)`.

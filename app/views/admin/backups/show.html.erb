@@ -1,0 +1,29 @@
+<% content_for :title, "Backup" %>
+<%= render "admin/tabs" %>
+<h1>Backup</h1>
+<p class="page-intro">
+  One zip with everything: every household, account, schedule, pet, place and photo
+  (<%= pluralize(@counts[:people], "person") %>, <%= pluralize(@counts[:households], "household") %>,
+  <%= pluralize(@counts[:photos], "photo") %>).
+</p>
+
+<div class="form-card">
+  <h2><%= icon(:download) %> Download a backup</h2>
+  <p>
+    To move to a new server, set it up fresh and choose <strong>Restore a backup</strong> on its setup page
+    instead of creating an account. Everyone signs in there with their usual email and password.
+  </p>
+  <ul class="backup-notes">
+    <li>Passkeys keep working only if the new server has the same address.</li>
+    <li>Secrets stay encrypted to this server, so on a new one two-step verification is turned off
+      (people set it up again), the email password needs entering again in Settings, and each device
+      turns notifications back on by opening the app.</li>
+    <li>It holds everything the board knows. Keep it somewhere as safe as the server itself.</li>
+  </ul>
+  <%= form_with url: admin_backup_path, method: :post, data: { turbo: false } do |f| %>
+    <div class="form-actions">
+      <%= f.button type: "submit", class: "btn btn-primary" do %><%= icon_label(:download, "Download backup") %><% end %>
+    </div>
+  <% end %>
+  <p><small>From a shell: <code>bin/rails backup:create</code> writes one into <code>storage/backups</code>.</small></p>
+</div>

@@ -36,3 +36,22 @@
     </div>
   <% end %>
 </div>
+
+<%# Moving from another server: its Admin > Backup zip instead of a new account. %>
+<details class="form-card restore-card">
+  <summary><%= icon(:upload) %> Moving from another server? Restore a backup</summary>
+  <p>
+    Choose the zip from <strong>Admin &gt; Backup</strong> on your old server. It brings back every household,
+    account, schedule, pet and photo, and everyone signs in with their usual email and password.
+    Passkeys keep working only if this server has the same address; two-step verification may need setting up again.
+  </p>
+  <%= form_with url: setup_restore_path, method: :post, multipart: true do |f| %>
+    <div class="form-field">
+      <%= f.label :backup, "Backup zip" %>
+      <%= f.file_field :backup, accept: ".zip,application/zip", required: true %>
+    </div>
+    <div class="form-actions">
+      <%= f.button type: "submit", class: "btn" do %><%= icon_label(:upload, "Restore backup") %><% end %>
+    </div>
+  <% end %>
+</details>

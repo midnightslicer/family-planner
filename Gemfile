@@ -42,6 +42,9 @@ gem "kamal", require: false
 # Add HTTP asset caching/compression and X-Sendfile acceleration to Puma [https://github.com/basecamp/thruster/]
 gem "thruster", require: false
 
+# Backup zips (Admin > Backup, the setup page's restore, bin/rails backup:*)
+gem "rubyzip", "~> 3.0", require: "zip"
+
 
 group :development, :test do
   # Opens sent mail in the browser during development [https://github.com/ryanb/letter_opener]

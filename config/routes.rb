@@ -12,6 +12,7 @@ Rails.application.routes.draw do
   post "setup",                 to: "setup#create"
   post "setup/unlock",          to: "setup#unlock",          as: :setup_unlock
   post "setup/passkey_options", to: "setup#passkey_options", as: :setup_passkey_options
+  post "setup/restore",         to: "setup#restore",         as: :setup_restore
 
   # Sign-in: Devise password flow (no public sign-up), then an optional
   # authenticator-code step; or a passkey.
@@ -125,5 +126,7 @@ Rails.application.routes.draw do
     resource :settings, only: [:show, :update] do
       post :test_email, on: :collection
     end
+    # The whole app as a zip (Backup); restoring is on a fresh server's setup page.
+    resource :backup, only: [:show, :create]
   end
 end
