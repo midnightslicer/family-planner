@@ -46,7 +46,11 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
 - `app/models/`: `User` (Devise + `handle`, `color`, `admin`, TOTP fields,
   `webauthn_id`), `Passkey` (WebAuthn public keys), `Household`
   (`slug`, from its name and editable by an admin, is its wall URL; `member_statuses` loads every
-  card's tasks in one query; `broadcast_member_cards`), `HouseholdMembership` (`home`: the house, a household location, they
+  card's tasks in one query; `broadcast_member_cards`, batched per request by
+  `Household.batching_cards`; `board_members` and `places` load the people,
+  with work hours, days off and photos, and the places, with photos, once per
+  page: pass them to `member_statuses(members:, places:)`, `by_house`,
+  `Whereabouts` and `PersonSchedule` rather than letting each query again), `HouseholdMembership` (`home`: the house, a household location, they
   live in; `Household#by_house` groups people and pets by it for the
   board),
   `Invitation` (SHA-256 token digest, expiry, optional email, atomic
@@ -66,7 +70,8 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   `conflicts_for` checks their events and work hours), `TaskAssigner`
   (places people on save, notifies them, and writes the flash that says
   what happened), `PersonSchedule` (one person's now / to-dos / today /
-  later / done / waiting for their OK / following up), `Setting` (encrypted key/value, cached per request in `Current`),
+  later / done / waiting for their OK / following up; `PersonSchedule.for_family`
+  loads every member's day in one query for the family view), `Setting` (encrypted key/value, cached per request in `Current`),
   `AppSettings` (app name/URL, SMTP and setup code, Setting then ENV),
   `GettingStarted` (the dashboard checklist), and the pets feature:
   `Location` (a place: house/yard/pasture/pool/other, with a photo),
@@ -144,10 +149,10 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   - pets & profiles (the pattern for new features: a card says what's true
     now and puts the next action one tap away; batch actions are "pick
     tiles, then a button that says what will happen"): `header-actions`,
-    `section-header`, `empty-state`, `pet-grid` > `pet-card` > `pet-identity`
+    `empty-state`, `pet-grid` > `pet-card` > `pet-identity`
     + `pet-facts` (`pet-where`, `report-comment`, `pet-fed` > `meal-pips`);
     `person-where`, `birthday-cake`; `profile-header` > `profile-avatar` +
-    `profile-heading`; `profile-panels` > `panel` (`panel-wide`);
+    `profile-heading`; `profile-panels` > `panel`;
     `place-now`, `place-photo` (rounded square; discs are for faces),
     `place-grid` > `place-card` > `place-body` + `here-now`; `history` >
     `history-item` > `history-mark` + `history-body`; tile pickers
@@ -176,7 +181,11 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
     and any `matrix-select`), `matrix-hints`, `quiet-hours`.
   - icons & motion: `icon(:name)` / `icon_label(:name, "Text")` from
     `IconsHelper` render inline SVG with `icon icon-<name>` (add new icons to
-    `IconsHelper::ICONS`); `flash_message` renders a flash with its icon.
+    `IconsHelper::ICONS`; each rendering is cached, so the markup must depend
+    only on the arguments); `flash_message` renders a flash with its icon.
+    Photos render through `photo_tag` (via `avatar_content`,
+    `location_picture`, `pet_avatar_content`), which signs each blob's link
+    once per page.
     `btn-success` (Done), `btn-icon` (+ `btn-icon-danger`),
     `person-card.is-busy` (pulsing avatar: not free to call),
     `banner-icon`, `checklist-progress` (`--progress`), and `.confetti` from
@@ -198,7 +207,8 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
 - **Each person's colour themes the app for them.** `ColorTheme` (OKLCH
   maths, `ColorTheme::Oklch`) turns `current_user.color` into the accent
   tokens (their hue, lightness moved until it reads at 4.5:1 or better)
-  and faintly tinted neutrals, light and dark; `ThemeHelper#theme_tokens_tag`
+  and faintly tinted neutrals, light and dark (cached per colour, so a
+  `ColorTheme` is immutable); `ThemeHelper#theme_tokens_tag`
   prints them as a `<style id="theme-tokens">` token block after the
   stylesheet, and `theme_surface` feeds the `theme-color` metas. Signed-out
   pages keep application.css's defaults. It's still tokens only: never
@@ -413,7 +423,11 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   `turbo_stream_from household, :members` (cards) and
   `turbo_stream_from current_user, :notifications`. Stream names are signed,
   and Action Cable refuses anonymous connections. Broadcasts render
-  synchronously in `after_commit` and never raise into the request.
+  synchronously and never raise into the request: in `after_commit`, except
+  person cards, which every request collects (`ApplicationController`'s
+  `batch_card_broadcasts`) and sends once per person when it ends, even if
+  it raised after saving. Code outside a request that saves several things
+  can wrap them in `Household.batching_cards { }` too.
 - Pet, location and feeding changes call `Household#broadcast_refresh`
   (a debounced Turbo refresh on `[household, :members]`); pages that show
   them render `shared/_live`, which subscribes and morphs. Person cards still
