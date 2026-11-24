@@ -6,9 +6,7 @@ module ThemeHelper
     theme = user && ColorTheme.for(user.color)
     return unless theme
 
-    css = ":root{#{declarations(theme.light)}}" \
-          "@media (prefers-color-scheme: dark){:root{#{declarations(theme.dark)}}}"
-    tag.style(css.html_safe, id: "theme-tokens") # rubocop:disable Rails/OutputSafety -- every value is a computed hex/rgba
+    tag.style(theme.css.html_safe, id: "theme-tokens") # rubocop:disable Rails/OutputSafety -- every value is a computed hex/rgba
   end
 
   # The installed app's title bar colour, light or dark.
@@ -21,9 +19,5 @@ module ThemeHelper
 
   def current_theme_user
     current_user if respond_to?(:user_signed_in?) && user_signed_in?
-  end
-
-  def declarations(tokens)
-    tokens.map { |name, value| "#{name}:#{value}" }.join(";")
   end
 end

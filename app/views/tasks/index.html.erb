@@ -4,10 +4,9 @@
 
 <% if @family %>
   <div class="page-header"><h1>Everyone's day</h1></div>
-  <% groups = current_household.by_house(@members, []).reject { |_, people, _| people.empty? }
-     grouped = groups.any? { |house, _, _| house } %>
+  <% grouped = @groups.any? { |house, _, _| house } %>
   <div data-controller="auto-refresh" data-auto-refresh-interval-value="60">
-  <% groups.each do |house, people, _| %>
+  <% @groups.each do |house, people, _| %>
   <% if grouped %>
     <h2 class="house-title"><% if house %><%= location_picture(house) %><%= house.name %><% else %><span class="place-photo"><%= icon(:map_pin) %></span>No house set<% end %></h2>
   <% end %>
@@ -75,7 +74,7 @@
     </section>
   <% end %>
 
-  <%= render "tasks/quick_add", task: @task, person: @person, selected: @assignee_ids %>
+  <%= render "tasks/quick_add", task: @task, person: @person, selected: @assignee_ids, members: @members %>
 
   <div class="schedule-columns" data-controller="auto-refresh" data-auto-refresh-interval-value="60">
     <section class="panel">

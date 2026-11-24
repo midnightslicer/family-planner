@@ -26,17 +26,6 @@ module ApplicationHelper
     TASK_STATUS_LABELS.fetch(task.status)
   end
 
-  # "Doing" gets the pulsing live dot from CSS instead of an icon.
-  TASK_STATUS_ICONS = { "planned" => :clock, "undone" => :skip, "completed" => :check }.freeze
-
-  def task_status_icon(task)
-    name = TASK_STATUS_ICONS[task.status]
-    icon(name) if name
-  end
-
-  # Curated palette for the color picker partial.
-  PALETTE = User::PALETTE
-
   # One or two letters for the avatar disc on a person card.
   def initials(name)
     parts = name.to_s.split(/[\s_-]+/).reject(&:empty?)
@@ -47,14 +36,13 @@ module ApplicationHelper
 
   # What goes inside a .person-avatar disc: their photo, else initials.
   def avatar_content(user)
-    if user.avatar_saved?
-      image_tag rails_blob_path(user.avatar, only_path: true), alt: "", loading: "lazy", decoding: "async"
-    else
-      initials(user.display_name)
-    end
+    user.avatar_saved? ? photo_tag(user.avatar) : initials(user.display_name)
   end
 
-  def two_factor_status(user)
-    user.two_factor_enabled? ? "On" : "Off"
+  # A stored photo (SmallPhoto) as an <img>. The signed link is made once
+  # per page however many times the same face or place shows.
+  def photo_tag(attachment)
+    (@photo_tags ||= {})[attachment.blob_id] ||=
+      image_tag(rails_blob_path(attachment, only_path: true), alt: "", loading: "lazy", decoding: "async")
   end
 end

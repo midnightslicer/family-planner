@@ -10,7 +10,6 @@ class DayOff < ApplicationRecord
 
   normalizes :note, with: ->(note) { note.squish.presence }
 
-  scope :covering, ->(date) { where("starts_on <= :date AND ends_on >= :date", date: date) }
   scope :upcoming, ->(from = Date.current) { where(ends_on: from..).order(:starts_on) }
 
   def covers?(date)

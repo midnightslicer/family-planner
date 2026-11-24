@@ -5,11 +5,13 @@ class DashboardsController < ApplicationController
     return render(:no_household) unless current_household
 
     @household = current_household
-    @members = @household.members_by_name
-    @statuses = @household.member_statuses
-    @checklist = GettingStarted.new(current_user, @household)
-    @pets = @household.pets.here.by_name.with_attached_photo
+    @members = @household.board_members
+    places = @household.places
+    @statuses = @household.member_statuses(members: @members, places: places)
+    @checklist = GettingStarted.new(current_user, @household, members: @members)
+    @pets = @household.pets.here.by_name.with_attached_photo.to_a
     @pet_statuses = Pet.statuses(@household, @pets)
+    @groups = @household.by_house(@members, @pets, places)
   end
 
   # POST /dashboard/dismiss_checklist

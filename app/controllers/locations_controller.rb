@@ -6,13 +6,13 @@ class LocationsController < ApplicationController
 
   # GET /locations: every place, and who's there right now.
   def index
-    @locations = current_household.locations.in_display_order.with_attached_photo
-    @pets = current_household.pets.here.by_name.with_attached_photo
+    @locations = current_household.places
+    @pets = current_household.pets.here.by_name.with_attached_photo.to_a
     pet_reports = LocationReport.latest_for(current_household, "Pet", @pets.map(&:id))
-    @members = current_household.members_by_name.with_attached_avatar
-    statuses = current_household.member_statuses
+    @members = current_household.board_members
+    statuses = current_household.member_statuses(members: @members, places: @locations)
     homes = current_household.household_memberships.pluck(:user_id, :home_id).to_h
-    @residents = (@members.to_a + @pets.to_a).group_by { |who| who.is_a?(Pet) ? who.home_id : homes[who.id] }
+    @residents = (@members + @pets).group_by { |who| who.is_a?(Pet) ? who.home_id : homes[who.id] }
     @here = Hash.new { |hash, key| hash[key] = [] }
     @pets.each { |pet| @here[pet_reports[pet.id]&.location_id] << pet if pet_reports[pet.id] }
     # A person is where their current event is, if it's at one of these

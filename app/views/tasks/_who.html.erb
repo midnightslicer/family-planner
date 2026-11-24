@@ -1,8 +1,9 @@
 <%# Who it's for: a chip per person (several for things done together), and
     "Follow up", shown once someone else is picked, which keeps it on your
     list and tells you how it goes. Off by default. Ticking nobody means
-    it's for anyone. Locals: form, selected (user ids). %>
-<% members = current_household.members_by_name.with_attached_avatar.to_a.sort_by { |m| m == current_user ? 0 : 1 } %>
+    it's for anyone. Locals: form, selected (user ids), members (optional,
+    if the page has them loaded). %>
+<% members = (local_assigns[:members] || current_household.members_by_name.with_attached_avatar).sort_by { |m| m == current_user ? 0 : 1 } %>
 <div class="who-row">
   <span class="who-label">For</span>
   <%= hidden_field_tag "task[assignee_ids][]", "", id: nil %>

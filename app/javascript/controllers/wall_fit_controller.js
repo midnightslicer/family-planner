@@ -79,9 +79,14 @@ export default class extends Controller {
 
     const most = Math.max(...bands.map((band) => band.children.length))
     const counts = Array.from({ length: Math.min(MAX_TILES, Math.max(most, 1)) }, (_, i) => i + 1)
+    // Each layout tried forces the browser to lay the board out, so a tile
+    // count is only searched if it can beat the best so far.
+    const scales = new Map()
     let best = null
     for (const tiles of counts) {
+      if (best && !this.layout(tiles, best.scale + 0.005, bands)) continue
       const scale = this.largestScale(tiles, bands)
+      scales.set(tiles, scale)
       if (scale && (!best || scale > best.scale + 0.005)) best = { tiles, scale }
     }
     best ||= { tiles: 1, scale: SCALES[0] } // nothing fits: smallest we go
@@ -90,7 +95,7 @@ export default class extends Controller {
     // clearly bigger; and don't nudge the scale by a hair.
     const current = this.current
     if (current && counts.includes(current.tiles)) {
-      const scale = this.largestScale(current.tiles, bands)
+      const scale = scales.has(current.tiles) ? scales.get(current.tiles) : this.largestScale(current.tiles, bands)
       if (scale && best.scale < scale * (1 + STICKY)) best = { tiles: current.tiles, scale }
       if (best.tiles === current.tiles && Math.abs(best.scale - current.scale) < current.scale * STICKY / 2 &&
           this.layout(current.tiles, current.scale, bands)) best = current

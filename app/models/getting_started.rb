@@ -4,12 +4,11 @@
 class GettingStarted
   Step = Struct.new(:key, :title, :detail, :done, :link_label, :path, :skippable, :skipped, keyword_init: true)
 
-  # Steps that can be waved off one at a time ("I don't have one").
-  SKIPPABLE = %w[work].freeze
-
-  def initialize(user, household)
+  # `members`: the household's members, if the page has them loaded.
+  def initialize(user, household, members: nil)
     @user = user
     @household = household
+    @members = members
   end
 
   # On the dashboard until hidden or done.
@@ -66,7 +65,7 @@ class GettingStarted
 
     Step.new(key: :invite, title: "Invite your family",
              detail: "Each person gets a single-use link. Email it, or copy it into a text message.",
-             done: @household.users.count > 1 || @household.invitations.exists?,
+             done: (@members ? @members.size : @household.users.count) > 1 || @household.invitations.exists?,
              link_label: "Invite someone", path: routes.new_admin_invitation_path)
   end
 

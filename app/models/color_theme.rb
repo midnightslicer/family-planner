@@ -19,9 +19,14 @@ class ColorTheme
   # WCAG contrast the accent keeps against the page and its own button text.
   MIN_CONTRAST = 4.6
 
+  # Themes depend only on the colour, so each is worked out once per
+  # process (there are only as many as people's colours).
+  CACHE = Concurrent::Map.new
+
   def self.for(hex)
-    match = HEX.match(hex.to_s.strip)
-    new(match[1]) if match
+    match = HEX.match(hex.to_s.strip) or return
+    key = match[1].downcase
+    CACHE.compute_if_absent(key) { new(key).tap { |theme| theme.light && theme.dark } }
   end
 
   def initialize(hex)
@@ -42,7 +47,7 @@ class ColorTheme
         "--accent-hover" => shade(accent, -0.06),
         "--accent-soft" => Oklch.to_hex(0.957, [@c * 0.3, 0.035].min, @h),
         "--accent-fg" => "#ffffff"
-      }
+      }.freeze
     end
   end
 
@@ -60,8 +65,13 @@ class ColorTheme
         "--accent-hover" => shade(accent, 0.05),
         "--accent-soft" => Oklch.rgba(accent, 0.16),
         "--accent-fg" => bg
-      }
+      }.freeze
     end
+  end
+
+  # Both token sets as the layout's <style> block: light, then dark.
+  def css
+    @css ||= ":root{#{declarations(light)}}@media (prefers-color-scheme: dark){:root{#{declarations(dark)}}}".freeze
   end
 
   # The installed app's title bar matches --surface.
@@ -73,6 +83,10 @@ class ColorTheme
   end
 
   private
+
+  def declarations(tokens)
+    tokens.map { |name, value| "#{name}:#{value}" }.join(";")
+  end
 
   def tint(lightness, chroma)
     strength = @c < GREY ? 0.6 : 1.0

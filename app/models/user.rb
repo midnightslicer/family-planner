@@ -126,12 +126,9 @@ class User < ApplicationRecord
     household_memberships.find_by(household: household)&.home
   end
 
+  # In memory when the households are already loaded, else one query.
   def member_of?(household)
-    households.exists?(household.id)
-  end
-
-  def initials
-    display_name.to_s.split(/\s+/).filter_map { |word| word[0]&.upcase }.take(2).join.presence || "?"
+    households.include?(household)
   end
 
   def password_set?

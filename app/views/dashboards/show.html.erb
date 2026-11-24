@@ -20,10 +20,9 @@
 
 <%# Grouped by house once anyone has one; one plain board until then.
     Refreshes each minute too, so cards flip as events start and end. %>
-<% groups = @household.by_house(@members.to_a, @pets.to_a)
-   grouped = groups.any? { |house, _, _| house } %>
+<% grouped = @groups.any? { |house, _, _| house } %>
 <div class="house-groups" data-controller="auto-refresh" data-auto-refresh-interval-value="60">
-  <% groups.each do |house, people, pets| %>
+  <% @groups.each do |house, people, pets| %>
     <section class="house-group">
       <% if grouped %>
         <h2 class="house-title">

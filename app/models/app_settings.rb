@@ -3,7 +3,6 @@
 # admin screens or entirely from its env (handy for Kamal and Compose).
 module AppSettings
   DEFAULT_APP_NAME = "Family Status".freeze
-  SMTP_KEYS = %w[smtp_host smtp_port smtp_user smtp_password smtp_from smtp_tls].freeze
 
   module_function
 

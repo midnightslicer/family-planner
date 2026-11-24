@@ -6,7 +6,7 @@ class ScheduleTickJob < ApplicationJob
   queue_as :default
 
   def perform(now = Time.current, window = 70.seconds)
-    Household.find_each { |household| household.roll_recurring_events!(now) }
+    Household.where(id: Task.ended_repeats(now).select(:household_id)).find_each { |household| household.roll_recurring_events!(now) }
 
     edges = Task.open.timed.where(starts_at: (now - window)..now)
                 .or(Task.open.timed.where(ends_at: (now - window)..now))

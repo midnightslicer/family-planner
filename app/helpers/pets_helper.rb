@@ -18,11 +18,7 @@ module PetsHelper
   end
 
   def location_picture_content(location)
-    if location.photo_saved?
-      image_tag rails_blob_path(location.photo, only_path: true), alt: "", loading: "lazy", decoding: "async"
-    else
-      location_icon(location)
-    end
+    location.photo_saved? ? photo_tag(location.photo) : location_icon(location)
   end
 
   # "Red Brick House · Outside · Penned up", "Back yard", "Off property".
@@ -34,11 +30,7 @@ module PetsHelper
 
   # What goes inside a pet's .person-avatar disc: its photo, else a paw.
   def pet_avatar_content(pet)
-    if pet.photo_saved?
-      image_tag rails_blob_path(pet.photo, only_path: true), alt: "", loading: "lazy", decoding: "async"
-    else
-      icon(:paw)
-    end
+    pet.photo_saved? ? photo_tag(pet.photo) : icon(:paw)
   end
 
   # Pets have no colour of their own; their discs use the accent.

@@ -2,7 +2,7 @@
     list it goes on (whoever's day this is, by default); "Add a time or
     day" opens the event fields. quick_add_controller.js clears and
     refocuses the box after each add. Locals: task (new), person (whose day
-    this is), selected (assignee ids). %>
+    this is), selected (assignee ids), members (optional, if already loaded). %>
 <% mine = person == current_user %>
 <%= form_with model: task, url: tasks_path, class: "quick-add", data: { controller: "quick-add", action: "turbo:submit-end->quick-add#added" } do |f| %>
   <%= hidden_field_tag :stay, 1, id: nil %>
@@ -13,7 +13,7 @@
                      data: { quick_add_target: "title" } %>
     <%= f.button type: "submit", class: "btn btn-primary" do %><%= icon_label(:plus, "Add") %><% end %>
   </div>
-  <%= render "tasks/who", form: f, selected: selected %>
+  <%= render "tasks/who", form: f, selected: selected, members: local_assigns[:members] %>
   <%= render "tasks/status_fields", form: f %>
   <details class="quick-add-more" data-quick-add-target="more">
     <summary><%= icon(:clock) %>Add a time or day</summary>

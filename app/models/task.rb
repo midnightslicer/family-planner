@@ -64,6 +64,10 @@ class Task < ApplicationRecord
   scope :open, -> { where(status: [:planned, :in_progress]) }
   scope :timed, -> { where.not(starts_at: nil) }
   scope :untimed, -> { where(starts_at: nil) }
+  # Recurring events that have ended without anyone marking them.
+  scope :ended_repeats, ->(now = Time.current) {
+    planned.timed.where.not(recurrence_interval: "").where("COALESCE(ends_at, starts_at) <= ?", now)
+  }
 
   def timed?
     starts_at.present?

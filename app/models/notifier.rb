@@ -114,8 +114,4 @@ module Notifier
 
     tag.match?(/\A[A-Za-z0-9_-]{1,32}\z/) ? tag : Digest::SHA256.hexdigest(tag)[0, 32]
   end
-
-  def url_helpers
-    Rails.application.routes.url_helpers
-  end
 end

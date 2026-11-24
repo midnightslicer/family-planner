@@ -11,21 +11,25 @@ class TasksController < ApplicationController
   # GET /tasks
   def index
     current_household.roll_recurring_events!
-    @members = current_household.members_by_name.with_attached_avatar.to_a
+    @members = current_household.board_members
+    places = current_household.places
     if params[:person] == "family"
-      @family = @members.index_with { |member| PersonSchedule.new(current_household, member, viewer: current_user) }
-      @statuses = current_household.member_statuses
-      @anyone = current_household.tasks.open.for_anyone.order(:created_at).select { |task| task.visible_to?(current_user) }
+      @family = PersonSchedule.for_family(current_household, @members, viewer: current_user, places: places)
+      @statuses = current_household.member_statuses(members: @members, places: places)
+      @groups = current_household.by_house(@members, [], places)
+      @anyone = current_household.tasks.open.for_anyone.order(:created_at)
+                                 .includes(:created_by, :location, :assignments).select { |task| task.visible_to?(current_user) }
     else
-      @person = @members.find { |member| member.id.to_s == params[:person].to_s } || current_user
-      @schedule = PersonSchedule.new(current_household, @person, viewer: current_user)
+      @person = @members.find { |member| member.id.to_s == params[:person].to_s } ||
+                @members.find { |member| member == current_user } || current_user
+      @schedule = PersonSchedule.new(current_household, @person, viewer: current_user, places: places)
       @task = current_household.tasks.new
       @assignee_ids = [@person.id]
       @where = LocationReport.latest_for(current_household, "User", [@person.id])[@person.id]
       # Their event's place, unless they've said where they are since it started.
       @at = @schedule.at unless @where&.newer_than?(@schedule.now)
       if @person == current_user
-        @locations = current_household.locations.in_display_order.with_attached_photo
+        @locations = places
         @status_set = StatusUpdate.active_for_user(current_user)
       end
     end

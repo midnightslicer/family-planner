@@ -4,11 +4,11 @@
     user[custom_color] and wins when it's filled in (see User#custom_color).
     The color-picker controller keeps the two in step and recolours any
     [data-color-preview] in the same form. %>
-<% current = form.object.color.presence || ApplicationHelper::PALETTE.first
-   in_palette = ApplicationHelper::PALETTE.include?(current) %>
+<% current = form.object.color.presence || User::PALETTE.first
+   in_palette = User::PALETTE.include?(current) %>
 <div class="color-picker" data-controller="color-picker">
   <div class="palette" role="radiogroup" aria-label="Color">
-    <% ApplicationHelper::PALETTE.each do |hex| %>
+    <% User::PALETTE.each do |hex| %>
       <label class="swatch" style="background: <%= hex %>" title="<%= hex %>">
         <%= form.radio_button :color, hex, checked: current == hex, "aria-label": hex,
                               data: { color_picker_target: "swatch", action: "color-picker#pick" } %>

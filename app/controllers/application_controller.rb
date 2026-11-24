@@ -8,6 +8,8 @@ class ApplicationController < ActionController::Base
   before_action :set_current_context
   before_action :switch_household_from_link
   around_action :use_household_time_zone
+  # Person cards changed by this request re-render once each, at the end.
+  around_action :batch_card_broadcasts
 
   helper_method :current_household, :app_name
 
@@ -67,6 +69,10 @@ class ApplicationController < ActionController::Base
   # default.
   def use_household_time_zone(&)
     Time.use_zone(time_zone_household&.zone || browser_time_zone || Time.zone_default, &)
+  end
+
+  def batch_card_broadcasts(&)
+    Household.batching_cards(&)
   end
 
   # Whose clock this request runs on. The wall overrides it (the slug picks the household).

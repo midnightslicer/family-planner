@@ -10,12 +10,13 @@ class WallsController < ApplicationController
     @household = wall_household
     raise ActionController::RoutingError, "Not Found" unless @household
 
-    @members = @household.members_by_name
-    @statuses = @household.member_statuses
-    @pets = @household.pets.here.where(on_wall: true).by_name.with_attached_photo
+    @members = @household.board_members
+    places = @household.places
+    @statuses = @household.member_statuses(members: @members, places: places)
+    @pets = @household.pets.here.where(on_wall: true).by_name.with_attached_photo.to_a
     @pet_statuses = Pet.statuses(@household, @pets)
-    @sections = Whereabouts.new(@household, members: @members.with_attached_avatar, statuses: @statuses,
-                                            pets: @pets, pet_statuses: @pet_statuses).sections
+    @sections = Whereabouts.new(places, members: @members, statuses: @statuses,
+                                        pets: @pets, pet_statuses: @pet_statuses).sections
     render layout: "wall"
   end
 

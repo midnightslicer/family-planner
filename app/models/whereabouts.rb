@@ -6,15 +6,16 @@
 # it started (Household#member_statuses drops :at then); a pet where it
 # was last reported.
 #
-#   Whereabouts.new(household, members:, statuses:, pets:, pet_statuses:).sections
+#   Whereabouts.new(household.places, members:, statuses:, pets:, pet_statuses:).sections
 #   # => [Section(location, people, pets), ..., Section(nil, people, pets)]
 class Whereabouts
   Section = Struct.new(:location, :people, :pets) do
     def everyone = people + pets
   end
 
-  def initialize(household, members:, statuses:, pets:, pet_statuses:)
-    @household = household
+  # `places`: the household's locations in display order (Household#places).
+  def initialize(places, members:, statuses:, pets:, pet_statuses:)
+    @locations = places.to_a
     @members = members.to_a
     @statuses = statuses
     @pets = pets.to_a
@@ -22,19 +23,18 @@ class Whereabouts
   end
 
   def sections
-    locations = @household.locations.in_display_order.with_attached_photo.to_a
     people = @members.group_by { |member| person_location_id(member) }
-    pets = @pets.group_by { |pet| @pet_statuses[pet.id]&.report&.location_id }
+    pets = @pets.group_by { |pet| pet_location_id(pet) }
 
-    placed = locations.filter_map do |location|
+    placed = @locations.filter_map do |location|
       section = Section.new(location, people.fetch(location.id, []), pets.fetch(location.id, []))
       section unless section.everyone.empty?
     end
     # Busiest first; sort_by isn't stable, so the place order breaks ties.
     placed = placed.each_with_index.sort_by { |section, index| [-section.everyone.size, index] }.map(&:first)
-    known = locations.map(&:id)
+    known = @locations.to_set(&:id)
     elsewhere = Section.new(nil, @members.reject { |m| known.include?(person_location_id(m)) },
-                            @pets.reject { |p| known.include?(@pet_statuses[p.id]&.report&.location_id) })
+                            @pets.reject { |p| known.include?(pet_location_id(p)) })
     elsewhere.everyone.empty? ? placed : placed + [elsewhere]
   end
 
@@ -43,5 +43,9 @@ class Whereabouts
   def person_location_id(member)
     status = @statuses[member.id]
     status[:at]&.id || status[:location]&.location_id
+  end
+
+  def pet_location_id(pet)
+    @pet_statuses[pet.id]&.report&.location_id
   end
 end

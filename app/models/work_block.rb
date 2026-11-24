@@ -25,12 +25,6 @@ class WorkBlock
                                   .find { |block| block.happening_at?(now) }
   end
 
-  # The next block to start, within a week.
-  def self.upcoming(user, now = Time.current, locations: [])
-    (0..7).lazy.filter_map { |offset| on(user, now.to_date + offset, locations: locations) }
-          .find { |block| block.starts_at > now }
-  end
-
   def initialize(user, starts_at, ends_at, place, location)
     @user, @starts_at, @ends_at, @place, @location = user, starts_at, ends_at, place, location
   end
