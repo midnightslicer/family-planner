@@ -20,7 +20,8 @@ class PeopleLocationTest < ActionDispatch::IntegrationTest
     assert_equal @member, report.reported_by
 
     get dashboard_path
-    assert_select "##{ActionView::RecordIdentifier.dom_id(@member, :person_card)} .person-where", text: /Yard/
+    assert_select "##{ActionView::RecordIdentifier.dom_id(@yard, :board_place)} ##{ActionView::RecordIdentifier.dom_id(@member, :person_card)}"
+    assert_select "##{ActionView::RecordIdentifier.dom_id(@member, :person_card)} .person-where", count: 0
     get tasks_path
     assert_select ".day-where", text: /Yard/
     assert_select ".where-chip.is-current", text: "Yard"

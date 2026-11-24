@@ -3,14 +3,19 @@
     status ({ current:, next:, location: } from Household#member_statuses,
     which pages compute once for every card). It answers "can I reach them
     right now?" first, then what they're doing, what's next and where they
-    are. The name links to their schedule; the wall makes links inert. %>
+    are. The name links to their schedule; the wall makes links inert.
+    The dashboard and the wall both group cards under the place each person
+    is at, so a household location isn't repeated on the card: only a place
+    that isn't one (off property, an event somewhere else) is, under
+    "Somewhere else". %>
 <% status = local_assigns[:status] || household.member_statuses[user.id]
    current_task = status[:current]
    next_event = status[:next]
    here = status[:location]
    at = status[:at]
    reach = reachability(status) # a status they set by hand, else what they're on
-   reachable = reach.nil? || reach.availability_free? %>
+   reachable = reach.nil? || reach.availability_free?
+   placed = at || here&.location # the section heading already names it %>
 <div class="person-card<%= ' is-busy' unless reachable %><%= " is-#{reach.availability}" if reach %>"
      id="<%= dom_id(user, :person_card) %>"
      data-user-id="<%= user.id %>"
@@ -27,7 +32,7 @@
     <%# One of three: Free, Text only or Do not disturb. Then what they're doing. %>
     <%= reach_chip(status) %>
     <% if current_task %>
-      <p class="person-now"><%= icon(:briefcase) if current_task.work? %><%= now_line(current_task, place: !moved_on?(status)) %></p>
+      <p class="person-now"><%= icon(:briefcase) if current_task.work? %><%= now_line(current_task, place: !at && !moved_on?(status)) %></p>
     <% elsif status[:off] %>
       <p class="person-now">Day off<%= " · #{status[:off].note}" if status[:off].note %></p>
     <% end %>
@@ -35,18 +40,14 @@
   <% if next_event %>
     <p class="person-next"><%= icon(:clock) %><span>Next: <%= next_line(next_event) %></span></p>
   <% end %>
-  <% if at %>
-    <p class="person-where">
-      <%= location_icon(at) %>
-      <span><%= at.name %></span>
-      <small>until <%= clock(current_task.finishes_at) %></small>
-    </p>
-  <% elsif here %>
-    <p class="person-where">
-      <%= location_icon(here.location) %>
-      <span><%= here.location&.name || PetsHelper::OFF_PROPERTY %></span>
-      <small><%= time_tag_ago(here.created_at) %></small>
-    </p>
+  <% if here && !at %>
+    <% unless placed %>
+      <p class="person-where">
+        <%= location_icon(nil) %>
+        <span><%= PetsHelper::OFF_PROPERTY %></span>
+        <small><%= time_tag_ago(here.created_at) %></small>
+      </p>
+    <% end %>
     <% if here.comment %><p class="report-comment"><%= icon(:message) %><span><%= here.comment %></span></p><% end %>
   <% end %>
 </div>

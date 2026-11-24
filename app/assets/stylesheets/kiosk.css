@@ -281,9 +281,6 @@ body.kiosk .wall-place .person-next { font-size: 1rem; }
 body.kiosk .wall-pet-where { display: inline-flex; align-items: center; gap: 0.4375rem; font-size: 1rem; }
 body.kiosk .wall-pet-where small { font-size: 0.9375rem; font-weight: 500; color: var(--text-muted); }
 
-/* Inside / outside / penned up, in the drifting accent so it follows the
-   board's colour and tone; the icon and word carry the meaning. */
-body.kiosk .spot-chip { color: var(--accent); background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
-body.kiosk .spot-chip.is-outside { color: var(--text); background: transparent; border-color: var(--border-strong); }
-body.kiosk .spot-chip.is-penned { color: var(--accent-fg); background: var(--accent); border-color: var(--accent); }
-body.kiosk .spot-chip .icon { width: 1.15em; height: 1.15em; }
+/* Inside / outside / penned up (.spot-chip) is styled in application.css,
+   shared with the dashboard; in the drifting accent here, so it follows the
+   board's colour and tone. */

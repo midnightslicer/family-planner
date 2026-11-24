@@ -29,7 +29,6 @@
       <% if grouped %>
         <h2 class="house-title">
           <% if section.location %><%= location_picture(section.location) %><%= section.location.name %><% else %><span class="place-photo"><%= icon(:map_pin) %></span>Somewhere else<% end %>
-          <% if section.people.include?(current_user) %><small class="house-here">You're here</small><% end %>
         </h2>
       <% end %>
       <% if section.people.any? %>
@@ -42,7 +41,7 @@
       <% if section.pets.any? %>
         <div class="pet-grid">
           <% section.pets.each do |pet| %>
-            <%= render "pets/pet_card", pet: pet, status: @pet_statuses.fetch(pet.id) %>
+            <%= render "pets/pet_card", pet: pet, status: @pet_statuses.fetch(pet.id), grouped: section.location.present? %>
           <% end %>
         </div>
       <% end %>

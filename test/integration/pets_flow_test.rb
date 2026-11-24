@@ -103,7 +103,9 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     LocationReport.create!(household: @smiths, subject: @rex, location: @yard, reported_by: @admin)
     get dashboard_path
     assert_select ".pet-card", 2
-    assert_select "##{ActionView::RecordIdentifier.dom_id(@rex, :pet_card)} .pet-where-name", text: "Yard"
+    # Under the Yard heading, so the card says how fresh that is, not where.
+    assert_select "##{ActionView::RecordIdentifier.dom_id(@yard, :board_place)} ##{ActionView::RecordIdentifier.dom_id(@rex, :pet_card)} .pet-where small", text: /Seen/
+    assert_select "##{ActionView::RecordIdentifier.dom_id(@rex, :pet_card)} .pet-where-name", count: 0
     assert_select ".pet-card button", text: "Fed"
   end
 
@@ -125,7 +127,8 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     post pet_locations_path, params: { check_in: { pet_ids: [@rex.id], location_id: @house.id, spot: "outside" } }
     follow_redirect!
     assert_select ".flash-notice", text: "Rex is at House (outside)."
-    assert_select "##{ActionView::RecordIdentifier.dom_id(@rex, :pet_card)} .pet-where-name", text: "House · Outside"
+    assert_select "##{ActionView::RecordIdentifier.dom_id(@rex, :pet_card)} .pet-where-name", text: "House"
+    assert_select "##{ActionView::RecordIdentifier.dom_id(@rex, :pet_card)} .spot-chip.is-outside", text: "Outside"
   end
 
   test "outside at a house you can say a pet is penned up, and it shows" do
@@ -135,8 +138,12 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     post pet_locations_path, params: { check_in: { pet_ids: [@rex.id], location_id: @house.id, spot: "outside", penned: "1" } }
     follow_redirect!
     assert_select ".flash-notice", text: "Rex is at House (outside, penned up)."
-    assert_select "##{ActionView::RecordIdentifier.dom_id(@rex, :pet_card)} .pet-where-name", text: "House · Outside · Penned up"
+    assert_select "##{ActionView::RecordIdentifier.dom_id(@rex, :pet_card)} .pet-where-name", text: "House"
+    assert_select "##{ActionView::RecordIdentifier.dom_id(@rex, :pet_card)} .spot-chip.is-penned", text: "Penned up"
 
+    # The dashboard groups it under House, so the card shows the chip instead.
+    get dashboard_path
+    assert_select "##{ActionView::RecordIdentifier.dom_id(@house, :board_place)} ##{ActionView::RecordIdentifier.dom_id(@rex, :pet_card)} .spot-chip.is-penned", text: "Penned up"
   end
 
   test "penned up is ignored inside a house, with no inside or outside given, or anywhere but a house" do

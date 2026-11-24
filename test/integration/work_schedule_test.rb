@@ -82,8 +82,11 @@ class WorkScheduleTest < ActionDispatch::IntegrationTest
       sign_in @member
       get dashboard_path
       assert_select "#{card(@member)} .avail-text", text: "Text only"
-      assert_select "#{card(@member)} .person-now", text: "Work · until 5 PM · Little house"
-      assert_select "#{card(@member)} .person-where", text: /Little house/
+      # The section heading says where; the card doesn't repeat it.
+      assert_select ".house-group", text: /Little house/ do
+        assert_select "#{card(@member)} .person-now", text: "Work · until 5 PM"
+      end
+      assert_select "#{card(@member)} .person-where", count: 0
 
       get tasks_path
       assert_select ".sched-work .sched-title", text: "Work"

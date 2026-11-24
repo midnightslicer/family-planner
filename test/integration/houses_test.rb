@@ -49,7 +49,6 @@ class HousesTest < ActionDispatch::IntegrationTest
 
     get dashboard_path
     assert_equal ["Our House", "Red Brick House"], board_titles
-    assert_select ".house-group:first-child .house-here", text: "You're here"
     assert_select "#board_place_elsewhere", count: 0
   end
 

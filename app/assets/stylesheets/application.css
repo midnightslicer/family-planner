@@ -1410,6 +1410,13 @@ a.nav-brand { color: var(--text); text-decoration: none; }
 .pet-sub { font-size: 0.8125rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .pet-facts { display: grid; gap: 0.5rem; }
+/* Inside / outside / penned up (PetsHelper#spot_chip), on the wall and the
+   dashboard's pet cards, where the section already names the place. */
+.spot-chip { color: var(--accent); background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+.spot-chip.is-outside { color: var(--text); background: transparent; border-color: var(--border-strong); }
+.spot-chip.is-penned { color: var(--accent-fg); background: var(--accent); border-color: var(--accent); }
+.spot-chip .icon { width: 1.15em; height: 1.15em; }
+
 .pet-where,
 .person-where {
   display: flex;
@@ -1951,7 +1958,6 @@ form:has(.pick-house input:checked):has(.spot-field input[value="outside"]:check
 .house-title { display: flex; align-items: center; gap: 0.625rem; margin: 0; font-size: 1.125rem; }
 .house-title .place-photo { width: 2rem; border-radius: var(--radius-sm); }
 .house-title .place-photo > .icon { width: 55%; height: 55%; }
-.house-here { font-size: 0.8125rem; font-weight: 600; color: var(--accent); background: var(--accent-soft); border-radius: var(--radius-pill); padding: 0.125rem 0.5rem; }
 .family-grid + .house-title { margin-top: 2rem; }
 .house-title + .family-grid { margin-top: 0.875rem; }
 

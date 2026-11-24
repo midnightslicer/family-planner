@@ -71,7 +71,7 @@ class PrivateAndLinkedEventsTest < ActionDispatch::IntegrationTest
 
       sign_in @member
       get dashboard_path
-      assert_select "#{card(@admin)} .person-where", text: /Little house\s+until 3 PM/
+      assert_select "##{ActionView::RecordIdentifier.dom_id(@little, :board_place)} #{card(@admin)} .person-now", text: "Client meeting · until 3 PM"
 
       get tasks_path(person: @admin.id)
       assert_select ".day-where", text: /Little house · until 3 PM/
@@ -84,7 +84,9 @@ class PrivateAndLinkedEventsTest < ActionDispatch::IntegrationTest
       reset! # two hours on, the old session has timed out
       sign_in @member
       get dashboard_path
-      assert_select "#{card(@admin)} .person-where", text: /Big house/
+      assert_select ".house-group", text: /Big house/ do
+        assert_select card(@admin)
+      end
     end
   end
 

@@ -1,7 +1,10 @@
 <%# A pet's card: who, where, fed today, and the two things people do with
     it, one tap away. Used on the pets page and the dashboard. Locals: pet,
-    status (a PetStatus from Pet.statuses). %>
-<% report = status.report %>
+    status (a PetStatus from Pet.statuses), grouped (the dashboard, whose
+    section already names the place: the card shows inside / outside /
+    penned up and how fresh that is instead, as the wall does). %>
+<% report = status.report
+   placed = local_assigns[:grouped] && report&.location %>
 <article class="pet-card" id="<%= dom_id(pet, :pet_card) %>">
   <%= link_to pet_path(pet), class: "pet-identity" do %>
     <span class="person-avatar" style="<%= PetsHelper::PET_DISC_STYLE %>" aria-hidden="true"><%= pet_avatar_content(pet) %></span>
@@ -12,15 +15,25 @@
   <% end %>
 
   <div class="pet-facts">
+    <% if placed %>
+      <p class="pet-where">
+        <%= spot_chip(report) %>
+        <small>Seen <%= time_tag_ago(report.created_at) %><%= " · #{report.reported_by.display_name}" if report.reported_by %></small>
+      </p>
+    <% else %>
     <p class="pet-where">
       <%= location_icon(report&.location) %>
       <% if report.nil? %>
         <span class="pet-where-name is-unknown">Not reported yet</span>
       <% else %>
-        <span class="pet-where-name"><%= place_label(report) %></span>
+        <span class="pet-where-name"><%= report.location&.name || PetsHelper::OFF_PROPERTY %></span>
         <small><%= time_tag_ago(report.created_at) %><%= " · #{report.reported_by.display_name}" if report.reported_by %></small>
       <% end %>
     </p>
+    <%# Inside / outside / penned up on a line of its own, so it doesn't
+        wrap in the middle of the place and time. %>
+    <% if (chip = spot_chip(report)) %><p class="pet-where"><%= chip %></p><% end %>
+    <% end %>
     <% if report&.comment %>
       <p class="report-comment"><%= icon(:message) %><span><%= report.comment %></span></p>
     <% end %>
