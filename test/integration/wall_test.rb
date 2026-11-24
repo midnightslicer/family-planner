@@ -45,6 +45,25 @@ class WallTest < ActionDispatch::IntegrationTest
     assert_equal [@admin.color], colours # each colour once
   end
 
+  test "a pet's inside, outside or penned up shows as a chip" do
+    rex = @smiths.pets.create!(name: "Rex")
+    tom = @smiths.pets.create!(name: "Tom")
+    bo = @smiths.pets.create!(name: "Bo")
+    LocationReport.create!(household: @smiths, subject: rex, location: @house, spot: "inside", reported_by: @member)
+    LocationReport.create!(household: @smiths, subject: tom, location: @house, spot: "outside", penned: true, reported_by: @member)
+    LocationReport.create!(household: @smiths, subject: bo, location: @house, spot: "outside", reported_by: @member)
+    wall
+    assert_select ".wall-pet", text: /Rex/ do
+      assert_select ".spot-chip.is-inside", text: "Inside"
+    end
+    assert_select ".wall-pet", text: /Tom/ do
+      assert_select ".spot-chip.is-penned", text: "Penned up"
+    end
+    assert_select ".wall-pet", text: /Bo/ do
+      assert_select ".spot-chip.is-outside", text: "Outside"
+    end
+  end
+
   test "an event at a place puts its person in that place's section" do
     LocationReport.create!(household: @smiths, subject: @admin, location: @yard, reported_by: @admin)
     Task.create!(household: @smiths, title: "Client call", place: "Big house", assigned_to: @admin,

@@ -86,16 +86,30 @@ module PetsHelper
 
   FED_CHIPS = { fed: ["status-completed", :check], partly: ["status-planned", :utensils], hungry: ["status-in_progress", nil] }.freeze
 
-  # "Fed today" / "Fed 1 of 2" / "Not fed yet", with meal pips.
-  def fed_chip(status)
+  # Inside / outside / penned up, as a chip to read at a glance (the wall).
+  # Penned up is filled, since it's the one someone may need to act on.
+  def spot_chip(report)
+    return unless report&.spot
+
+    icon_name, text, css = if report.penned? then [:fence, "Penned up", "is-penned"]
+                           elsif report.spot == "inside" then [:house, "Inside", "is-inside"]
+                           else [:trees, "Outside", "is-outside"]
+                           end
+    tag.span(safe_join([icon(icon_name), text]), class: "status-chip spot-chip #{css}")
+  end
+
+  # "Fed today" / "Fed 1 of 2" / "Not fed yet", with meal pips. `short`
+  # (the wall, where it shares a line) drops the "today": the pips say how
+  # many meals.
+  def fed_chip(status, short: false)
     return unless status.tracks_meals?
 
     css, icon_name = FED_CHIPS.fetch(status.fed_state)
     text =
       case status.fed_state
-      when :fed then status.meals == 1 ? "Fed today" : "All #{status.meals} meals today"
+      when :fed then short || status.meals == 1 ? "Fed today" : "All #{status.meals} meals today"
       when :partly then "Fed #{status.fed_today} of #{status.meals}"
-      else "Not fed yet today"
+      else short ? "Not fed yet" : "Not fed yet today"
       end
     pips = tag.span(class: "meal-pips", aria: { hidden: true }) do
       safe_join(Array.new(status.meals) { |i| tag.span(class: ("is-fed" if i < status.fed_today)) })
