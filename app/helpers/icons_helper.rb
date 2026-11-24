@@ -76,8 +76,15 @@ module IconsHelper
 
   # A flash line with its icon. Also rendered into turbo streams by
   # TasksController, so the message is escaped by safe_join.
+  # A flash, floated over the page with the toasts (layouts/application);
+  # the toast controller takes it away after a while (alerts stay longer).
   def flash_message(message, kind)
-    tag.p(safe_join([icon(kind.to_sym == :alert ? :alert_circle : :check_circle), message]), class: "flash-#{kind}")
+    alert = kind.to_sym == :alert
+    dismiss = tag.button(icon(:x), type: "button", class: "btn btn-quiet btn-icon", "aria-label": "Dismiss", data: { action: "toast#dismiss" })
+    tag.div(safe_join([icon(alert ? :alert_circle : :check_circle), tag.span(message, class: "toast-body"), dismiss]),
+            class: "flash-#{kind} toast", role: alert ? "alert" : "status",
+            data: { controller: "toast", toast_delay_value: alert ? 10_000 : 4000,
+                    action: "mouseenter->toast#hold mouseleave->toast#start focusin->toast#hold focusout->toast#start" })
   end
 
   # Icon then text, for buttons and links: `link_to icon_label(:plus, "Add"), ...`

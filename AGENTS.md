@@ -126,7 +126,9 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
     (> `user-menu-header`), closed by the `menu` Stimulus controller,
     `container`, `page-header`, `page-intro`, `household-switch`
   - messages: `flash-stack` (the always-present `#flash` container that
-    flashes render into), `flash-notice`, `flash-alert`
+    flashes render into, inside `overlay-stack` with the toasts, so flashes
+    float over the page instead of pushing it down), `flash-notice toast`,
+    `flash-alert toast` (the `toast` controller dismisses them: 4s, alerts 10s)
   - forms: `form-card`, `form-field` (also on a `fieldset`), `form-actions`,
     `btn` + `btn-primary`/`btn-danger`/`btn-quiet`/`btn-small`, `devise-links`
   - tables: `table-wrap` (scroll container) + bare `table`, `table-actions`
@@ -172,8 +174,9 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
     `passkey-signin`, `passkey-choice`, `passkey-hint`, `passkey-add`,
     `setup-steps`, `qr-frame` > `qr-code` (`qr-light`/`qr-dark`, coloured by
     the `--qr-*` tokens), `secret-key`, `recovery-codes`.
-  - notifications: `toast-stack` (the `#notifications` container, fixed
-    bottom corner) > `flash toast` > `toast-body` (household in `small`,
+  - notifications: `toast-stack` (the `#notifications` container,
+    `data-turbo-permanent` so morph refreshes keep it, in the fixed
+    bottom-corner `overlay-stack`) > `flash toast` > `toast-body` (household in `small`,
     then the text), driven by the `toast` Stimulus controller; the
     Notifications page's `push-panel` (a `form-card` whose states are
     `[data-push-target=state][data-state=…]`), `push-steps` lists, the

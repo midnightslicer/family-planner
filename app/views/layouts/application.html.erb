@@ -44,16 +44,23 @@
       </div>
     </nav>
 
-    <%# Always rendered, so a turbo stream can prepend a flash into #flash. %>
-    <div class="flash-stack" id="flash">
-      <%= flash_message(notice, :notice) if notice %>
-      <%= flash_message(alert, :alert) if alert %>
+    <%# Flashes and toasts float over the page in the bottom corner, so they
+        never push it around; each goes away by itself (toast_controller.js). %>
+    <div class="overlay-stack">
+      <%# Always rendered, so a turbo stream can prepend a flash into #flash. %>
+      <div class="flash-stack" id="flash">
+        <%= flash_message(notice, :notice) if notice %>
+        <%= flash_message(alert, :alert) if alert %>
+      </div>
+      <% if user_signed_in? %>
+        <%# In-page notifications (Notifier) arrive here as toasts while the app
+            is open. Permanent, so a morph refresh doesn't wipe the ones showing. %>
+        <div id="notifications" class="toast-stack" aria-live="polite" data-turbo-permanent></div>
+      <% end %>
     </div>
 
     <% if user_signed_in? %>
-      <%# In-page notifications (Notifier) arrive here as toasts while the app is open. %>
       <%= turbo_stream_from current_user, :notifications %>
-      <div id="notifications" class="toast-stack" aria-live="polite"></div>
       <div hidden data-controller="push-sync" data-push-sync-url-value="<%= push_subscriptions_path %>"></div>
     <% end %>
 
