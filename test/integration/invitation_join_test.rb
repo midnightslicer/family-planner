@@ -18,7 +18,7 @@ class InvitationJoinTest < ActionDispatch::IntegrationTest
 
     post join_invitation_path(invitation.raw_token),
          params: { user: { display_name: "Sam", email: "hacker@example.com", password: "long enough pw", color: "#22c55e" } }
-    assert_redirected_to dashboard_path
+    assert_redirected_to root_path
 
     user = User.find_by!(email: "sam@example.com")
     assert user.member_of?(@household)
@@ -34,7 +34,7 @@ class InvitationJoinTest < ActionDispatch::IntegrationTest
 
     credential = authenticator.create(challenge: response.parsed_body["challenge"])
     post join_invitation_path(invitation.raw_token), params: fields.merge(passkey_credential: credential.to_json)
-    assert_redirected_to dashboard_path
+    assert_redirected_to root_path
 
     user = User.find_by!(email: "sam@example.com")
     assert_not user.password_set?
@@ -46,7 +46,7 @@ class InvitationJoinTest < ActionDispatch::IntegrationTest
     assert_nil invitation.email
     post join_invitation_path(invitation.raw_token),
          params: { user: { display_name: "Kid", email: "kid@example.com", password: "long enough pw" } }
-    assert_redirected_to dashboard_path
+    assert_redirected_to root_path
     assert User.exists?(email: "kid@example.com")
   end
 
@@ -78,7 +78,7 @@ class InvitationJoinTest < ActionDispatch::IntegrationTest
     get invitation_path(invitation.raw_token)
     assert_select "button", text: "Join Grandma's"
     post accept_invitation_path(invitation.raw_token)
-    assert_redirected_to dashboard_path
+    assert_redirected_to root_path
     assert users(:member).member_of?(other)
   end
 

@@ -56,7 +56,7 @@ class LocationsController < ApplicationController
   private
 
   def set_location
-    @location = current_household.locations.find_by(id: params[:id]) or head :not_found
+    @location = current_household.locations.find_by(id: params[:id]) or not_found
   end
 
   def location_params

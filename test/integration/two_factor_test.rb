@@ -36,15 +36,15 @@ class TwoFactorTest < ActionDispatch::IntegrationTest
     secret, = enable_two_factor
     password_step
 
-    get dashboard_path
+    get root_path
     assert_redirected_to new_user_session_path, "not signed in after the password alone"
 
     post user_two_factor_path, params: { code: "000000" }
     assert_response :unprocessable_content
 
     post user_two_factor_path, params: { code: Totp.code_at(secret, Totp.time_step + 1) }
-    assert_redirected_to dashboard_path # back to the page asked for before signing in
-    get dashboard_path
+    assert_redirected_to root_path # back to the page asked for before signing in
+    get root_path
     assert_response :success
   end
 
@@ -64,7 +64,7 @@ class TwoFactorTest < ActionDispatch::IntegrationTest
     _, codes = enable_two_factor
     password_step
     post user_two_factor_path, params: { code: codes.first.upcase }
-    assert_redirected_to dashboard_root_path
+    assert_redirected_to root_path
     assert_equal User::RECOVERY_CODE_COUNT - 1, @member.reload.recovery_codes_remaining
     delete destroy_user_session_path
 

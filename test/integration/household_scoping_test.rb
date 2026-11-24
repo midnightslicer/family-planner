@@ -20,6 +20,24 @@ class HouseholdScopingTest < ActionDispatch::IntegrationTest
   test "a task in another household is invisible (404) even by direct id" do
     get task_path(@other_task)
     assert_response :not_found
+    assert_select "h1", "Nothing here" # the 404 page, not an empty body
+    assert_select "a[href='/']", "Back home"
+  end
+
+  test "a 404 for anything but a browser stays empty" do
+    # What Turbo sends for a form or button_to.
+    post start_task_path(@other_task), headers: { "Accept" => "text/vnd.turbo-stream.html, text/html, application/xhtml+xml" }
+    assert_response :not_found
+    assert_empty response.body
+  end
+
+  test "the dashboard lives at / only" do
+    get "/"
+    assert_select ".person-card"
+    assert_select "h1.visually-hidden", @smiths.name
+    assert_select "a", text: "Add to my day", count: 0
+    get "/dashboard"
+    assert_response :not_found
   end
 
   test "status actions on another household's task 404" do
@@ -29,14 +47,14 @@ class HouseholdScopingTest < ActionDispatch::IntegrationTest
   end
 
   test "dashboard only renders cards for current household members" do
-    get dashboard_path
+    get root_path
     assert_response :success
     assert_select ".person-card", count: 2  # admin + member, not other-household users
   end
 
   test "dashboard spells out each person's status in words" do
     Task.create!(household: @smiths, title: "Dishes", assigned_to: @member, status: :in_progress)
-    get dashboard_path
+    get root_path
     assert_select ".person-now", text: "Dishes"
     assert_select ".status-chip", text: "Text only"
     assert_select ".status-chip", text: "Free"

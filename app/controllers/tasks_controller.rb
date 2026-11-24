@@ -129,7 +129,7 @@ class TasksController < ApplicationController
 
   def set_task
     @task = current_household.tasks.find_by(id: params[:id])
-    head :not_found unless @task&.visible_to?(current_user)
+    not_found unless @task&.visible_to?(current_user)
   end
 
   # Whoever added it, whoever it's for, or an admin. Anyone in the household
@@ -139,7 +139,7 @@ class TasksController < ApplicationController
   end
 
   def respond_to_invite(status, notice, verb)
-    assignment = @task.assignment_for(current_user) or return head(:not_found)
+    assignment = @task.assignment_for(current_user) or return not_found
     assignment.update!(status: status, responded_at: Time.current, conflict_note: (assignment.conflict_note if status == "pending"))
     creator = @task.created_by
     if creator && creator != current_user

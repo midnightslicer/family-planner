@@ -12,7 +12,7 @@ class AccountMenuTest < ActionDispatch::IntegrationTest
 
   test "the avatar menu holds the account and sign-out links, plus Admin for admins" do
     sign_in users(:member)
-    get dashboard_path
+    get root_path
     assert_select ".user-menu .user-menu-header", text: /Member User/
     assert_select ".user-menu a[href=?]", account_root_path
     assert_select ".user-menu form[action=?]", destroy_user_session_path
@@ -20,7 +20,7 @@ class AccountMenuTest < ActionDispatch::IntegrationTest
 
     sign_out users(:member)
     sign_in users(:admin)
-    get dashboard_path
+    get root_path
     assert_select ".user-menu a[href=?]", admin_root_path
     assert_select ".nav-links a[href=?]", admin_root_path, count: 0
   end

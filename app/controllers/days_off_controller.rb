@@ -29,7 +29,7 @@ class DaysOffController < ApplicationController
 
   # DELETE /days_off/:id: "I'm working after all", or a cancelled holiday.
   def destroy
-    day_off = managed_person.days_off.find_by(id: params[:id]) or return head(:not_found)
+    day_off = managed_person.days_off.find_by(id: params[:id]) or return not_found
     day_off.destroy
     announce_change
     redirect_back_or_to edit_work_schedule_path(**managed_person_param), notice: "Day off removed.", status: :see_other, allow_other_host: false

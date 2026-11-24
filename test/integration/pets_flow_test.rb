@@ -101,7 +101,7 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
 
   test "the dashboard shows pets with where they are and whether they've eaten" do
     LocationReport.create!(household: @smiths, subject: @rex, location: @yard, reported_by: @admin)
-    get dashboard_path
+    get root_path
     assert_select ".pet-card", 2
     # Under the Yard heading, so the card says how fresh that is, not where.
     assert_select "##{ActionView::RecordIdentifier.dom_id(@yard, :board_place)} ##{ActionView::RecordIdentifier.dom_id(@rex, :pet_card)} .pet-where small", text: /Seen/
@@ -142,7 +142,7 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     assert_select "##{ActionView::RecordIdentifier.dom_id(@rex, :pet_card)} .spot-chip.is-penned", text: "Penned up"
 
     # The dashboard groups it under House, so the card shows the chip instead.
-    get dashboard_path
+    get root_path
     assert_select "##{ActionView::RecordIdentifier.dom_id(@house, :board_place)} ##{ActionView::RecordIdentifier.dom_id(@rex, :pet_card)} .spot-chip.is-penned", text: "Penned up"
   end
 
@@ -185,7 +185,7 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     get pets_path
     assert_select ".pet-card", 1
     assert_select ".away-list", text: /Rex/
-    get dashboard_path
+    get root_path
     assert_select ".pet-card .person-name", text: "Rex", count: 0
     get new_feeding_path
     assert_select "input[name='check_in[pet_ids][]'][value='#{@rex.id}']", count: 0
@@ -202,7 +202,7 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     assert_select ".away-banner", text: /Rex isn't here right now/
     post back_pet_path(@rex)
     assert_not @rex.reload.away?
-    get dashboard_path
+    get root_path
     assert_select ".pet-card .person-name", text: "Rex"
   end
 

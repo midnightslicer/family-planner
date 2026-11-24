@@ -102,7 +102,7 @@ class WallTest < ActionDispatch::IntegrationTest
       get tasks_path
       assert_select ".day-where", text: /Yard/
       assert_select ".now-banner small", text: "until 5 PM"
-      get dashboard_path
+      get root_path
       assert_select "#{admin_card} .person-now", text: "Work · until 5 PM"
       get tasks_path(person: "family")
       assert_select ".family-now .person-now", text: "Work · until 5 PM"

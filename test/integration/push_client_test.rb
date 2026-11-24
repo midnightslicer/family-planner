@@ -42,7 +42,7 @@ class PushClientTest < ActionDispatch::IntegrationTest
   test "the Notifications page shows this device's panel and the device list, from the menu" do
     device
     sign_in @member
-    get dashboard_path
+    get root_path
     assert_select ".user-menu-panel a[href=?]", account_notifications_path
     get account_notifications_path
     assert_response :success
@@ -69,7 +69,7 @@ class PushClientTest < ActionDispatch::IntegrationTest
     get new_user_session_path
     assert_select "meta[name=push-key]", 0
     sign_in @member
-    get dashboard_path
+    get root_path
     assert_select "meta[name=push-key][content=?]", PushKeys.public_key
     assert_select "meta[name=push-user][content=?]", @member.id.to_s
     assert_select "[data-controller=push-sync][data-push-sync-url-value=?]", push_subscriptions_path
@@ -78,7 +78,7 @@ class PushClientTest < ActionDispatch::IntegrationTest
 
   test "the dashboard nudge links to the settings and starts hidden" do
     sign_in @member
-    get dashboard_path
+    get root_path
     assert_select ".invite-banner[data-controller=push-nudge][hidden]" do
       assert_select "a[href=?]", account_notifications_path
     end

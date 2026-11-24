@@ -45,7 +45,7 @@ class AssignmentsTest < ActionDispatch::IntegrationTest
     travel_to sunday_at(10) do
       reset! # two hours on, the old session has timed out
       sign_in @me
-      get dashboard_path
+      get root_path
       [@me, @mom].each do |person|
         assert_select "##{ActionView::RecordIdentifier.dom_id(person, :person_card)} .avail-busy", text: "Do not disturb"
       end

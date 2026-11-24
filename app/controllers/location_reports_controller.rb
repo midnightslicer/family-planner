@@ -4,7 +4,7 @@ class LocationReportsController < ApplicationController
   # DELETE /location_reports/:id: take back a report made by mistake; the
   # one before it becomes current again.
   def destroy
-    report = current_household.location_reports.find_by(id: params[:id]) or return head(:not_found)
+    report = current_household.location_reports.find_by(id: params[:id]) or return not_found
     return head(:forbidden) unless report.reported_by_id == current_user.id || current_user.admin?
 
     report.destroy

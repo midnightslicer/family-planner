@@ -20,6 +20,6 @@ class PetSubscriptionsController < ApplicationController
   private
 
   def set_pet
-    @pet = current_household.pets.find_by(id: params[:pet_id]) or head :not_found
+    @pet = current_household.pets.find_by(id: params[:pet_id]) or not_found
   end
 end

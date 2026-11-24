@@ -26,7 +26,7 @@ class FeedingsController < ApplicationController
 
   # DELETE /feedings/:id: take back a meal recorded by mistake.
   def destroy
-    feeding = current_household.feedings.find_by(id: params[:id]) or return head(:not_found)
+    feeding = current_household.feedings.find_by(id: params[:id]) or return not_found
     return head(:forbidden) unless feeding.fed_by_id == current_user.id || current_user.admin?
 
     feeding.destroy

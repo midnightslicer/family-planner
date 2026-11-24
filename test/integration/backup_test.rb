@@ -81,7 +81,7 @@ class BackupTest < ActionDispatch::IntegrationTest
 
     # Set up now: the restore form is gone, and everyone signs in as before.
     get setup_path
-    assert_redirected_to dashboard_path
+    assert_redirected_to root_path
   end
 
   test "a server with other keys drops what it can't decrypt; the same keys keep it" do

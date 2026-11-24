@@ -6,9 +6,9 @@ class HouseholdsController < ApplicationController
     household = current_user.households.find_by(id: params[:household_id])
     if household
       session[:current_household_id] = household.id
-      redirect_back(fallback_location: dashboard_path, notice: "Switched to #{household.name}.")
+      redirect_back(fallback_location: root_path, notice: "Switched to #{household.name}.")
     else
-      redirect_back(fallback_location: dashboard_path, alert: "You are not a member of that household.")
+      redirect_back(fallback_location: root_path, alert: "You are not a member of that household.")
     end
   end
 end

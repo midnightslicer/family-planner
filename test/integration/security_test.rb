@@ -105,14 +105,14 @@ class SecurityTest < ActionDispatch::IntegrationTest
   test "a member without a household sees a message, not a redirect loop" do
     @member.household_memberships.destroy_all
     sign_in @member
-    get dashboard_path
+    get root_path
     assert_response :success
     assert_select "h1", "You're not in a household yet"
   end
 
   test "pages carry a content security policy" do
     sign_in @member
-    get dashboard_path
+    get root_path
     policy = response.headers["Content-Security-Policy"]
     assert_match(/script-src 'self'/, policy)
     assert_match(/object-src 'none'/, policy)

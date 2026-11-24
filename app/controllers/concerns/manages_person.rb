@@ -24,7 +24,7 @@ module ManagesPerson
   end
 
   def require_managed_person
-    head :not_found unless managed_person
+    not_found unless managed_person
   end
 
   def managing_someone_else?

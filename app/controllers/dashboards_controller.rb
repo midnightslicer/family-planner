@@ -16,18 +16,18 @@ class DashboardsController < ApplicationController
                            .sections(first: current_user)
   end
 
-  # POST /dashboard/dismiss_checklist
+  # POST /getting_started/dismiss
   def dismiss_checklist
     current_user.update_column(:onboarding_dismissed_at, Time.current)
-    redirect_to dashboard_path, status: :see_other
+    redirect_to root_path, status: :see_other
   end
 
   # POST /getting_started/skip/:step ("I don't have a work schedule").
   def skip_step
     case params[:step]
     when "work" then current_user.update_column(:work_schedule_skipped_at, Time.current)
-    else return head(:not_found)
+    else return not_found
     end
-    redirect_back_or_to dashboard_path, status: :see_other
+    redirect_back_or_to root_path, status: :see_other
   end
 end

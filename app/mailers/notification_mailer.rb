@@ -27,8 +27,4 @@ class NotificationMailer < ApplicationMailer
     path = "/" unless path.to_s.start_with?("/") && !path.to_s.start_with?("//")
     root_url.delete_suffix("/") + path
   end
-
-  def root_url
-    dashboard_root_url
-  end
 end

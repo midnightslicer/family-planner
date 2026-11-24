@@ -44,7 +44,7 @@ class SetupController < ApplicationController
     if attach_signup_passkey(@user) && create_first_account
       session.delete(:setup_unlocked)
       sign_in(:user, @user)
-      redirect_to dashboard_path, notice: "You're all set. Next, invite your family."
+      redirect_to root_path, notice: "You're all set. Next, invite your family."
     else
       render :show, status: :unprocessable_content
     end
@@ -96,7 +96,7 @@ class SetupController < ApplicationController
   end
 
   def require_no_users!
-    redirect_to dashboard_path if User.exists?
+    redirect_to root_path if User.exists?
   end
 
   def require_unlocked

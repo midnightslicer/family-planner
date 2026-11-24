@@ -15,9 +15,9 @@ class PasskeyTest < ActionDispatch::IntegrationTest
     delete destroy_user_session_path
     sign_in_with_passkey(authenticator)
     assert_response :success
-    assert_equal dashboard_root_path, response.parsed_body["redirect"]
+    assert_equal root_path, response.parsed_body["redirect"]
 
-    get dashboard_path
+    get root_path
     assert_response :success
     assert passkey.reload.last_used_at
   end
@@ -35,7 +35,7 @@ class PasskeyTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert cookies["remember_user_token"].present?
 
-    get dashboard_path
+    get root_path
     assert_response :success
   end
 
@@ -58,7 +58,7 @@ class PasskeyTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_user_session_path # then signs in with it
 
     post user_session_path, params: { user: { email: @member.email, password: "a-new-long-password" } }
-    get dashboard_path
+    get root_path
     assert_response :success
   end
 
@@ -90,7 +90,7 @@ class PasskeyTest < ActionDispatch::IntegrationTest
     post user_passkey_session_path, params: { credential: impostor.get(challenge: response.parsed_body["challenge"]) }, as: :json
     assert_response :unprocessable_content
 
-    get dashboard_path
+    get root_path
     assert_redirected_to new_user_session_path
   end
 

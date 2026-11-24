@@ -374,7 +374,9 @@ server; see `Backup` below).
   task's time, people and `location_id`.
 - **Household scoping is mandatory** on every task query: filter by
   `Current.household.id` (the wall too: the token only picks one of your households). Non-members get
-  404, not 403.
+  404, not 403: call `not_found` (ApplicationController), not `head :not_found`, so a
+  browser gets `public/404.html` (also Rails's page for unknown routes) and fetch/Turbo
+  Stream requests an empty 404.
 - **Invitations are the only join path.** Devise `:registerable` is off (no
   `/users/sign_up`); accounts come from `InvitationsController#join`, the
   setup wizard (first admin only), or a restored backup (only onto a server

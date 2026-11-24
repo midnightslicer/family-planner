@@ -8,6 +8,6 @@
 <div class="form-card">
   <div class="form-actions">
     <%= button_to "Join #{@invitation.household.name}", accept_invitation_path(params[:token]), class: "btn btn-primary" %>
-    <%= link_to "Not now", dashboard_path, class: "btn btn-quiet" %>
+    <%= link_to "Not now", root_path, class: "btn btn-quiet" %>
   </div>
 </div>

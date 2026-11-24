@@ -21,7 +21,7 @@ class SetupFlowTest < ActionDispatch::IntegrationTest
   end
 
   test "every page leads to setup until the first account exists" do
-    get dashboard_path
+    get root_path
     assert_redirected_to setup_path
     get new_user_session_path
     assert_redirected_to setup_path
@@ -51,7 +51,7 @@ class SetupFlowTest < ActionDispatch::IntegrationTest
   test "creates the admin, household and settings with a password" do
     unlock
     post setup_path, params: account_params
-    assert_redirected_to dashboard_path
+    assert_redirected_to root_path
 
     user = User.sole
     assert user.admin?
@@ -75,7 +75,7 @@ class SetupFlowTest < ActionDispatch::IntegrationTest
 
     credential = authenticator.create(challenge: options["challenge"])
     post setup_path, params: account_params(user: { password: "" }).merge(passkey_credential: credential.to_json)
-    assert_redirected_to dashboard_path
+    assert_redirected_to root_path
 
     user = User.sole
     assert_not user.password_set?
@@ -96,7 +96,7 @@ class SetupFlowTest < ActionDispatch::IntegrationTest
     delete destroy_user_session_path
 
     get setup_path
-    assert_redirected_to dashboard_path
+    assert_redirected_to root_path
     post setup_path, params: account_params(user: { email: "intruder@example.com" })
     assert_equal 1, User.count
   end

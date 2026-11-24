@@ -5,7 +5,7 @@ class PeopleController < ApplicationController
   include HouseholdScoped
 
   def show
-    person = current_household.users.find_by(id: params[:id]) or return head(:not_found)
+    person = current_household.users.find_by(id: params[:id]) or return not_found
     redirect_to tasks_path(person: (person.id unless person == current_user))
   end
 

@@ -36,7 +36,7 @@ class InvitationsController < ApplicationController
     if attach_signup_passkey(@user) && create_member
       sign_in(:user, @user)
       session[:current_household_id] = @invitation.household_id
-      redirect_to dashboard_path, notice: "Welcome to #{@invitation.household.name}!"
+      redirect_to root_path, notice: "Welcome to #{@invitation.household.name}!"
     else
       render :show, status: :unprocessable_content
     end
@@ -57,7 +57,7 @@ class InvitationsController < ApplicationController
       HouseholdMembership.find_or_create_by!(user: current_user, household: @invitation.household)
     end
     session[:current_household_id] = @invitation.household_id
-    redirect_to dashboard_path, notice: "You've joined #{@invitation.household.name}."
+    redirect_to root_path, notice: "You've joined #{@invitation.household.name}."
   end
 
   private

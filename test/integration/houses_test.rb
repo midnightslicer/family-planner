@@ -15,7 +15,7 @@ class HousesTest < ActionDispatch::IntegrationTest
   end
 
   test "the board stays one group until someone has a house" do
-    get dashboard_path
+    get root_path
     assert_select ".house-title", count: 0
     assert_select ".person-card", 2
   end
@@ -47,7 +47,7 @@ class HousesTest < ActionDispatch::IntegrationTest
     report(@smiths.pets.create!(name: "Rex"), @brick)
     report(@me, @ours)
 
-    get dashboard_path
+    get root_path
     assert_equal ["Our House", "Red Brick House"], board_titles
     assert_select "#board_place_elsewhere", count: 0
   end
@@ -57,7 +57,7 @@ class HousesTest < ActionDispatch::IntegrationTest
     report(@me, off_property: true)
     sign_in @admin
 
-    get dashboard_path
+    get root_path
     assert_equal ["Red Brick House", "Somewhere else"], board_titles
   end
 
@@ -65,7 +65,7 @@ class HousesTest < ActionDispatch::IntegrationTest
     report(@admin, @brick)
     report(@me, off_property: true)
 
-    get dashboard_path
+    get root_path
     assert_equal ["Somewhere else", "Red Brick House"], board_titles
     assert_select "#board_place_elsewhere .person-card", 1
   end

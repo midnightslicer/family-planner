@@ -56,7 +56,7 @@ class ScheduleFlowTest < ActionDispatch::IntegrationTest
       Task.create!(household: @smiths, title: "Grocery run", assigned_to: @admin, availability: "text", place: "Town",
                    starts_at: Time.zone.local(2026, 11, 22, 13, 0), ends_at: Time.zone.local(2026, 11, 22, 16, 0))
 
-      get dashboard_path
+      get root_path
       member_card = "##{ActionView::RecordIdentifier.dom_id(@member, :person_card)}"
       assert_select "#{member_card} .avail-busy", text: "Do not disturb"
       assert_select "#{member_card} .person-now", text: "Client call · until 3 PM"
@@ -70,7 +70,7 @@ class ScheduleFlowTest < ActionDispatch::IntegrationTest
     travel_to Time.zone.local(2026, 11, 22, 8, 0) do
       Task.create!(household: @smiths, title: "Church", assigned_to: @member,
                    starts_at: Time.zone.local(2026, 11, 22, 10, 0), ends_at: Time.zone.local(2026, 11, 22, 11, 0))
-      get dashboard_path
+      get root_path
       card = "##{ActionView::RecordIdentifier.dom_id(@member, :person_card)}"
       assert_select "#{card} .avail-free", text: "Free"
       assert_select "#{card} .person-next", text: "Next: Church · 10 AM"

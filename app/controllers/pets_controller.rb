@@ -80,7 +80,7 @@ class PetsController < ApplicationController
   private
 
   def set_pet
-    @pet = current_household.pets.find_by(id: params[:id]) or head :not_found
+    @pet = current_household.pets.find_by(id: params[:id]) or not_found
   end
 
   def pet_params

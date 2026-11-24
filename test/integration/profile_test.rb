@@ -104,7 +104,7 @@ class ProfileTest < ActionDispatch::IntegrationTest
     assert_redirected_to account_root_path
     assert @member.reload.avatar.attached?
 
-    get dashboard_path
+    get root_path
     assert_select "##{ActionView::RecordIdentifier.dom_id(@member, :person_card)} .person-avatar img[src*='/rails/active_storage/']"
   end
 

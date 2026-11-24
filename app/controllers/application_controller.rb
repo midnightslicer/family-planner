@@ -91,7 +91,17 @@ class ApplicationController < ActionController::Base
   end
 
   def require_household!
-    head :not_found unless current_household
+    not_found unless current_household
+  end
+
+  # Not there, or not yours to see: the 404 page (public/404.html) for a
+  # browser, a bare 404 for anything else (fetch, Turbo Stream, JSON).
+  def not_found
+    if request.format == :html # not html?, which a Turbo Stream request also passes
+      render file: Rails.public_path.join("404.html"), status: :not_found, layout: false, content_type: "text/html"
+    else
+      head :not_found
+    end
   end
 
   def require_admin!

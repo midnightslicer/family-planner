@@ -39,7 +39,7 @@ class HouseholdTimeZoneTest < ActionDispatch::IntegrationTest
     travel_to Time.utc(2026, 11, 23, 16, 0) do
       sign_in @admin
       cookies[:tz] = "America/Los_Angeles"
-      get dashboard_path
+      get root_path
       assert_select "#{card(@member)} .person-now", text: "Work · until 5 PM · Office"
     end
   end
@@ -49,7 +49,7 @@ class HouseholdTimeZoneTest < ActionDispatch::IntegrationTest
     travel_to Time.utc(2026, 11, 23, 16, 0) do
       sign_in @admin
       cookies[:tz] = "America/Los_Angeles" # 08:00 there: not at work yet
-      get dashboard_path
+      get root_path
       assert_select "#{card(@member)} .person-next", text: "Next: Work · 9 AM"
     end
   end

@@ -17,7 +17,7 @@ class PrivateAndLinkedEventsTest < ActionDispatch::IntegrationTest
                    starts_at: Time.zone.local(2026, 11, 22, 13, 30), ends_at: Time.zone.local(2026, 11, 22, 15, 0))
       sign_in @member
 
-      get dashboard_path
+      get root_path
       assert_select "#{card(@admin)} .person-now", text: "Busy · until 3 PM"
       assert_select "#{card(@admin)} .avail-busy"
       assert_no_match(/Therapy|Dr\. Lee/, response.body)
@@ -70,7 +70,7 @@ class PrivateAndLinkedEventsTest < ActionDispatch::IntegrationTest
       assert_equal @little, event.location
 
       sign_in @member
-      get dashboard_path
+      get root_path
       assert_select "##{ActionView::RecordIdentifier.dom_id(@little, :board_place)} #{card(@admin)} .person-now", text: "Client meeting · until 3 PM"
 
       get tasks_path(person: @admin.id)
@@ -83,7 +83,7 @@ class PrivateAndLinkedEventsTest < ActionDispatch::IntegrationTest
     travel_to Time.zone.local(2026, 11, 22, 16, 0) do
       reset! # two hours on, the old session has timed out
       sign_in @member
-      get dashboard_path
+      get root_path
       assert_select ".house-group", text: /Big house/ do
         assert_select card(@admin)
       end
@@ -102,7 +102,7 @@ class PrivateAndLinkedEventsTest < ActionDispatch::IntegrationTest
       Task.create!(household: @smiths, title: "Nap", place: "Little house", assigned_to: @admin, private: true,
                    starts_at: Time.zone.local(2026, 11, 22, 13, 30), ends_at: Time.zone.local(2026, 11, 22, 15, 0))
       sign_in @member
-      get dashboard_path
+      get root_path
       assert_select "#{card(@admin)} .person-where", count: 0
     end
   end

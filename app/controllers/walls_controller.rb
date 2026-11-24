@@ -8,7 +8,7 @@ class WallsController < ApplicationController
 
   def show
     @household = wall_household
-    raise ActionController::RoutingError, "Not Found" unless @household
+    return not_found unless @household
 
     @members = @household.board_members
     places = @household.places

@@ -22,7 +22,7 @@ class WorkScheduleTest < ActionDispatch::IntegrationTest
     get tasks_path
     assert_select "a", text: "Add work hours"
     assert_select "button", text: "I'm off today", count: 0
-    get dashboard_path
+    get root_path
     assert_select "#{card(@member)} .avail-free", text: "Free"
   end
 
@@ -80,7 +80,7 @@ class WorkScheduleTest < ActionDispatch::IntegrationTest
     @member.work_shifts.create!(weekday: 1, from_time: "09:00", until_time: "17:00", place: "Little house")
     travel_to monday_at(10) do
       sign_in @member
-      get dashboard_path
+      get root_path
       assert_select "#{card(@member)} .avail-text", text: "Text only"
       # The section heading says where; the card doesn't repeat it.
       assert_select ".house-group", text: /Little house/ do
@@ -99,7 +99,7 @@ class WorkScheduleTest < ActionDispatch::IntegrationTest
                  starts_at: monday_at(10), ends_at: monday_at(10, 30))
     travel_to monday_at(10, 10) do
       sign_in @member
-      get dashboard_path
+      get root_path
       assert_select "#{card(@member)} .person-now", text: "Standup · until 10:30 AM"
     end
   end
@@ -108,7 +108,7 @@ class WorkScheduleTest < ActionDispatch::IntegrationTest
     @member.work_shifts.create!(weekday: 1, from_time: "09:00", until_time: "17:00", place: "Remote")
     travel_to monday_at(7) do
       sign_in @member
-      get dashboard_path
+      get root_path
       assert_select "#{card(@member)} .avail-free", text: "Free"
       assert_select "#{card(@member)} .person-next", text: "Next: Work · 9 AM"
     end
@@ -128,7 +128,7 @@ class WorkScheduleTest < ActionDispatch::IntegrationTest
       assert_select ".sched-work", count: 0
 
       sign_in @admin
-      get dashboard_path
+      get root_path
       # Only three statuses: a day off is Free, saying why underneath.
       assert_select "#{card(@member)} .status-chip.avail-free", text: "Free"
       assert_select "#{card(@member)} .person-now", text: "Day off"

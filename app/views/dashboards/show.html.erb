@@ -1,11 +1,9 @@
-<% content_for :title, @household.name %>
+<% content_for :title, @household.name unless @household.name == app_name %>
 <% content_for :head, turbo_refreshes_with(method: :morph, scroll: :preserve) %>
 <%= turbo_stream_from @household, :members %>
 
-<div class="page-header">
-  <h1><%= @household.name %></h1>
-  <%= link_to tasks_path, class: "btn btn-primary" do %><%= icon_label(:plus, "Add to my day") %><% end %>
-</div>
+<%# No visible title: the nav's brand and household switcher say where you are. %>
+<h1 class="visually-hidden"><%= @household.name %></h1>
 
 <%= render "dashboards/checklist", checklist: @checklist if @checklist.visible? %>
 <%= render "shared/notifications_banner" %>
