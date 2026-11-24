@@ -8,7 +8,7 @@ class LocationsController < ApplicationController
   def index
     @locations = current_household.places
     @pets = current_household.pets.here.by_name.with_attached_photo.to_a
-    pet_reports = LocationReport.latest_for(current_household, "Pet", @pets.map(&:id))
+    pet_reports = LocationReport.latest_for(current_household, "Pet", @pets.map(&:id), preload: [])
     @members = current_household.board_members
     statuses = current_household.member_statuses(members: @members, places: @locations)
     homes = current_household.household_memberships.pluck(:user_id, :home_id).to_h

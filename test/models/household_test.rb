@@ -54,4 +54,23 @@ class HouseholdTest < ActiveSupport::TestCase
     assert_not task.valid?
     assert task.errors.include?(:ends_at)
   end
+
+  test "a shared event is on every card it's for, and the batched loaders agree" do
+    smiths = households(:smiths)
+    admin, member = users(:admin), users(:member)
+    yard = smiths.locations.create!(name: "Yard", kind: "yard")
+    travel_to Time.zone.local(2026, 11, 24, 10, 0) do
+      picnic = Task.create!(household: smiths, title: "Picnic", assigned_to: admin, place: "Yard",
+                            starts_at: 10.minutes.ago, ends_at: 1.hour.from_now)
+      picnic.assignments.create!(user: member, status: "accepted")
+      Task.create!(household: smiths, title: "Lunch", assigned_to: member, starts_at: 2.hours.from_now)
+
+      [smiths.member_statuses, smiths.member_statuses(members: smiths.board_members, places: smiths.places)].each do |statuses|
+        assert_equal ["Picnic", "Picnic"], [statuses[admin.id][:current].title, statuses[member.id][:current].title]
+        assert_equal [yard, yard], [statuses[admin.id][:at], statuses[member.id][:at]]
+        assert_equal "Lunch", statuses[member.id][:next].title
+        assert_nil statuses[admin.id][:next]
+      end
+    end
+  end
 end

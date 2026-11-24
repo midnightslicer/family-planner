@@ -36,11 +36,12 @@ class LocationReport < ApplicationRecord
 
   after_commit :broadcast
 
-  # The newest report per subject: { subject_id => LocationReport }.
-  def self.latest_for(household, subject_type, subject_ids)
+  # The newest report per subject: { subject_id => LocationReport }, with
+  # `preload` loaded alongside (pet cards also say who reported it).
+  def self.latest_for(household, subject_type, subject_ids, preload: :location)
     newest = where(household_id: household.id, subject_type: subject_type, subject_id: subject_ids)
              .group(:subject_id).select("MAX(id)")
-    where(id: newest).includes(:location, :reported_by).index_by(&:subject_id)
+    where(id: newest).preload(preload).index_by(&:subject_id)
   end
 
   def self.recent

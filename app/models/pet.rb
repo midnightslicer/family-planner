@@ -52,7 +52,7 @@ class Pet < ApplicationRecord
   def self.statuses(household, pets)
     pets = pets.to_a
     ids = pets.map(&:id)
-    reports = LocationReport.latest_for(household, "Pet", ids)
+    reports = LocationReport.latest_for(household, "Pet", ids, preload: [:location, :reported_by])
     today = Feeding.where(pet_id: ids).today
     fed_counts = today.group(:pet_id).count
     last_fed = Feeding.where(id: Feeding.where(pet_id: ids).group(:pet_id).select("MAX(id)"))

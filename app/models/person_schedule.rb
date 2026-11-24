@@ -25,7 +25,7 @@ class PersonSchedule
     rows = window(household.tasks, now).joins(:assignments).merge(TaskAssignment.accepted)
                                        .where(task_assignments: { user_id: members.map(&:id) })
                                        .select("tasks.*, task_assignments.user_id AS person_id")
-                                       .includes(:location, :assignments).to_a
+                                       .preload(:location, :assignments).to_a
     by_person = rows.group_by(&:person_id)
     members.index_with do |member|
       new(household, member, viewer: viewer, now: now, places: places, items: by_person.fetch(member.id, []), lists: false)

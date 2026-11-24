@@ -69,7 +69,7 @@ class Household < ApplicationRecord
     # One row per (item, person who accepted it): shared items count for
     # everyone on them.
     by_user = tasks.open.joins(:assignments).merge(TaskAssignment.accepted).where(task_assignments: { user_id: ids })
-                   .includes(:location)
+                   .preload(:location)
                    .select("tasks.*, task_assignments.user_id AS person_id")
                    .where("tasks.status = :doing OR (tasks.starts_at < :horizon AND COALESCE(tasks.ends_at, tasks.starts_at) >= :earliest)",
                           doing: Task.statuses[:in_progress], horizon: now + 7.days, earliest: now - Task::DEFAULT_LENGTH)
@@ -131,18 +131,18 @@ class Household < ApplicationRecord
 
   # Collects the card re-renders asked for in the block and sends each
   # person's card once when it ends: saving an item, its people and its next
-  # repeat is one status lookup and one card each, not one per record.
+  # repeat is one status lookup and one card each, not one per record. What
+  # was committed still goes out if the block raises.
   def self.batching_cards
     return yield if Current.pending_cards
 
-    begin
-      Current.pending_cards = pending = {}
-      result = yield
-    ensure
+    Current.pending_cards = pending = {}
+    yield
+  ensure
+    if pending # the outermost batch
       Current.pending_cards = nil
+      pending.each_value { |household, ids| household.send(:broadcast_cards_now, ids.to_a) }
     end
-    pending.each_value { |household, ids| household.send(:broadcast_cards_now, ids.to_a) }
-    result
   end
 
   # The household's clock (an ActiveSupport::TimeZone), or nil if no admin
