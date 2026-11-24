@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_24_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_24_010000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -185,6 +185,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_24_000000) do
     t.datetime "away_since"
     t.datetime "archived_at"
     t.boolean "visitor", default: false, null: false
+    t.boolean "on_wall", default: true, null: false
     t.index ["created_by_id"], name: "index_pets_on_created_by_id"
     t.index ["home_id"], name: "index_pets_on_home_id"
     t.index ["household_id"], name: "index_pets_on_household_id"

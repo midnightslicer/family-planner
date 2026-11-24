@@ -27,7 +27,7 @@
     <%# One of three: Free, Text only or Do not disturb. Then what they're doing. %>
     <%= reach_chip(status) %>
     <% if current_task %>
-      <p class="person-now"><%= icon(:briefcase) if current_task.work? %><%= now_line(current_task) %></p>
+      <p class="person-now"><%= icon(:briefcase) if current_task.work? %><%= now_line(current_task, place: !moved_on?(status)) %></p>
     <% elsif status[:off] %>
       <p class="person-now">Day off<%= " · #{status[:off].note}" if status[:off].note %></p>
     <% end %>

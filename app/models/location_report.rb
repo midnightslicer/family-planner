@@ -51,6 +51,14 @@ class LocationReport < ApplicationRecord
     location.nil?
   end
 
+  # Whether this report says where they are rather than `current` (the
+  # event or work block whose place would otherwise put them somewhere):
+  # the newer one wins, so saying "I'm at X" mid-shift moves you, and a
+  # shift that starts after your report still takes you to work.
+  def newer_than?(current)
+    current&.starts_at.nil? || created_at >= current.starts_at
+  end
+
   def pennable?
     location&.house? && spot == "outside"
   end

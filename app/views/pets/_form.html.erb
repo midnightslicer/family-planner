@@ -39,6 +39,11 @@
       <%= f.check_box :visitor %>
       <span>We dog-sit them: they come and go</span>
     </label>
+    <%# Off for pets that never move (horses in their pasture): the wall has no room to spare. %>
+    <label class="inline-check visitor-check">
+      <%= f.check_box :on_wall %>
+      <span>Show on the wall</span>
+    </label>
     <%= render "shared/location_picker", locations: homes, field_name: "pet[home_id]",
                new_name_field: "pet[new_home_name]", new_name: @new_home_name || (@pet.home.name if new_home),
                selected: selected, legend: "Sleeps at", blank_label: "Not set", new_label: "New house",

@@ -76,7 +76,9 @@ class Household < ApplicationRecord
       statuses[user_id][:set] = update
     end
     LocationReport.latest_for(self, "User", users.select(:id)).each do |user_id, report|
-      statuses[user_id][:location] = report
+      status = statuses[user_id]
+      status[:location] = report
+      status.delete(:at) if status[:at] && report.newer_than?(status[:current])
     end
     statuses
   end

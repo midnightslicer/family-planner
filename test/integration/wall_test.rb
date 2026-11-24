@@ -65,7 +65,8 @@ class WallTest < ActionDispatch::IntegrationTest
   end
 
   test "an event at a place puts its person in that place's section" do
-    LocationReport.create!(household: @smiths, subject: @admin, location: @yard, reported_by: @admin)
+    # Said they were in the yard before the call began: the call, newer, wins.
+    travel_to(20.minutes.ago) { LocationReport.create!(household: @smiths, subject: @admin, location: @yard, reported_by: @admin) }
     Task.create!(household: @smiths, title: "Client call", place: "Big house", assigned_to: @admin,
                  starts_at: 10.minutes.ago, ends_at: 50.minutes.from_now)
     wall
@@ -74,10 +75,71 @@ class WallTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "places follow the household's location order" do
+  test "saying where you are mid-shift moves you; a shift that starts later still takes you to work" do
+    @smiths.update!(time_zone: "Central Time (US & Canada)")
+    office = @smiths.locations.create!(name: "Office", kind: "other")
+    @admin.work_shifts.create!(weekday: 1, from_time: "09:00", until_time: "17:00", place: "Office")
+    admin_card = "##{ActionView::RecordIdentifier.dom_id(@admin, :person_card)}"
+
+    # Reported at the house before work: work's place wins once the shift is on.
+    travel_to(Time.utc(2026, 11, 23, 14, 0)) { LocationReport.create!(household: @smiths, subject: @admin, location: @house, reported_by: @admin) }
+    travel_to Time.utc(2026, 11, 23, 16, 0) do # 10 AM, mid-shift
+      wall
+      assert_select ".wall-place", text: /Office/ do
+        assert_select admin_card
+      end
+
+      # Now they say they're in the yard: that's newer, so it wins.
+      sign_in @admin
+      post locate_me_path, params: { location_report: { location_id: @yard.id } }
+      wall
+      assert_select ".wall-place", text: /Yard/ do
+        assert_select admin_card
+        # The shift's place no longer says where they are.
+        assert_select "#{admin_card} .person-now", text: "Work · until 5 PM"
+      end
+      assert_select ".wall-place h2", text: office.name, count: 0
+      get tasks_path
+      assert_select ".day-where", text: /Yard/
+      assert_select ".now-banner small", text: "until 5 PM"
+      get dashboard_path
+      assert_select "#{admin_card} .person-now", text: "Work · until 5 PM"
+      get tasks_path(person: "family")
+      assert_select ".family-now .person-now", text: "Work · until 5 PM"
+    end
+  end
+
+  test "a pet can be left off the wall, and stays everywhere else" do
+    mare = @smiths.pets.create!(name: "Mare")
+    LocationReport.create!(household: @smiths, subject: mare, location: @yard, reported_by: @member)
+    wall
+    assert_select ".wall-pet", text: /Mare/
+
+    get edit_pet_path(mare)
+    assert_select "input[type=checkbox][name='pet[on_wall]'][checked]"
+    patch pet_path(mare), params: { pet: { on_wall: "0" } }
+    assert_not mare.reload.on_wall?
+
+    wall
+    assert_select ".wall-pet", text: /Mare/, count: 0
+    assert_select ".wall-place h2", text: "Yard", count: 0 # nobody else there
+    get pets_path
+    assert_select ".pet-card", text: /Mare/
+  end
+
+  test "the busiest place is on top; ties keep the household's place order; somewhere else is last" do
     LocationReport.create!(household: @smiths, subject: @member, location: @pool, reported_by: @member)
     LocationReport.create!(household: @smiths, subject: @admin, location: @house, reported_by: @admin)
-    wall
+    wall # one each: a house before a pool
     assert_equal ["Big house", "Pool"], css_select(".wall-place h2").map(&:text)
+
+    rex = @smiths.pets.create!(name: "Rex")
+    LocationReport.create!(household: @smiths, subject: rex, location: @pool, reported_by: @member)
+    tom = @smiths.pets.create!(name: "Tom") # nowhere yet
+    bo = @smiths.pets.create!(name: "Bo")
+    LocationReport.create!(household: @smiths, subject: bo, location: @yard, reported_by: @member)
+    [tom].each { |pet| assert_nil pet.status.report }
+    wall # pool 2, big house 1, yard 1, somewhere else 1 (Tom)
+    assert_equal ["Pool", "Big house", "Yard", "Somewhere else"], css_select(".wall-place h2").map(&:text)
   end
 end

@@ -11,12 +11,14 @@ recurring ones), and everyone sees a live auto-updating dashboard of who's busy.
 A wall view (`GET /h/:slug`, sign-in required: a member of that
 household, else 404; the slug only names the household) is meant for a
 wall-mounted iPad / browser home page that stays signed in: a section per place someone (or a
-pet) is right now (`Whereabouts`), with their status cards, then
+pet) is right now (`Whereabouts`, busiest first, ties in place order), with their status cards, then
 "Somewhere else", each a full-width band (`wall-place`: the name and
 `wall-count` in a fixed left column, then same-size tiles, `--tiles`
 across in every band so they line up); read-only, and
 `wall_fit_controller.js` picks `--tiles` and the scale (up to 1.5×) that
-fill the screen, since it can't scroll. Sign-in: passwords, passkeys
+fill the screen, since it can't scroll. It keeps its layout unless
+another is clearly bigger, and animates live changes (FLIP by element id:
+`dom_id(location, :wall_place)`, person cards, `dom_id(pet, :wall_pet)`). Sign-in: passwords, passkeys
 (WebAuthn), and optional TOTP two-step verification. Deploy: Docker + Kamal.
 
 Stack: Rails 8.1, propshaft (raw CSS, no CSS framework), esbuild via
@@ -206,7 +208,8 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   `<html>` (Turbo's morph refreshes leave `<html>` alone) every 10s, all
   computed from the clock (`app/javascript/lib/oklch.js`): surfaces tinted
   with each member's colour in turn (20 min each, gliding), a dark⇄light
-  ease every hour (dark 21:00–07:00), text and chips switching token sets
+  switch every hour as a quick 3s fade, never resting mid-grey where text
+  can't read (dark 21:00–07:00), text and chips switching token sets
   with the tone, two wandering background glows, and the board orbiting
   ±8px. kiosk.css reads them with dark fallbacks; transitions as long as
   the tick make it continuous. New wall colours go in kiosk.css's two tone
@@ -363,8 +366,11 @@ server can't claim it. SMTP is optional and lives in Admin > Settings.
   on your own day (`StatusUpdate`, append-only, `PeopleController#set_status`,
   your own only) wins over work hours and events for 12 hours
   (`StatusUpdate::LASTS`); `member_statuses[:set]` carries it and
-  `reachability(status)` picks it first. A day off is Free with "Day off"
-  as the detail line.
+  `reachability(status)` picks it first. Tapping the lit chip again posts
+`availability=clear`, a row that ends at once (back to the schedule). A day off is Free with "Day off"
+  as the detail line. Where someone is: their current event or work
+  block's place, unless their latest location report is newer than its
+  start (`LocationReport#newer_than?`), so "I'm at" mid-shift moves them.
 - Status colors: blue planned, amber in_progress, gray undone, green
   completed, set via `--status-*` custom properties in application.css.
   Availability reuses them: green free, amber text only, red (danger)

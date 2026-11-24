@@ -1,7 +1,9 @@
 # Who is where right now, as sections: one per location someone (or some
-# pet) is at, in the household's location order, then everyone whose place
-# is unknown or not one of the locations. A person is where their current
-# event or work hours put them, else where they last said; a pet where it
+# pet) is at, busiest first (most people and pets; ties by the household's
+# location order), then everyone whose place is unknown or not one of the
+# locations, always last. A person is where their current
+# event or work hours put them, unless they've said where they are since
+# it started (Household#member_statuses drops :at then); a pet where it
 # was last reported.
 #
 #   Whereabouts.new(household, members:, statuses:, pets:, pet_statuses:).sections
@@ -28,6 +30,8 @@ class Whereabouts
       section = Section.new(location, people.fetch(location.id, []), pets.fetch(location.id, []))
       section unless section.everyone.empty?
     end
+    # Busiest first; sort_by isn't stable, so the place order breaks ties.
+    placed = placed.each_with_index.sort_by { |section, index| [-section.everyone.size, index] }.map(&:first)
     known = locations.map(&:id)
     elsewhere = Section.new(nil, @members.reject { |m| known.include?(person_location_id(m)) },
                             @pets.reject { |p| known.include?(@pet_statuses[p.id]&.report&.location_id) })

@@ -23,7 +23,7 @@
         <div class="family-now">
           <%= reach_chip(status) %>
           <% if status[:current] %>
-            <p class="person-now"><%= now_line(status[:current], current_user) %></p>
+            <p class="person-now"><%= now_line(status[:current], current_user, place: !moved_on?(status)) %></p>
           <% elsif status[:off] %>
             <p class="person-now">Day off<%= " · #{status[:off].note}" if status[:off].note %></p>
           <% end %>
@@ -55,14 +55,14 @@
 <% else %>
   <% me = @person == current_user
      s = @schedule %>
-  <%= render "tasks/person_header", person: @person, where: @where, at: @schedule.at, now_task: @schedule.now, locations: @locations, schedule: @schedule, status_set: @status_set %>
+  <%= render "tasks/person_header", person: @person, where: @where, at: @at, now_task: @schedule.now, locations: @locations, schedule: @schedule, status_set: @status_set %>
 
   <% if s.now %>
     <div class="now-banner <%= "is-#{s.now.availability}" %>">
       <span class="banner-icon"><%= icon(s.now.timed? ? :clock : :zap) %></span>
       <div>
         <strong><%= me ? "You're on" : "Now" %>: <%= s.now.title_for(current_user) %></strong>
-        <small><% if s.now.timed? %>until <%= clock(s.now.finishes_at) %><% else %>started <%= time_tag_ago(s.now.started_at || s.now.updated_at) %><% end %><%= " · #{s.now.place_name}" if s.now.place_name && s.now.visible_to?(current_user) %></small>
+        <small><% if s.now.timed? %>until <%= clock(s.now.finishes_at) %><% else %>started <%= time_tag_ago(s.now.started_at || s.now.updated_at) %><% end %><%= " · #{s.now.place_name}" if s.now.place_name && s.now.visible_to?(current_user) && !@where&.newer_than?(s.now) %></small>
       </div>
       <%= availability_chip(s.now) %>
     </div>

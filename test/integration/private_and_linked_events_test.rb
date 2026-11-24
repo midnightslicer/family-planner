@@ -58,9 +58,13 @@ class PrivateAndLinkedEventsTest < ActionDispatch::IntegrationTest
   end
 
   test "an event at one of your locations puts you there while it's on" do
-    travel_to Time.zone.local(2026, 11, 22, 14, 0) do
+    # Said they were at the big house before the event began; the event,
+    # newer, puts them at the little one (a report after it began would win).
+    travel_to Time.zone.local(2026, 11, 22, 13, 0) do
       LocationReport.create!(household: @smiths, subject: @admin, reported_by: @admin,
                              location: @smiths.locations.create!(name: "Big house", kind: "house"))
+    end
+    travel_to Time.zone.local(2026, 11, 22, 14, 0) do
       event = Task.create!(household: @smiths, title: "Client meeting", place: "little HOUSE", assigned_to: @admin,
                            starts_at: Time.zone.local(2026, 11, 22, 13, 30), ends_at: Time.zone.local(2026, 11, 22, 15, 0))
       assert_equal @little, event.location

@@ -21,6 +21,12 @@ module ScheduleHelper
     status[:set] || status[:current]
   end
 
+  # Whether they've said where they are since what they're on began, so its
+  # place no longer says where they are (LocationReport#newer_than?).
+  def moved_on?(status)
+    status[:current] && status[:location]&.newer_than?(status[:current])
+  end
+
   # Someone's status chip from their member status: what they set by hand,
   # else what they're on, else Free.
   def reach_chip(status)
@@ -60,11 +66,13 @@ module ScheduleHelper
   # "Meeting · until 3 PM · Town": what's on. A private item reads "Busy ·
   # until 3 PM" to anyone but its people; with no viewer (person cards,
   # which also go to the wall) it always does.
-  def now_line(task, viewer = nil)
+  # "Work · until 3 PM · Office". `place: false` leaves the place out, for
+  # when they've said where they are since it began (moved_on?).
+  def now_line(task, viewer = nil, place: true)
     visible = task.visible_to?(viewer)
     parts = [task.title_for(viewer)]
     parts << "until #{clock(task.finishes_at)}" if task.timed?
-    parts << task.place_name if visible && task.place_name
+    parts << task.place_name if place && visible && task.place_name
     parts.join(" · ")
   end
 
