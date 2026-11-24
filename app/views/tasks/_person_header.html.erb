@@ -63,7 +63,7 @@
                     class: "where-chip#{' is-current' if off}", "aria-pressed": off do %><%= icon(:external) %><span><%= PetsHelper::OFF_PROPERTY %></span><% end %>
     </div>
     <details class="where-more">
-      <summary><%= locations.any? ? "Somewhere else or add a note" : "Say where you are" %></summary>
+      <summary class="where-chip where-more-toggle"><%= icon(:plus) %><span><%= locations.any? ? "Somewhere else or add a note" : "Say where you are" %></span><%= icon(:chevron_down, class: "where-more-chevron") %></summary>
       <%= form_with model: LocationReport.new, url: locate_me_path, method: :post do |f| %>
         <%= render "shared/location_picker", locations: locations, field_name: "location_report[location_id]",
                    new_name_field: "location_report[new_location_name]", selected: where&.location_id, legend: "Where are you?" %>

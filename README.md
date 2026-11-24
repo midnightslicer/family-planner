@@ -101,6 +101,12 @@ bin/setup        # installs gems and npm packages, prepares the database, starts
 Open http://localhost:3000. In development the setup page doesn't ask for a
 code. Mail opens in the browser via letter_opener.
 
+`bin/dev` listens on every interface, and development allows the tailnet
+names `stardrift` and `novacore` (bare or `.ts.net`), so a phone on the
+tailnet can open http://stardrift:3000. Add others to `config.hosts` in
+`config/environments/development.rb`. Passkeys, push and installing the app
+need https, so over plain http use a password.
+
 Tests: `bin/rails test`
 
 ## Backups

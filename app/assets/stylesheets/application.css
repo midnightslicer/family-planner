@@ -2142,8 +2142,12 @@ form:has(.work-days) { max-width: 860px; }
 .status-bar .where-chip.avail-busy.is-current { color: var(--danger); background: var(--danger-bg); border-color: var(--danger); }
 .status-until { flex-basis: 100%; }
 .where-more { flex-basis: 100%; }
-.where-more > summary { display: inline-block; cursor: pointer; font-size: 0.875rem; font-weight: 600; color: var(--accent); }
-.where-more[open] > summary { margin-bottom: 0.75rem; }
+/* A dashed chip, so it reads as one more thing to tap after the places. */
+.where-more > summary { list-style: none; width: fit-content; color: var(--accent); border-style: dashed; background: transparent; }
+.where-more > summary::-webkit-details-marker { display: none; }
+.where-more > summary .where-more-chevron { width: 0.875rem; height: 0.875rem; transition: transform var(--medium) var(--ease-spring); }
+.where-more[open] > summary { margin-bottom: 0.75rem; border-style: solid; background: var(--accent-soft); border-color: var(--accent); }
+.where-more[open] > summary .where-more-chevron { transform: rotate(180deg); }
 .where-more > form {
   background: var(--surface);
   border: 1px solid var(--border);
