@@ -11,8 +11,11 @@ class PeopleController < ApplicationController
 
   # POST /people/me/status: the "I'm" chips on your day. Your own status
   # only (never a person from params); it wins over work and events for
-  # StatusUpdate::LASTS.
+  # StatusUpdate::LASTS. "clear" (tapping the lit chip again) ends it now,
+  # back to what your work hours and events say.
   def set_status
+    return clear_status if params[:availability] == "clear"
+
     update = current_user.status_updates.new(availability: params[:availability].to_s)
     message =
       if update.save
@@ -21,6 +24,15 @@ class PeopleController < ApplicationController
       else { alert: "Pick how reachable you are." }
       end
     redirect_back_or_to tasks_path, **message, status: :see_other, allow_other_host: false
+  end
+
+  def clear_status
+    if (active = StatusUpdate.active_for_user(current_user))
+      # History is append-only: a row that ends at once is the "cleared".
+      current_user.status_updates.create!(availability: active.availability, expires_at: Time.current)
+      current_user.broadcast_card
+    end
+    redirect_back_or_to tasks_path, notice: "Back to your schedule.", status: :see_other, allow_other_host: false
   end
 
   # POST /people/me/location: from the "I'm at" chips on your day (one tap,

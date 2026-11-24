@@ -81,6 +81,27 @@ class StatusTest < ActionDispatch::IntegrationTest
     css_select(".person-card .avail-free").each { |chip| assert_select chip, ".icon-sun" }
   end
 
+  test "tapping the lit chip again goes back to your work hours" do
+    @smiths.update!(time_zone: "Central Time (US & Canada)")
+    @member.update!(work_availability: "busy")
+    @member.work_shifts.create!(weekday: 1, from_time: "09:00", until_time: "17:00", place: "Office")
+    travel_to Time.utc(2026, 11, 23, 16, 0) do
+      post status_me_path, params: { availability: "free" }
+      get tasks_path
+      assert_select ".status-bar .where-chip.is-current", text: "Free"
+      assert_select ".status-bar form:has(.is-current) input[name=availability][value=clear]"
+
+      post status_me_path, params: { availability: "clear" }, headers: { "Referer" => tasks_url }
+      assert_redirected_to tasks_url
+      assert_equal "Back to your schedule.", flash[:notice]
+      get tasks_path
+      assert_select ".status-bar .where-chip.is-current", count: 0
+      get dashboard_path
+      assert_select "#{card}.is-busy .avail-busy" # work's Do not disturb again
+      assert_equal 2, @member.status_updates.count # kept as history
+    end
+  end
+
   test "the wall shows it too" do
     post status_me_path, params: { availability: "busy" }
     get wall_path(@smiths.slug)

@@ -78,17 +78,19 @@
     </details>
   </div>
 
-  <%# How reachable you are, in one tap. Nothing's lit until you set one. %>
+  <%# How reachable you are, in one tap. Nothing's lit until you set one;
+      tapping the lit one again hands back to your work hours and events. %>
   <% set = local_assigns[:status_set] %>
   <div class="where-bar status-bar">
     <span class="where-label"><%= icon(:phone) %>I'm</span>
     <div class="where-chips">
       <% ScheduleHelper::AVAILABILITY.each do |value, (label, icon_name, css)| %>
         <% current = set&.availability == value %>
-        <%= button_to status_me_path, params: { availability: value }, method: :post,
+        <%= button_to status_me_path, params: { availability: current ? "clear" : value }, method: :post,
+                      title: (current ? "Tap again to go back to your schedule" : nil),
                       class: "where-chip #{css}#{' is-current' if current}", "aria-pressed": current do %><%= icon(icon_name) %><span><%= label %></span><% end %>
       <% end %>
     </div>
-    <small class="status-until"><%= set ? "Until #{clock(set.expires_at)}, then back to your schedule" : "Wins over work and events for 12 hours" %></small>
+    <small class="status-until"><%= set ? "Until #{clock(set.expires_at)}, then back to your schedule. Tap it again to go back now." : "Wins over work and events for 12 hours" %></small>
   </div>
 <% end %>
