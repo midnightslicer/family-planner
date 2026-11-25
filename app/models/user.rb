@@ -63,6 +63,9 @@ class User < ApplicationRecord
 
   before_validation :apply_custom_color
   before_validation :normalize_color
+  # A new password also stops every "remember me" cookie (Devise's
+  # remember_token outlives it otherwise); sessions end with the salt.
+  after_update :forget_remembered_devices, if: :saved_change_to_encrypted_password?
 
   # A colour from the palette nobody in the household is using yet, so new
   # people get a distinct card without having to pick one.
@@ -178,12 +181,26 @@ class User < ApplicationRecord
   end
 
   # Lets an admin help someone who lost their phone: clears 2FA and passkeys
-  # so they can get back in with a password reset.
+  # so they can get back in with a password reset, and signs them out
+  # everywhere, the lost phone included.
   def reset_sign_in_security!
     transaction do
       passkeys.destroy_all
       disable_two_factor!
+      sign_out_everywhere!
     end
+  end
+
+  # Every session and "remember me" cookie stops working.
+  def sign_out_everywhere!
+    update_columns(session_token: SecureRandom.hex(16), remember_token: nil, remember_created_at: nil)
+  end
+
+  # Devise keeps this in each session and checks it on every request. It's
+  # the password hash's salt, which a passkey-only account doesn't have, so
+  # session_token is added: changing either ends every session.
+  def authenticatable_salt
+    "#{super}#{session_token}"
   end
 
   # A password reset link an admin can pass on by hand, for boards without
@@ -236,6 +253,10 @@ class User < ApplicationRecord
   def recovery_digest(code)
     normalized = code.to_s.downcase.gsub(/[^a-z2-7]/, "")
     OpenSSL::HMAC.hexdigest("SHA256", Rails.application.secret_key_base, "recovery-code:#{normalized}")
+  end
+
+  def forget_remembered_devices
+    update_columns(remember_token: nil, remember_created_at: nil)
   end
 
   def apply_custom_color

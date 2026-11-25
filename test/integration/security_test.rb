@@ -65,8 +65,10 @@ class SecurityTest < ActionDispatch::IntegrationTest
 
   test "members can't reach the admin area" do
     sign_in @member
-    get admin_users_path
-    assert_response :forbidden
+    [admin_users_path, admin_settings_path, admin_households_path, admin_invitations_path].each do |path|
+      get path
+      assert_response :forbidden, path
+    end
   end
 
   test "members can't edit tasks someone else created" do
@@ -121,5 +123,50 @@ class SecurityTest < ActionDispatch::IntegrationTest
   test "there is no public sign-up route" do
     get "/users/sign_up"
     assert_response :not_found
+  end
+
+  test "photos need a signed-in person, and direct uploads are closed" do
+    sign_in @member
+    patch account_profile_path, params: { user: { avatar: fixture_file_upload("avatar.png", "image/png") } }
+    path = Rails.application.routes.url_helpers.rails_blob_path(@member.reload.avatar, only_path: true)
+    get path
+    assert_response :redirect
+    post rails_direct_uploads_path, params: { blob: { filename: "x.png", byte_size: 1, checksum: "x", content_type: "image/png" } }
+    assert_response :forbidden
+
+    sign_out @member
+    get path
+    assert_response :unauthorized
+  end
+
+  test "a clash with someone's private event doesn't name it to whoever saves" do
+    starts = 2.days.from_now.change(hour: 10)
+    Task.create!(household: @household, title: "Therapy", private: true, created_by: @admin, assigned_to: @admin,
+                 starts_at: starts, ends_at: starts + 1.hour)
+    sign_in @member
+    post tasks_path, params: { task: { title: "Church", assignee_ids: [@admin.id], on_date: starts.to_date.iso8601, from_time: "10:00" } }
+    follow_redirect!
+    assert_select ".flash-notice", text: /Admin User has Busy then/
+    assert_no_match(/Therapy/, response.body)
+    assert_equal "Clashes with Therapy", Task.find_by!(title: "Church").assignment_for(@admin).conflict_note, "her own note names it"
+  end
+
+  test "an admin's security reset signs the person out everywhere" do
+    sign_in @member
+    get root_path
+    assert_response :success
+
+    @member.reset_sign_in_security!
+    get root_path
+    assert_redirected_to new_user_session_path
+  end
+
+  test "a new password forgets every remembered device" do
+    @member.remember_me!
+    assert @member.remember_token
+
+    @member.update!(password: "a-new-password")
+    assert_nil @member.reload.remember_token
+    assert_nil @member.remember_created_at
   end
 end

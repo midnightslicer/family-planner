@@ -18,8 +18,9 @@ class TaskAssignment < ApplicationRecord
 
   # What on `user`'s schedule the task's time clashes with: their other
   # accepted events and their work hours. Returns short labels ("Work",
-  # "Dentist"); empty for to-dos and free slots.
-  def self.conflicts_for(task, user)
+  # "Dentist") as `viewer` may see them (a private event is "Busy"); empty
+  # for to-dos and free slots.
+  def self.conflicts_for(task, user, viewer: user)
     return [] unless task.timed?
 
     from, to = task.starts_at, task.finishes_at
@@ -29,7 +30,7 @@ class TaskAssignment < ApplicationRecord
     places = task.household.locations.to_a
     work = (from.to_date - 1..to.to_date).filter_map { |date| WorkBlock.on(user, date, locations: places) }
                                         .select { |block| block.starts_at < to && block.finishes_at > from }
-    (events.map(&:title) + work.map(&:title)).uniq
+    (events.map { |event| event.title_for(viewer) } + work.map(&:title)).uniq
   end
 
   private

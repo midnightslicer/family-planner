@@ -2,6 +2,8 @@ module Account
   # Changes the password (asking for the current one), or sets a first one
   # for accounts created with a passkey.
   class PasswordsController < BaseController
+    include Devise::Controllers::Rememberable
+
     rate_limit to: 10, within: 10.minutes, only: :update, with: -> {
       redirect_to account_root_path, alert: "Too many attempts. Wait a few minutes and try again."
     }
@@ -9,6 +11,7 @@ module Account
     def update
       @user = current_user
       had_password = @user.password_set?
+      remembered = remember_me_is_active?(@user)
       saved =
         if had_password
           @user.update_with_password(params.require(:user).permit(:current_password, :password))
@@ -17,8 +20,10 @@ module Account
         end
 
       if saved
-        # Changing the password rotates the session salt; stay signed in here.
+        # Changing the password rotates the session salt and forgets every
+        # remembered device (User); stay signed in, and remembered, here.
         bypass_sign_in(@user)
+        remember_me(@user) if remembered
         redirect_to account_root_path, notice: had_password ? "Password changed." : "Password set."
       else
         load_account_page

@@ -69,7 +69,8 @@ class TaskAssigner
       notify(user, "#{actor.display_name} added you to #{task.title_for(user)}#{when_text}") if fresh
     else
       assignment.update!(status: "pending", conflict_note: "Clashes with #{clashes.to_sentence}")
-      @waiting << [user, clashes]
+      # The summary is the actor's to read: someone's private event is "Busy".
+      @waiting << [user, TaskAssignment.conflicts_for(task, user, viewer: actor)]
       # Waiting on their answer: urgent, so it gets through quiet hours.
       notify(user, "#{actor.display_name} asked you to #{task.title_for(user)}#{when_text}.",
              body: "It clashes with #{clashes.to_sentence}: accept or decline on your day.", urgent: true)
