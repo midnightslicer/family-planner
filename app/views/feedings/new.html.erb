@@ -4,7 +4,7 @@
 
 <% feedable = @pets.select { |pet| @statuses.fetch(pet.id).tracks_meals? } %>
 <% if feedable.empty? %>
-  <p class="empty-hint"><%= icon(:paw) %>No pets to feed. <%= link_to "Add a pet", new_pet_path %> and set how many meals they get.</p>
+  <p class="empty-hint"><%= icon(:paw) %><span>No pets to feed. <%= link_to "Add a pet", new_pet_path %> and set how many meals they get.</span></p>
 <% else %>
   <%= render "shared/form_errors", object: @check_in %>
   <%= form_with url: feedings_path, method: :post, class: "form-card form-card-wide",

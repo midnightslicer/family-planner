@@ -844,8 +844,13 @@ input[type="radio"]:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 .form-card + h2,
+.table-wrap + h2,
 .form-card + .table-wrap { margin-top: 2.5rem; }
 h2 + .table-wrap { margin-top: 1rem; }
+.form-card + .form-card { margin-top: 1rem; }
+/* A select in a table row (who lives where) keeps room for a name: the
+   table scrolls sideways on a phone rather than squeezing it to a letter. */
+td select { min-width: 10rem; }
 
 table {
   width: 100%;
@@ -2331,6 +2336,10 @@ form[aria-busy="true"] .btn {
   .household-switch { order: 4; width: 100%; }
   .household-switch select { width: 100%; }
 
+  /* iOS zooms into any field under 16px when it's focused: the compact
+     ones (table selects, copy fields, inline forms) go full size here. */
+  html :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"]), select, textarea) { font-size: 1rem; }
+
   .container { padding-top: 1.5rem; padding-bottom: calc(3rem + var(--tab-bar-h, 0px) + env(safe-area-inset-bottom, 0px)); }
 
   /* A phone has no width to spare for boxes in boxes: a slimmer card, and
@@ -2347,7 +2356,8 @@ form[aria-busy="true"] .btn {
   .sticky-actions .btn-wide { flex: 1; min-width: 0; }
   .pick-grid { grid-template-columns: repeat(auto-fill, minmax(6.25rem, 1fr)); }
   .quick-add-row .btn span { display: none; }
-  .sched-time { min-width: 4.5rem; white-space: normal; }
+  /* Wraps (a day before the time) rather than squeezing the title. */
+  .sched-time { flex: 0 0 5rem; min-width: 0; white-space: normal; }
   .sched-actions { opacity: 1; }
   .work-day { grid-template-columns: 1fr 1fr; }
   .work-day-name { grid-column: 1 / -1; }

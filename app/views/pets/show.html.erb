@@ -69,7 +69,7 @@
     <% if @pet.feeding_notes.present? %>
       <div class="feeding-notes"><%= simple_format(@pet.feeding_notes) %></div>
     <% else %>
-      <p class="empty-hint">No feeding notes. <%= link_to "Add some", edit_pet_path(@pet) %> so whoever feeds <%= @pet.name %> knows what to do.</p>
+      <p class="empty-hint"><span>No feeding notes. <%= link_to "Add some", edit_pet_path(@pet) %> so whoever feeds <%= @pet.name %> knows what to do.</span></p>
     <% end %>
     <% if @status.tracks_meals? %>
       <div class="form-actions">

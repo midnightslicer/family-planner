@@ -3,7 +3,7 @@
 <p class="page-intro">Pick the pets, pick the place. They stay there on the board until someone reports them somewhere else.</p>
 
 <% if @pets.empty? %>
-  <p class="empty-hint"><%= icon(:paw) %>No pets yet. <%= link_to "Add a pet", new_pet_path %> first.</p>
+  <p class="empty-hint"><%= icon(:paw) %><span>No pets yet. <%= link_to "Add a pet", new_pet_path %> first.</span></p>
 <% else %>
   <%= render "shared/form_errors", object: @check_in %>
   <%= form_with url: pet_locations_path, method: :post, class: "form-card form-card-wide",

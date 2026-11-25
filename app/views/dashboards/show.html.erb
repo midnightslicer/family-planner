@@ -48,5 +48,5 @@
 </div>
 
 <% if @members.size == 1 && current_user.admin? %>
-  <p class="empty-hint"><%= icon(:user_plus) %>It's just you so far. <%= link_to "Invite your family", new_admin_invitation_path %> to fill the board.</p>
+  <p class="empty-hint"><%= icon(:user_plus) %><span>It's just you so far. <%= link_to "Invite your family", new_admin_invitation_path %> to fill the board.</span></p>
 <% end %>
