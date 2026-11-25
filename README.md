@@ -38,9 +38,9 @@ Optional settings go in a `.env` file next to `compose.yml`:
 
 | Variable | What it does |
 | --- | --- |
-| `APP_URL` | Public address used in email links, e.g. `https://status.example.com` |
-| `FORCE_SSL=true` | Set when a reverse proxy serves the app over https |
-| `APP_HOSTS` | Extra hostnames to accept (comma separated), e.g. a LAN name |
+| `APP_URL` | Public address used in email links, e.g. `https://status.example.com`; its host is then the only one accepted (plus `APP_HOSTS`) |
+| `FORCE_SSL=true` | Set when a reverse proxy serves the app over https. Compose defaults to `false` (plain http on a LAN, so cookies aren't https-only) |
+| `APP_HOSTS` | Extra hostnames to accept (comma separated), e.g. a LAN name. With neither this nor `APP_URL` set, any Host header is accepted |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | Email, if you'd rather not enter it in Admin > Settings |
 | `APP_NAME` | Board name before setup names it |
 | `VAPID_PRIVATE_KEY`, `VAPID_PUBLIC_KEY` | Push notification keys (base64url, as printed by any web-push key generator). Optional: without them a key pair is generated into `storage/.vapid_key` on first use |
@@ -81,14 +81,35 @@ Admin > Settings also shows whether push and email are working.
 
 1. Point a DNS name at the server.
 2. In `config/deploy.yml`, fill in the three `CHANGE ME` lines (server, host,
-   registry) and set `APP_URL`.
+   registry) and set `APP_URL` to `https://` and that name. `APP_URL` is
+   also what turns on Host header checking.
 3. Export `KAMAL_REGISTRY_PASSWORD` (a registry token), then run
    `bin/kamal setup`. Kamal installs Docker, gets a Let's Encrypt
    certificate and boots the app.
 4. `bin/kamal setup-code` prints the setup code. Open your domain and finish
    setup in the browser.
 
-Later deploys are `bin/kamal deploy`.
+Later deploys are `bin/kamal deploy`; migrations run by themselves when the
+container starts.
+
+Before you rely on it:
+
+- **Keep the `family_status_storage` volume.** It holds the database,
+  photos and `.secret_key_base`, which signs sessions and links and
+  encrypts two-step secrets and the SMTP password. Lose or change the
+  secret and everyone is signed out and those have to be set up again.
+  If you set `SECRET_KEY_BASE` yourself instead, never change it.
+- **Leave `FORCE_SSL` alone** (it defaults to on in production). kamal-proxy
+  serves https (`proxy: ssl: true`), and the app then keeps cookies
+  https-only and sends HSTS.
+- **Run one app server.** It's SQLite: don't add a second host to `web`.
+- **Make a backup** (below) once you've set up, and before upgrades.
+
+What to expect: anyone with an account stays signed in (30 days on a
+device they ticked "Keep me signed in" on), so a wall tablet never
+times out. Too many sign-in tries from one address are slowed down;
+accounts are never locked. Admins are admins of the whole server: run
+one per family.
 
 ## Run it locally for development
 
@@ -110,7 +131,8 @@ https://<machine>.<tailnet>.ts.net (tailnet only; `tailscale serve --https=443 o
 stops it). Passkeys belong to the address they were made on, so add one
 there; ones made on localhost don't carry over.
 
-Tests: `bin/rails test`
+Tests: `bin/rails test` (with the Ruby from `.ruby-version`); `bin/ci`
+also runs the linters and security checks.
 
 ## Backups
 
@@ -156,4 +178,7 @@ complete backup, secrets included.
   email isn't set up, an admin can make a reset link under Admin > People.
 - **Lost the phone with the passkey or authenticator app:** use a recovery
   code, or ask an admin to use "Reset sign-in" under Admin > People, which
-  removes passkeys and two-step verification so a password reset gets you in.
+  removes passkeys and two-step verification and signs you out everywhere
+  (the lost phone too), so a password reset gets you in.
+- **Changing or resetting a password** signs you out on every other
+  device, including ones kept signed in.

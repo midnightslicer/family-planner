@@ -46,7 +46,7 @@ server; see `Backup` below).
 ## Where things live
 
 - `app/models/`: `User` (Devise + `color`, `admin`, TOTP fields,
-  `webauthn_id`), `Passkey` (WebAuthn public keys), `Household`
+  `webauthn_id`, `session_token`: see Security model), `Passkey` (WebAuthn public keys), `Household`
   (`slug`, from its name and editable by an admin, is its wall URL; `member_statuses` loads every
   card's tasks in one query; `broadcast_member_cards`, batched per request by
   `Household.batching_cards`; `board_members` and `places` load the people,
@@ -71,7 +71,9 @@ server; see `Backup` below).
   notifications after commit), `TaskAssignment` (who an item is for: `accepted`,
   `pending` when it clashed with their schedule, or `declined`; several
   people can share one item, and none means "for anyone";
-  `conflicts_for` checks their events and work hours), `TaskAssigner`
+  `conflicts_for(task, user, viewer:)` checks their events and work hours,
+  labelled as the viewer may see them: `TaskAssigner` passes the saver, so
+  someone's private event reads "Busy"), `TaskAssigner`
   (places people on save, notifies them, and writes the flash that says
   what happened), `PersonSchedule` (one person's now / to-dos / today /
   later / done / waiting for their OK / following up; `PersonSchedule.for_family`
@@ -140,7 +142,8 @@ server; see `Backup` below).
 - `app/assets/stylesheets/application.css`: all app styling, plus
   `kiosk.css`, whose every rule is scoped to `body.kiosk` (the wall view).
   Both are served by Propshaft; `stylesheet_link_tag :app` in the layouts
-  picks up every file in the directory. The class vocabulary is the contract
+  picks up every file in the directory. On a phone every text input,
+  select and textarea is at least 1rem, or iOS zooms in on focus. The class vocabulary is the contract
   with the views — reuse it, don't invent new classes:
   - shell: `nav`/`nav-inner`/`nav-brand`/`nav-links`/`nav-user`, the account
     menu `user-menu` > `user-menu-button` (> `nav-avatar`) + `user-menu-panel`
@@ -226,7 +229,9 @@ server; see `Backup` below).
     the `celebrate` Stimulus controller. Motion uses the `--ease-*`, `--fast`,
     `--medium` tokens; entrance animations use fill-mode `backwards`, never
     `both`, or the held end frame blocks hover transforms.
-  - utilities: `visually-hidden`, `btn-block`, `empty-hint`, `section-title`.
+  - utilities: `visually-hidden`, `btn-block`, `empty-hint` (an icon, then
+    text; text with a link goes in one `<span>` so it wraps as a line),
+    `section-title`.
     `[hidden]` is forced to `display: none` because `.btn` sets a display.
   `button_to` renders a `<form>`; inside a flex row the wrapping form is set
   to `display: contents` so the button itself lays out. Add new action rows to
@@ -358,7 +363,8 @@ server; see `Backup` below).
   production shipping (Kamal 2, Thruster on port 3000 in front of Puma on
   3001, Solid Queue inside Puma). The entrypoint generates
   `storage/.secret_key_base` on first boot when neither `SECRET_KEY_BASE`
-  nor `RAILS_MASTER_KEY` is set.
+  nor `RAILS_MASTER_KEY` is set, then runs `bin/rails db:prepare` (so
+  migrations run on every boot).
 
 ## Conventions
 
@@ -382,7 +388,7 @@ server; see `Backup` below).
   save), `days_off`. Where someone was because of an event comes from the
   task's time, people and `location_id`.
 - **Household scoping is mandatory** on every task query: filter by
-  `Current.household.id` (the wall too: the token only picks one of your households). Non-members get
+  `Current.household.id` (the wall too: the slug only picks one of your households). Non-members get
   404, not 403: call `not_found` (ApplicationController), not `head :not_found`, so a
   browser gets `public/404.html` (also Rails's page for unknown routes) and fetch/Turbo
   Stream requests an empty 404.
@@ -435,6 +441,38 @@ server; see `Backup` below).
 - Per-user color arrives as inline `--user-color` / `--user-fg` on
   `.person-card`; accents use `color-mix(...)`, so don't hardcode hexes.
 
+## Security model
+
+- Open without sign-in, on purpose: `/up`; `/manifest.webmanifest`,
+  `/service-worker.js`, `/h/:slug/manifest.webmanifest`; `/setup` (first
+  run only, behind the setup code outside development); Devise sign-in/out
+  and password reset (rate limited; no sign-up route); `/users/two_factor`
+  (only with a pending password step); passkey sign-in;
+  `/invitations/:token`; `/notifications/unsubscribe/:token`; `POST
+  /push_subscriptions/renew` (authorised by the old endpoint). Everything
+  else, `/h/:slug`, Action Cable and Active Storage included, needs sign-in.
+- Sessions: `User#authenticatable_salt` adds `session_token` to the
+  password salt, so `sign_out_everywhere!` (rotates it, clears the
+  remember-me columns) ends every session and remembered device. Admin
+  "Reset sign-in" (`reset_sign_in_security!`) calls it; a password change
+  or reset forgets remembered devices (`after_update`), and
+  `Account::PasswordsController` re-remembers the current one. No idle
+  timeout, by design (the wall tablet stays signed in; remember-me lasts
+  30 days).
+- Rate limits are per IP (the two-step code per pending sign-in) and live
+  in Solid Cache in production; there's no per-account lockout, by design.
+- `admin` is app-wide: one family per server.
+- Logs filter push keys and endpoints (`p256dh`, `auth`, `endpoint`) along
+  with the usual secrets (`config/initializers/filter_parameter_logging.rb`).
+- Production (`config/environments/production.rb`): `FORCE_SSL` defaults
+  to true (secure cookies, HSTS, `assume_ssl` behind kamal-proxy);
+  `FORCE_SSL=false`, as `compose.yml` defaults to for plain LAN http, means
+  non-secure cookies. `APP_URL` and/or `APP_HOSTS` turn on host
+  authorization (`/up` excluded); without either, Host headers aren't
+  checked. `SECRET_KEY_BASE` (or `storage/.secret_key_base`) must persist:
+  it signs sessions, stream names and unsubscribe links and derives the
+  encryption keys.
+
 ## Gotchas
 
 - The colour picker's swatches post `user[color]`; the custom hex box posts
@@ -451,7 +489,8 @@ server; see `Backup` below).
   allows `data:` but not `blob:` (a blob preview silently shows nothing). There
   is no server-side image library, so no variants and analyzers are off;
   `SmallPhoto` only accepts JPEG/PNG/WebP (sniffed, not trusted) up to 2 MB.
-  Photo URLs are signed blob links.
+  Photo URLs are signed blob links that also need sign-in, and direct
+  uploads are closed (`config/initializers/active_storage.rb`).
 
 - Active Record encryption keys come from credentials if present, otherwise
   they're derived from `SECRET_KEY_BASE` (see `config/application.rb`). So
@@ -462,7 +501,11 @@ server; see `Backup` below).
 - Live updates use Turbo Streams: pages subscribe with
   `turbo_stream_from household, :members` (cards) and
   `turbo_stream_from current_user, :notifications`. Stream names are signed,
-  and Action Cable refuses anonymous connections. Broadcasts render
+  Action Cable refuses anonymous connections, and a subscription is only
+  accepted for one of the connected person's households or their own
+  notifications (`ApplicationCable::StreamAuthorization`, prepended to
+  `Turbo::StreamsChannel` in `config/initializers/turbo_streams.rb`): a new
+  stream needs adding to its allow-list. Broadcasts render
   synchronously and never raise into the request: in `after_commit`, except
   person cards, which every request collects (`ApplicationController`'s
   `batch_card_broadcasts`) and sends once per person when it ends, even if
@@ -475,7 +518,7 @@ server; see `Backup` below).
 - Every request runs on the household's clock: `households.time_zone`
   (Rails zone name, set by an admin on the household page), applied by
   `ApplicationController#use_household_time_zone` with `Time.use_zone`;
-  the wall uses its token's household. Work hours, "today", "fed today"
+  the wall uses its slug's household. Work hours, "today", "fed today"
   and every time shown follow it. Until it's set, the browser's own zone
   (the `tz` cookie from `application.js`) is used, then UTC.
 - Every notification rides the `[user, :notifications]` stream (in-page
@@ -493,13 +536,19 @@ server; see `Backup` below).
 ## Testing
 
 ```sh
-bin/rails test              # unit/integration tests
+bin/rails test              # the whole suite (344 runs), with the Ruby in .ruby-version
+bin/ci                      # rubocop, bundler-audit, npm audit, brakeman, tests, seeds
 docker compose up --build   # smoke: setup page on localhost:3000, code in the logs
 ```
 
-`test/support/fake_authenticator.rb` is a software passkey that signs real
-WebAuthn responses; `register_passkey` / `sign_in_with_passkey` in
-`test_helper.rb` drive the endpoints with it.
+Tests live in `test/models`, `test/integration`, `test/channels` (stream
+authorisation), `test/jobs`, `test/mailers` and `test/lib`. Helpers in
+`test_helper.rb`: `push_keys` (a browser's `p256dh`/`auth`, every test);
+`FakePushService` (push HTTP, through `PushSubscription.transport`); and
+for integration tests `card(user)` (the selector for someone's person
+card) and `dom_id`. `test/support/fake_authenticator.rb` is a software
+passkey that signs real WebAuthn responses; `register_passkey` /
+`sign_in_with_passkey` drive the endpoints with it.
 `test/integration/backup_test.rb` runs without transactions (a restore
 replaces the whole database): it wipes the tables to stand in for a fresh
 server and resets the fixture cache in teardown so the next test reloads

@@ -6,9 +6,12 @@ notifications on the lock screen even when the app is closed. Each person
 chooses, per kind of update, whether it reaches them by **push**, **email**,
 both or neither. No Android or iOS native apps.
 
-This file has: what's true today, the decisions, the phased work (each phase
-shippable on its own), what's deliberately out of scope, and the steps only
-the owner can do.
+This file has: what was true when it was written, the decisions, the
+phased work (each phase shippable on its own), what's deliberately out of
+scope, and the steps only the owner can do. All of it is built: section 8
+has the status and what's left to test on devices. For how the code works
+now, AGENTS.md is the map; sections 1 to 3 describe the app as it was
+before this work.
 
 ## 1. Where things stand
 
@@ -621,8 +624,8 @@ Also unverified anywhere:
 
 ### Gotchas for the next agent
 
-- Ruby is pinned to 4.0.x (`.ruby-version` says 4.0.10; 4.0.3 works). In
-  rbenv: `RBENV_VERSION=4.0.3`, bundler 4.1.0.
+- Ruby is pinned to 4.0.10 (`.ruby-version`); `bin/rails` fails under a
+  system Ruby without the gems, so put that Ruby first on `PATH` (mise).
 - Minitest 6 has no `stub`, and the lockfile shouldn't change: push HTTP
   is faked with `FakePushService` (test_helper) through
   `PushSubscription.transport`; `PushKeys.stub_unavailable` turns push off
@@ -655,6 +658,7 @@ Also unverified anywhere:
 2. Ask the owner about: the icons, the category defaults (owner step 5),
    whether the digest should include overdue to-dos, and the 12-character
    short name ("Family Status" becomes "FamilyStatus" under the icon).
-3. Still out of scope (section 4): the phone UX pass, batched email, a
-   "hide details on lock screen" option, pet-not-fed nudges.
+3. Still out of scope (section 4): batched email, a "hide details on lock
+   screen" option, pet-not-fed nudges. The phone UX pass has since landed
+   separately (bottom tab bar, 1rem inputs, slimmer forms).
 

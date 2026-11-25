@@ -1,5 +1,18 @@
 # family-status-plan
 
+> **Historical: the original v1 plan, kept for its reasoning.** The app has
+> moved on, so don't build from it; AGENTS.md describes the code as it is.
+> The main departures: live updates are Turbo Streams over Action Cable
+> (no SSE); the wall `/h/:slug` needs a signed-in member (no public token
+> URL); there are no handles (people go by their name); the dashboard is
+> `/`, not `/dashboard`; items can belong to several people through
+> `task_assignments` (no `assigned_to_id`); sign-up is off by disabling
+> Devise `:registerable` (no overridden registrations controller); secrets
+> are generated on first boot onto the storage volume (no credentials or
+> master key needed); backups are built in (Admin > Backup); notifications
+> are Web Push and email (see PWA_PLAN.md); and there are pets, places,
+> passkeys and two-step verification.
+
 ## Context
 
 Build a multi-household family status app on Ruby on Rails + SQLite: each person logs in with their own account, manages tasks (including recurring ones), and everyone sees a live, auto-updating dashboard of who is busy — ideal for a wall-mounted iPad or the browser home page. First account is created through an initial settings/setup wizard and becomes the admin; all other accounts join only via email invitation. One instance can serve many households; household switchers appear wherever membership is relevant. Deployment is Docker/Kamal, with SMTP wired for password resets, invitations, and future status emails.
