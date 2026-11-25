@@ -8,8 +8,6 @@ class PrivateAndLinkedEventsTest < ActionDispatch::IntegrationTest
     @little = @smiths.locations.create!(name: "Little house", kind: "house")
   end
 
-  def card(user) = "##{ActionView::RecordIdentifier.dom_id(user, :person_card)}"
-
   test "others see a private event only as busy, with its availability" do
     travel_to Time.zone.local(2026, 11, 22, 14, 0) do
       Task.create!(household: @smiths, title: "Therapy", place: "Dr. Lee", assigned_to: @admin, created_by: @admin,
@@ -43,18 +41,13 @@ class PrivateAndLinkedEventsTest < ActionDispatch::IntegrationTest
     assert secret.reload.planned?
   end
 
-  test "you see your own private items in full" do
-    Task.create!(household: @smiths, title: "Buy Mom's present", assigned_to: @member, created_by: @member, private: true)
+  test "the private box saves from the form, and you see your own private items in full" do
     sign_in @member
+    post tasks_path, params: { task: { title: "Buy Mom's present", assignee_ids: [@member.id], private: "1" } }
+    assert Task.find_by!(title: "Buy Mom's present").private?
     get tasks_path
     assert_select ".sched-title", text: "Buy Mom's present"
     assert_select ".sched-title .private-mark"
-  end
-
-  test "the private box saves from the form" do
-    sign_in @member
-    post tasks_path, params: { task: { title: "Doctor", assignee_ids: [@member.id], private: "1" } }
-    assert Task.find_by!(title: "Doctor").private?
   end
 
   test "an event at one of your locations puts you there while it's on" do
@@ -71,13 +64,13 @@ class PrivateAndLinkedEventsTest < ActionDispatch::IntegrationTest
 
       sign_in @member
       get root_path
-      assert_select "##{ActionView::RecordIdentifier.dom_id(@little, :board_place)} #{card(@admin)} .person-now", text: "Client meeting · until 3 PM"
+      assert_select "##{dom_id(@little, :board_place)} #{card(@admin)} .person-now", text: "Client meeting · until 3 PM"
 
       get tasks_path(person: @admin.id)
       assert_select ".day-where", text: /Little house · until 3 PM/
 
       get locations_path
-      assert_select "##{ActionView::RecordIdentifier.dom_id(@little)} .here-now", text: /Admin User/
+      assert_select "##{dom_id(@little)} .here-now", text: /Admin User/
     end
 
     travel_to Time.zone.local(2026, 11, 22, 16, 0) do

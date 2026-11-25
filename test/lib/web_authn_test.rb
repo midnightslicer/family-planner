@@ -31,14 +31,10 @@ class WebAuthnTest < ActiveSupport::TestCase
     assert_equal @authenticator.key.public_to_der, registration.public_key
   end
 
-  test "registration rejects a replayed or foreign challenge" do
-    response = @authenticator.create(challenge: "one")
-    assert_raises(WebAuthn::Error) { @rp.verify_registration(response, challenge: "two") }
-  end
-
-  test "registration rejects the wrong origin, rp id, type or missing verification" do
+  test "registration rejects a foreign challenge, the wrong origin, rp id, type or missing verification" do
     challenge = "c"
     [
+      @authenticator.create(challenge: "replayed"),
       @authenticator.create(challenge: challenge, origin: "https://evil.example"),
       @authenticator.create(challenge: challenge, rp_id: "evil.example"),
       @authenticator.create(challenge: challenge, type: "webauthn.get"),

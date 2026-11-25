@@ -8,8 +8,13 @@ module ActiveSupport
     # Run tests in parallel with specified workers
     parallelize(workers: :number_of_processors)
 
-    # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
     fixtures :all
+
+    # The keys a browser sends with a push subscription.
+    def push_keys(browser = OpenSSL::PKey::EC.generate("prime256v1"))
+      { p256dh: WebPush::Base64Url.encode(browser.public_key.to_octet_string(:uncompressed)),
+        auth: WebPush::Base64Url.encode(SecureRandom.random_bytes(16)) }
+    end
   end
 end
 
@@ -74,6 +79,10 @@ ActionDispatch::Integration::Session.prepend(ResetCurrentAfterRequest)
 
 class ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
+  include ActionView::RecordIdentifier
+
+  # CSS selector for someone's card on the board, wall or family view.
+  def card(user) = "##{dom_id(user, :person_card)}"
 
   # Integration requests go to http://www.example.com, so that's the origin
   # and RP ID a browser would use for passkeys here.

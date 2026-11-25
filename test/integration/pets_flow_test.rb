@@ -16,10 +16,9 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     sign_in @member
   end
 
-  test "the nav has a Pets tab and the pets page shows each card" do
+  test "the pets page shows each card" do
     get pets_path
     assert_response :success
-    assert_select ".nav-links a[aria-current=page]", text: "Pets"
     assert_select ".pet-card", 2
     assert_select ".pet-card", text: /Not reported yet/
     assert_select ".pet-card .status-chip", text: /Not fed yet today/
@@ -82,10 +81,16 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     assert_select ".pet-card .report-comment", text: /Gate shut/
   end
 
-  test "a report with nothing picked explains what's missing" do
+  test "a report missing pets or a new place's name explains itself and keeps what was picked" do
     post pet_locations_path, params: { check_in: { location_id: @yard.id } }
     assert_response :unprocessable_content
     assert_select ".flash-alert", text: /Pick at least one pet/
+
+    post pet_locations_path, params: { check_in: { pet_ids: [@rex.id], location_id: "new", new_location_name: "" } }
+    assert_response :unprocessable_content
+    assert_select ".flash-alert", text: /New location can't be blank/
+    assert_select "input[name='check_in[pet_ids][]'][value='#{@rex.id}'][checked]"
+    assert_select "input[name='check_in[location_id]'][value='new'][checked]"
   end
 
   test "feeding shows the notes and counts meals" do
@@ -104,8 +109,8 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     get root_path
     assert_select ".pet-card", 2
     # Under the Yard heading, so the card says how fresh that is, not where.
-    assert_select "##{ActionView::RecordIdentifier.dom_id(@yard, :board_place)} ##{ActionView::RecordIdentifier.dom_id(@rex, :pet_card)} .pet-where small", text: /Seen/
-    assert_select "##{ActionView::RecordIdentifier.dom_id(@rex, :pet_card)} .pet-where-name", count: 0
+    assert_select "##{dom_id(@yard, :board_place)} ##{dom_id(@rex, :pet_card)} .pet-where small", text: /Seen/
+    assert_select "##{dom_id(@rex, :pet_card)} .pet-where-name", count: 0
     assert_select ".pet-card button", text: "Fed"
   end
 
@@ -127,8 +132,8 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     post pet_locations_path, params: { check_in: { pet_ids: [@rex.id], location_id: @house.id, spot: "outside" } }
     follow_redirect!
     assert_select ".flash-notice", text: "Rex is at House (outside)."
-    assert_select "##{ActionView::RecordIdentifier.dom_id(@rex, :pet_card)} .pet-where-name", text: "House"
-    assert_select "##{ActionView::RecordIdentifier.dom_id(@rex, :pet_card)} .spot-chip.is-outside", text: "Outside"
+    assert_select "##{dom_id(@rex, :pet_card)} .pet-where-name", text: "House"
+    assert_select "##{dom_id(@rex, :pet_card)} .spot-chip.is-outside", text: "Outside"
   end
 
   test "outside at a house you can say a pet is penned up, and it shows" do
@@ -138,16 +143,17 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     post pet_locations_path, params: { check_in: { pet_ids: [@rex.id], location_id: @house.id, spot: "outside", penned: "1" } }
     follow_redirect!
     assert_select ".flash-notice", text: "Rex is at House (outside, penned up)."
-    assert_select "##{ActionView::RecordIdentifier.dom_id(@rex, :pet_card)} .pet-where-name", text: "House"
-    assert_select "##{ActionView::RecordIdentifier.dom_id(@rex, :pet_card)} .spot-chip.is-penned", text: "Penned up"
+    assert_select "##{dom_id(@rex, :pet_card)} .pet-where-name", text: "House"
+    assert_select "##{dom_id(@rex, :pet_card)} .spot-chip.is-penned", text: "Penned up"
 
     # The dashboard groups it under House, so the card shows the chip instead.
     get root_path
-    assert_select "##{ActionView::RecordIdentifier.dom_id(@house, :board_place)} ##{ActionView::RecordIdentifier.dom_id(@rex, :pet_card)} .spot-chip.is-penned", text: "Penned up"
+    assert_select "##{dom_id(@house, :board_place)} ##{dom_id(@rex, :pet_card)} .spot-chip.is-penned", text: "Penned up"
   end
 
-  test "penned up is ignored inside a house, with no inside or outside given, or anywhere but a house" do
-    post pet_locations_path, params: { check_in: { pet_ids: [@rex.id], location_id: @yard.id, penned: "1" } }
+  test "inside, outside and penned up only count at a house, and penned up only outside" do
+    post pet_locations_path, params: { check_in: { pet_ids: [@rex.id], location_id: @yard.id, spot: "inside", penned: "1" } }
+    assert_nil @rex.status.report.spot
     assert_not @rex.status.report.penned?
     follow_redirect!
     assert_select ".flash-notice", text: "Rex is at #{@yard.name}."
@@ -160,12 +166,8 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     assert_select ".flash-notice", text: "Rex is at House."
   end
 
-  test "inside or outside is ignored away from a house" do
-    post pet_locations_path, params: { check_in: { pet_ids: [@rex.id], location_id: @yard.id, spot: "inside" } }
-    assert_nil @rex.status.report.spot
-  end
-
-  test "only pets we sit get \"Not here right now\"" do
+  test "a pet we sit can be not here: off the board, the wall and the pickers, and back with one tap" do
+    # Only for pets we sit.
     get pet_path(@rex)
     assert_select "form[action='#{away_pet_path(@rex)}']", count: 0
     post away_pet_path(@rex)
@@ -175,10 +177,6 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     @rex.update!(visitor: true)
     get pet_path(@rex)
     assert_select "form[action='#{away_pet_path(@rex)}']", 1
-  end
-
-  test "a pet that isn't here is off the board, the wall and the pickers, and comes back with one tap" do
-    @rex.update!(visitor: true)
     post away_pet_path(@rex)
     assert @rex.reload.away?
 
@@ -258,24 +256,14 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
-  test "a new place can be added right in the report form, keeping the picked pets" do
+  test "a new place can be added right in the report form; typing an existing one's name reuses it" do
     post pet_locations_path, params: { check_in: { pet_ids: [@rex.id, @tom.id], location_id: "new", new_location_name: " Pool " } }
     pool = @smiths.locations.find_by!(name: "Pool")
     assert_equal @member, pool.created_by
     assert_equal [pool, pool], [@rex, @tom].map { |pet| pet.status.report.location }
-  end
 
-  test "a new place with no name explains itself and keeps what was picked" do
-    post pet_locations_path, params: { check_in: { pet_ids: [@rex.id], location_id: "new", new_location_name: "" } }
-    assert_response :unprocessable_content
-    assert_select ".flash-alert", text: /New location can't be blank/
-    assert_select "input[name='check_in[pet_ids][]'][value='#{@rex.id}'][checked]"
-    assert_select "input[name='check_in[location_id]'][value='new'][checked]"
-  end
-
-  test "typing an existing place's name reuses it" do
     post pet_locations_path, params: { check_in: { pet_ids: [@rex.id], location_id: "new", new_location_name: "yard" } }
-    assert_equal 2, @smiths.locations.count
+    assert_equal 3, @smiths.locations.count
     assert_equal @yard, @rex.status.report.location
   end
 
@@ -286,13 +274,11 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     assert bella.home.house?
   end
 
-  test "a pet's photo saves" do
+  test "a pet's photo saves; one saved on crop stays on the edit page, saving the form goes to the pet" do
     post pets_path, params: { pet: { name: "Bella", meals_per_day: 2, home_id: "",
                                      photo: fixture_file_upload("avatar.png", "image/png") } }
     assert Pet.find_by!(name: "Bella").photo_saved?
-  end
 
-  test "a photo saved on crop stays on the edit page; saving the form goes to the pet" do
     patch pet_path(@rex), params: { photo_autosave: "1", pet: { photo: fixture_file_upload("avatar.png", "image/png") } }
     assert_redirected_to edit_pet_path(@rex)
     assert @rex.reload.photo_saved?

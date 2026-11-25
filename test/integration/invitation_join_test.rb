@@ -10,18 +10,20 @@ class InvitationJoinTest < ActionDispatch::IntegrationTest
     Invitation.create!(email: email, household: @household, invited_by: @admin)
   end
 
-  test "joining with a password creates the account and membership" do
+  test "joining with a password creates the account and membership, with the colour picked" do
     invitation = invite
     get invitation_path(invitation.raw_token)
     assert_response :success
     assert_select "input[name='user[email]'][readonly][value=?]", "sam@example.com"
+    assert_select "input[name='user[custom_color]']:not([value])"
 
     post join_invitation_path(invitation.raw_token),
-         params: { user: { display_name: "Sam", email: "hacker@example.com", password: "long enough pw", color: "#22c55e" } }
+         params: { user: { display_name: "Sam", email: "hacker@example.com", password: "long enough pw", color: "#f97316", custom_color: "" } }
     assert_redirected_to root_path
 
     user = User.find_by!(email: "sam@example.com")
     assert user.member_of?(@household)
+    assert_equal "#f97316", user.color
     assert invitation.reload.accepted?
   end
 

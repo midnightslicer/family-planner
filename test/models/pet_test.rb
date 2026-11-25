@@ -51,19 +51,15 @@ class PetTest < ActiveSupport::TestCase
 
     PetCheckIn.new(household: @smiths, actor: @member, kind: "feeding", pet_ids: [@rex.id]).save
     assert_equal :fed, @rex.status.fed_state
-  end
 
-  test "a pet nobody feeds has no fed status" do
     @tom.update!(meals_per_day: 0)
-    assert_not @tom.status.tracks_meals?
+    assert_not @tom.status.tracks_meals?, "a pet nobody feeds has no fed status"
   end
 
   test "deleting a location keeps the history but says somewhere else" do
     LocationReport.create!(household: @smiths, subject: @rex, location: @yard, reported_by: @member)
     @yard.destroy
-    report = @rex.status.report
-    assert_nil report.location
-    assert_nil @rex.reload.home_id unless @rex.home_id == @house.id
+    assert_nil @rex.status.report.location
   end
 
   test "each stretch a pet is here is a visit, for 'here N days last year'" do

@@ -34,6 +34,7 @@ class NotificationSettingsTest < ActionDispatch::IntegrationTest
     end
     assert_select "select[name='notifications[reminder_lead_minutes]']"
     assert_select "select[name='notifications[digest_hour]']"
+    assert_select ".matrix-hints", text: /None of your devices get pushes yet/
   end
 
   test "saving the matrix creates and then updates rows" do
@@ -101,11 +102,6 @@ class NotificationSettingsTest < ActionDispatch::IntegrationTest
     pets = @member.reload.notification_preference("pets")
     assert pets.push
     assert pets.email
-  end
-
-  test "no devices yet: a hint says how to get pushes" do
-    get account_notifications_path
-    assert_select ".matrix-hints", text: /None of your devices get pushes yet/
   end
 
   test "pause and resume" do

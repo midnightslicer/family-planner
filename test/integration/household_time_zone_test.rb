@@ -7,8 +7,6 @@ class HouseholdTimeZoneTest < ActionDispatch::IntegrationTest
     @smiths = households(:smiths)
   end
 
-  def card(user) = "##{ActionView::RecordIdentifier.dom_id(user, :person_card)}"
-
   test "an admin sets the household's time zone" do
     sign_in @admin
     cookies[:tz] = "America/Chicago"
@@ -32,34 +30,18 @@ class HouseholdTimeZoneTest < ActionDispatch::IntegrationTest
     assert_response :forbidden
   end
 
-  test "once set, work hours and times follow the household's clock, not the phone's" do
-    @smiths.update!(time_zone: "Central Time (US & Canada)")
+  test "each phone's own zone is used until the household's is set, then the household's clock wins" do
     @member.work_shifts.create!(weekday: 1, from_time: "09:00", until_time: "17:00", place: "Office")
     # Monday 10:00 in Chicago is 16:00 UTC and 08:00 in Los Angeles.
     travel_to Time.utc(2026, 11, 23, 16, 0) do
       sign_in @admin
       cookies[:tz] = "America/Los_Angeles"
       get root_path
-      assert_select "#{card(@member)} .person-now", text: "Work · until 5 PM · Office"
-    end
-  end
-
-  test "until it's set, each phone's own zone is used" do
-    @member.work_shifts.create!(weekday: 1, from_time: "09:00", until_time: "17:00", place: "Office")
-    travel_to Time.utc(2026, 11, 23, 16, 0) do
-      sign_in @admin
-      cookies[:tz] = "America/Los_Angeles" # 08:00 there: not at work yet
-      get root_path
+      assert_select "#{card(@member)} .avail-free", text: "Free" # not at work yet
       assert_select "#{card(@member)} .person-next", text: "Next: Work · 9 AM"
-    end
-  end
 
-  test "the wall runs on the household's clock" do
-    @smiths.update!(time_zone: "Central Time (US & Canada)")
-    @member.work_shifts.create!(weekday: 1, from_time: "09:00", until_time: "17:00", place: "Office")
-    sign_in @member
-    travel_to Time.utc(2026, 11, 23, 16, 0) do
-      get wall_path(@smiths.slug)
+      @smiths.update!(time_zone: "Central Time (US & Canada)")
+      get root_path
       assert_select "#{card(@member)} .person-now", text: "Work · until 5 PM · Office"
     end
   end

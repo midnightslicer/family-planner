@@ -29,12 +29,6 @@ class BackupTest < ActionDispatch::IntegrationTest
 
   def zip_path(name = "backup.zip") = File.join(@dir, name)
 
-  def push_keys
-    browser = OpenSSL::PKey::EC.generate("prime256v1")
-    { p256dh: WebPush::Base64Url.encode(browser.public_key.to_octet_string(:uncompressed)),
-      auth: WebPush::Base64Url.encode(SecureRandom.random_bytes(16)) }
-  end
-
   test "admins download the whole app as a zip; others can't" do
     @member.avatar.attach(io: file_fixture("avatar.png").open, filename: "avatar.png")
 
@@ -108,15 +102,12 @@ class BackupTest < ActionDispatch::IntegrationTest
     assert_equal households(:smiths).name, Household.first.name
   end
 
-  test "restore refuses a server that has accounts, a zip that isn't a backup, and a newer app's backup" do
+  test "restore refuses a server that has accounts, and a newer app's backup" do
     Backup.write(zip_path)
     error = assert_raises(Backup::Invalid) { Backup.restore(zip_path) }
     assert_match(/already has accounts/, error.message)
 
     wipe!
-    File.write(zip_path("junk.zip"), "not a zip")
-    assert_raises(Backup::Invalid) { Backup.restore(zip_path("junk.zip")) }
-
     Zip::File.open(zip_path, create: false) do |zip|
       zip.get_output_stream(Backup::MANIFEST) { |io| io.write({ format: Backup::FORMAT + 1 }.to_json) }
     end
@@ -125,24 +116,19 @@ class BackupTest < ActionDispatch::IntegrationTest
     assert_equal 0, User.count
   end
 
-  test "the setup page offers a restore and turns a bad zip away" do
+  test "restoring needs the setup code; the setup page then offers it and turns a bad zip away" do
+    File.write(zip_path("junk.zip"), "not a zip")
     wipe!
+    post setup_restore_path, params: { backup: Rack::Test::UploadedFile.new(zip_path("junk.zip"), "application/zip") }
+    assert_response :forbidden
+
     post setup_unlock_path, params: { code: AppSettings.setup_code }
     get setup_path
     assert_select "form[action='#{setup_restore_path}'] input[type=file][name=backup]"
 
-    File.write(zip_path("junk.zip"), "not a zip")
     post setup_restore_path, params: { backup: Rack::Test::UploadedFile.new(zip_path("junk.zip"), "application/zip") }
     assert_redirected_to setup_path
     assert_match(/isn't a backup/, flash[:alert])
-    assert_equal 0, User.count
-  end
-
-  test "restoring needs the setup code" do
-    Backup.write(zip_path)
-    wipe!
-    post setup_restore_path, params: { backup: Rack::Test::UploadedFile.new(zip_path, "application/zip") }
-    assert_response :forbidden
     assert_equal 0, User.count
   end
 end

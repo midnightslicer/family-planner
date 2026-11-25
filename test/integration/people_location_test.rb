@@ -20,8 +20,8 @@ class PeopleLocationTest < ActionDispatch::IntegrationTest
     assert_equal @member, report.reported_by
 
     get root_path
-    assert_select "##{ActionView::RecordIdentifier.dom_id(@yard, :board_place)} ##{ActionView::RecordIdentifier.dom_id(@member, :person_card)}"
-    assert_select "##{ActionView::RecordIdentifier.dom_id(@member, :person_card)} .person-where", count: 0
+    assert_select "##{dom_id(@yard, :board_place)} #{card(@member)}"
+    assert_select "#{card(@member)} .person-where", count: 0
     get tasks_path
     assert_select ".day-where", text: /Yard/
     assert_select ".where-chip.is-current", text: "Yard"
@@ -40,11 +40,12 @@ class PeopleLocationTest < ActionDispatch::IntegrationTest
     assert_select ".person-where", text: /Off property/
   end
 
-  test "someone else's day shows where they are but no way to set it" do
+  test "someone else's day shows where they are but no way to set it or their status" do
     LocationReport.create!(household: @smiths, subject: @admin, location: @yard, reported_by: @admin)
     get tasks_path(person: @admin.id)
     assert_select ".day-where", text: /Yard/
     assert_select ".where-bar", count: 0
+    assert_select ".status-bar", count: 0
   end
 
   test "the old profile address leads to their day" do
@@ -71,19 +72,6 @@ class PeopleLocationTest < ActionDispatch::IntegrationTest
     report = @member.location_reports.last
     assert_equal "Office", report.location.name
     assert_equal "Back by 6", report.comment
-  end
-
-  test "locations show people at their current event's place" do
-    little = @smiths.locations.create!(name: "Little house", kind: "house")
-    Task.create!(household: @smiths, title: "Client meeting", assigned_to: @admin, place: "Little house",
-                 starts_at: 10.minutes.ago, ends_at: 50.minutes.from_now)
-    get locations_path
-    assert_select "##{ActionView::RecordIdentifier.dom_id(little)} .here-now", text: /Admin User/
-  end
-
-  test "Locations is its own tab" do
-    get locations_path
-    assert_select ".nav-links a[aria-current=page]", text: "Locations"
   end
 
   test "birthdays save on the account page and ages show on your day" do

@@ -11,30 +11,24 @@ class PushClientTest < ActionDispatch::IntegrationTest
     @member = users(:member)
   end
 
-  def keys
-    browser = OpenSSL::PKey::EC.generate("prime256v1")
-    { p256dh: WebPush::Base64Url.encode(browser.public_key.to_octet_string(:uncompressed)),
-      auth: WebPush::Base64Url.encode(SecureRandom.random_bytes(16)) }
-  end
-
   def device(endpoint = OLD, user: @member)
-    user.push_subscriptions.create!(endpoint: endpoint, **keys, user_agent: "Mozilla/5.0 (Android 14) Firefox/133.0")
+    user.push_subscriptions.create!(endpoint: endpoint, **push_keys, user_agent: "Mozilla/5.0 (Android 14) Firefox/133.0")
   end
 
   test "the service worker moves a replaced subscription to its new endpoint, no session needed" do
     old = device
-    post renew_push_subscriptions_path, params: { old_endpoint: OLD, subscription: { endpoint: NEW, keys: keys } }, as: :json
+    post renew_push_subscriptions_path, params: { old_endpoint: OLD, subscription: { endpoint: NEW, keys: push_keys } }, as: :json
     assert_response :no_content
     assert_equal NEW, old.reload.endpoint
     assert_equal @member, old.user
   end
 
   test "renewing needs the old endpoint, and the new one must be a push service" do
-    post renew_push_subscriptions_path, params: { old_endpoint: "https://fcm.googleapis.com/fcm/send/guess", subscription: { endpoint: NEW, keys: keys } }, as: :json
+    post renew_push_subscriptions_path, params: { old_endpoint: "https://fcm.googleapis.com/fcm/send/guess", subscription: { endpoint: NEW, keys: push_keys } }, as: :json
     assert_response :not_found
 
     old = device
-    post renew_push_subscriptions_path, params: { old_endpoint: OLD, subscription: { endpoint: "https://evil.example/x", keys: keys } }, as: :json
+    post renew_push_subscriptions_path, params: { old_endpoint: OLD, subscription: { endpoint: "https://evil.example/x", keys: push_keys } }, as: :json
     assert_response :unprocessable_content
     assert_equal OLD, old.reload.endpoint
   end

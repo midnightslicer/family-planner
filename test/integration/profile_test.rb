@@ -64,15 +64,12 @@ class ProfileTest < ActionDispatch::IntegrationTest
     assert_select "style#theme-tokens", count: 0
   end
 
-  test "picking a swatch changes the colour" do
-    patch account_profile_path, params: profile_params(color: "#ec4899", custom_color: "")
-    assert_redirected_to account_root_path
-    assert_equal "#ec4899", @member.reload.color
-  end
-
-  test "a custom colour wins over the swatch" do
-    patch account_profile_path, params: profile_params(color: "#22c55e", custom_color: "123ABC")
-    assert_equal "#123abc", @member.reload.color
+  test "a swatch sets the colour, and a custom colour wins over it" do
+    { ["#ec4899", ""] => "#ec4899", ["#22c55e", "123ABC"] => "#123abc" }.each do |(color, custom), expected|
+      patch account_profile_path, params: profile_params(color: color, custom_color: custom)
+      assert_redirected_to account_root_path
+      assert_equal expected, @member.reload.color
+    end
   end
 
   test "a custom colour off the palette is shown in the custom box" do
@@ -80,17 +77,6 @@ class ProfileTest < ActionDispatch::IntegrationTest
     get account_root_path
     assert_select "details.custom-color[open] input[name='user[custom_color]'][value='#123abc']"
     assert_select "input[name='user[color]'][checked]", count: 0
-  end
-
-  test "the colour picked when joining sticks too" do
-    sign_out @member
-    invitation = Invitation.create!(email: "sam@example.com", household: @smiths, invited_by: users(:admin))
-    get invitation_path(invitation.raw_token)
-    assert_select "input[name='user[custom_color]']:not([value])"
-
-    post join_invitation_path(invitation.raw_token),
-         params: { user: { display_name: "Sam", password: "long enough pw", color: "#f97316", custom_color: "" } }
-    assert_equal "#f97316", User.find_by!(email: "sam@example.com").color
   end
 
   test "saving the profile re-renders the person card on the board" do
@@ -105,7 +91,7 @@ class ProfileTest < ActionDispatch::IntegrationTest
     assert @member.reload.avatar.attached?
 
     get root_path
-    assert_select "##{ActionView::RecordIdentifier.dom_id(@member, :person_card)} .person-avatar img[src*='/rails/active_storage/']"
+    assert_select "#{card(@member)} .person-avatar img[src*='/rails/active_storage/']"
   end
 
   test "a file that isn't a picture is refused, whatever it claims to be" do

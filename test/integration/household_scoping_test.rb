@@ -24,32 +24,21 @@ class HouseholdScopingTest < ActionDispatch::IntegrationTest
     assert_select "a[href='/']", "Back home"
   end
 
-  test "a 404 for anything but a browser stays empty" do
+  test "status actions on another household's task 404, with an empty body for Turbo" do
     # What Turbo sends for a form or button_to.
     post start_task_path(@other_task), headers: { "Accept" => "text/vnd.turbo-stream.html, text/html, application/xhtml+xml" }
     assert_response :not_found
     assert_empty response.body
+    assert @other_task.reload.planned?
   end
 
-  test "the dashboard lives at / only" do
+  test "the dashboard lives at / only, with cards for this household's members" do
     get "/"
-    assert_select ".person-card"
+    assert_select ".person-card", 2 # admin + member, not other households' people
     assert_select "h1.visually-hidden", @smiths.name
     assert_select "a", text: "Add to my day", count: 0
     get "/dashboard"
     assert_response :not_found
-  end
-
-  test "status actions on another household's task 404" do
-    post start_task_path(@other_task)
-    assert_response :not_found
-    assert @other_task.reload.planned?
-  end
-
-  test "dashboard only renders cards for current household members" do
-    get root_path
-    assert_response :success
-    assert_select ".person-card", count: 2  # admin + member, not other-household users
   end
 
   test "dashboard spells out each person's status in words" do

@@ -29,43 +29,19 @@ class TaskRecurrenceTest < ActiveSupport::TestCase
     assert_equal @household, copy.household
   end
 
-  test "weekly recurrence advances seven days and biweekly fourteen" do
-    base = Time.zone.local(2026, 9, 23, 9, 0, 0)
-
-    weekly = Task.create!(household: @household, title: "Weekly", recurrence_interval: "weekly", starts_at: base)
-    weekly.start!
-    weekly.complete!
-    assert_equal base + 7.days, Task.where(title: "Weekly").order(:id).last.starts_at
-
-    biweekly = Task.create!(household: @household, title: "Biweekly", recurrence_interval: "biweekly", starts_at: base)
-    biweekly.start!
-    biweekly.complete!
-    assert_equal base + 14.days, Task.where(title: "Biweekly").order(:id).last.starts_at
-  end
-
-  test "monthly recurrence clamps day to target month length" do
-    # Jan 31 → Feb 28 (2026 is not a leap year)
+  test "weekly, biweekly and monthly intervals; skipping rolls on too, and a month end clamps" do
     base = Time.zone.local(2026, 1, 31, 9, 0, 0)
-    task = Task.create!(household: @household, title: "Monthly", recurrence_interval: "monthly", starts_at: base)
-    task.start!
-    task.cancel!
-
-    copy = Task.where(title: "Monthly").where.not(id: task.id).sole
-    assert_equal Time.zone.local(2026, 2, 28, 9, 0, 0), copy.starts_at
-    assert copy.planned?
+    { "weekly" => base + 7.days, "biweekly" => base + 14.days,
+      "monthly" => Time.zone.local(2026, 2, 28, 9, 0, 0) }.each do |interval, expected|
+      task = Task.create!(household: @household, title: interval, recurrence_interval: interval, starts_at: base)
+      task.cancel!
+      copy = Task.where(title: interval).where.not(id: task.id).sole
+      assert copy.planned?
+      assert_equal expected, copy.starts_at, interval
+    end
   end
 
-  test "recurs? is false for the empty recurrence interval" do
-    # recurrence_interval returns the enum key, so "" reads back as
-    # "no_recurrence" — .present? would wrongly report it as recurring.
-    # Private, but it is the guard schedule_next_occurrence depends on.
-    one_off = Task.create!(household: @household, title: "One-off", recurrence_interval: "")
-    daily = Task.create!(household: @household, title: "Daily", recurrence_interval: "daily")
-
-    assert_not one_off.send(:recurs?)
-    assert daily.send(:recurs?)
-  end
-
+  # "" reads back as the enum key "no_recurrence", which is .present?.
   test "non-recurring tasks do not spawn copies" do
     task = Task.create!(household: @household, title: "One-off", recurrence_interval: "")
     task.start!
@@ -142,15 +118,15 @@ class TaskRecurrenceTest < ActiveSupport::TestCase
     assert_operator task.started_at, :>=, started_at
   end
 
-  test "finishing or skipping stamps when, and restarting clears it" do
+  test "finishing or skipping, even straight from planned, stamps when; restarting clears it" do
     travel_to Time.zone.local(2026, 11, 22, 9, 0) do
       task = Task.create!(household: @household, title: "Stamp")
-      task.complete!
+      assert task.complete!
       assert_equal Time.current, task.finished_at
 
       one_off = Task.create!(household: @household, title: "Skip me")
-      one_off.start!
-      one_off.cancel!
+      assert one_off.cancel!
+      assert one_off.undone?
       assert_equal Time.current, one_off.finished_at
       one_off.start!
       assert_nil one_off.finished_at
@@ -164,13 +140,5 @@ class TaskRecurrenceTest < ActiveSupport::TestCase
       past.roll_forward!
       assert_equal Time.zone.local(2026, 11, 22, 11, 0), past.reload.finished_at
     end
-  end
-
-  test "a planned to-do can be ticked off or skipped directly" do
-    ticked = Task.create!(household: @household, title: "Tick")
-    assert ticked.complete!
-    skipped = Task.create!(household: @household, title: "Skip")
-    assert skipped.cancel!
-    assert skipped.undone?
   end
 end

@@ -13,8 +13,10 @@ class AssignmentsTest < ActionDispatch::IntegrationTest
 
   def sunday_at(hour) = Time.zone.local(2026, 11, 29, hour)
 
-  test "giving someone a to-do puts it on their list, not mine, and says so" do
-    post tasks_path, params: { task: { title: "Call the chiropractor", assignee_ids: ["", @mom.id] } }
+  test "giving someone a to-do puts it on their list, not mine, and tells them" do
+    assert_turbo_stream_broadcasts [@mom, :notifications], count: 1 do
+      post tasks_path, params: { task: { title: "Call the chiropractor", assignee_ids: ["", @mom.id] } }
+    end
     task = Task.find_by!(title: "Call the chiropractor")
     assert_equal [@mom], task.people
     follow_redirect!
@@ -24,12 +26,6 @@ class AssignmentsTest < ActionDispatch::IntegrationTest
     assert_select ".sched-title", text: "Call the chiropractor", count: 0
     get tasks_path(person: @mom.id)
     assert_select ".sched-title", text: "Call the chiropractor"
-  end
-
-  test "they're told about it" do
-    assert_turbo_stream_broadcasts [@mom, :notifications], count: 1 do
-      post tasks_path, params: { task: { title: "Call the chiropractor", assignee_ids: [@mom.id] } }
-    end
   end
 
   test "an event for two goes on both schedules and both cards" do
@@ -47,7 +43,7 @@ class AssignmentsTest < ActionDispatch::IntegrationTest
       sign_in @me
       get root_path
       [@me, @mom].each do |person|
-        assert_select "##{ActionView::RecordIdentifier.dom_id(person, :person_card)} .avail-busy", text: "Do not disturb"
+        assert_select "#{card(person)} .avail-busy", text: "Do not disturb"
       end
     end
   end
@@ -136,12 +132,6 @@ class AssignmentsTest < ActionDispatch::IntegrationTest
     assert_equal @mom, task.reload.finished_by
     assert_equal 1, @mom.finished_tasks.completed.count
     assert_equal 0, @me.finished_tasks.count
-  end
-
-  test "without follow up it's off my list" do
-    post tasks_path, params: { task: { title: "Call the chiropractor", assignee_ids: [@mom.id] } }
-    get tasks_path
-    assert_select ".sched-title", text: "Call the chiropractor", count: 0
   end
 
   test "picking nobody makes it for anyone" do

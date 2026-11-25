@@ -12,10 +12,7 @@ class NotifierTest < ActiveSupport::TestCase
   end
 
   def add_device(user, name = "one")
-    browser = OpenSSL::PKey::EC.generate("prime256v1")
-    user.push_subscriptions.create!(endpoint: "https://fcm.googleapis.com/fcm/send/#{name}",
-                                    p256dh: WebPush::Base64Url.encode(browser.public_key.to_octet_string(:uncompressed)),
-                                    auth: WebPush::Base64Url.encode(SecureRandom.random_bytes(16)))
+    user.push_subscriptions.create!(endpoint: "https://fcm.googleapis.com/fcm/send/#{name}", **push_keys)
   end
 
   def queued_pushes
@@ -40,6 +37,10 @@ class NotifierTest < ActiveSupport::TestCase
     options = queued_pushes.first["arguments"].last
     assert_equal "normal", options["urgency"]
     assert_equal "task-5-1", options["topic"]
+
+    clear_enqueued_jobs
+    Notifier.notify(@member, category: "assigned", title: "Clash", path: "/tasks", household: @smiths, tag: "t", urgent: true)
+    assert_equal %w[high high], queued_pushes.map { |job| job["arguments"].last["urgency"] }, "urgent ones ask the phone to wake"
   end
 
   test "the toast says whether it may buzz, for browsers without push" do
@@ -52,12 +53,6 @@ class NotifierTest < ActiveSupport::TestCase
     @member.notification_preferences.reload
     Notifier.notify(@member, category: "pets", title: "Fed Rex", path: "/pets", household: @smiths, tag: "pets")
     assert_includes capture_turbo_stream_broadcasts([@member, :notifications]).last.to_html, 'data-toast-alert-value="false"'
-  end
-
-  test "urgent ones ask the phone to wake" do
-    add_device(@member)
-    Notifier.notify(@member, category: "assigned", title: "Clash", path: "/tasks", household: @smiths, tag: "t", urgent: true)
-    assert_equal "high", queued_pushes.sole["arguments"].last["urgency"]
   end
 
   test "no devices, no pushes" do

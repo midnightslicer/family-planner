@@ -71,7 +71,7 @@ class WallTest < ActionDispatch::IntegrationTest
                  starts_at: 10.minutes.ago, ends_at: 50.minutes.from_now)
     wall
     assert_select ".wall-place", text: /Big house/ do
-      assert_select "##{ActionView::RecordIdentifier.dom_id(@admin, :person_card)}"
+      assert_select card(@admin)
     end
   end
 
@@ -79,7 +79,7 @@ class WallTest < ActionDispatch::IntegrationTest
     @smiths.update!(time_zone: "Central Time (US & Canada)")
     office = @smiths.locations.create!(name: "Office", kind: "other")
     @admin.work_shifts.create!(weekday: 1, from_time: "09:00", until_time: "17:00", place: "Office")
-    admin_card = "##{ActionView::RecordIdentifier.dom_id(@admin, :person_card)}"
+    admin_card = card(@admin)
 
     # Reported at the house before work: work's place wins once the shift is on.
     travel_to(Time.utc(2026, 11, 23, 14, 0)) { LocationReport.create!(household: @smiths, subject: @admin, location: @house, reported_by: @admin) }
@@ -138,7 +138,7 @@ class WallTest < ActionDispatch::IntegrationTest
     tom = @smiths.pets.create!(name: "Tom") # nowhere yet
     bo = @smiths.pets.create!(name: "Bo")
     LocationReport.create!(household: @smiths, subject: bo, location: @yard, reported_by: @member)
-    [tom].each { |pet| assert_nil pet.status.report }
+    assert_nil tom.status.report
     wall # pool 2, big house 1, yard 1, somewhere else 1 (Tom)
     assert_equal ["Pool", "Big house", "Yard", "Somewhere else"], css_select(".wall-place h2").map(&:text)
   end

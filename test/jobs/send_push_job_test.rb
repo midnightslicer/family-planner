@@ -2,11 +2,8 @@ require "test_helper"
 
 class SendPushJobTest < ActiveJob::TestCase
   setup do
-    browser = OpenSSL::PKey::EC.generate("prime256v1")
     @subscription = users(:member).push_subscriptions.create!(
-      endpoint: "https://web.push.apple.com/QGuQyavXutnMHk",
-      p256dh: WebPush::Base64Url.encode(browser.public_key.to_octet_string(:uncompressed)),
-      auth: WebPush::Base64Url.encode(SecureRandom.random_bytes(16)), user_agent: "iPhone Safari/605"
+      endpoint: "https://web.push.apple.com/QGuQyavXutnMHk", **push_keys, user_agent: "iPhone Safari/605"
     )
   end
 

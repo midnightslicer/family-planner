@@ -28,9 +28,14 @@ class HousesTest < ActionDispatch::IntegrationTest
     assert_select "select#home_id", count: 0
   end
 
-  test "you pick the house you live in" do
+  test "you pick the house you live in, or add a new one right there" do
     patch account_profile_path, params: profile_params(home_id: @ours.id)
     assert_equal @ours, @me.home_in(@smiths)
+
+    patch account_profile_path, params: profile_params(home_id: "new", new_home_name: "Little house")
+    home = @me.home_in(@smiths)
+    assert_equal "Little house", home.name
+    assert home.house?
   end
 
   def report(who, location = nil, off_property: false)
@@ -52,29 +57,17 @@ class HousesTest < ActionDispatch::IntegrationTest
     assert_select "#board_place_elsewhere", count: 0
   end
 
-  test "somewhere else stays at the bottom for everyone else" do
-    report(@admin, @brick)
-    report(@me, off_property: true)
-    sign_in @admin
-
-    get root_path
-    assert_equal ["Red Brick House", "Somewhere else"], board_titles
-  end
-
-  test "somewhere else comes first when that's where you are" do
+  test "somewhere else comes first when that's where you are, and last for everyone else" do
     report(@admin, @brick)
     report(@me, off_property: true)
 
     get root_path
     assert_equal ["Somewhere else", "Red Brick House"], board_titles
     assert_select "#board_place_elsewhere .person-card", 1
-  end
 
-  test "a new house can be added right from the account page" do
-    patch account_profile_path, params: profile_params(home_id: "new", new_home_name: "Little house")
-    home = @me.home_in(@smiths)
-    assert_equal "Little house", home.name
-    assert home.house?
+    sign_in @admin
+    get root_path
+    assert_equal ["Red Brick House", "Somewhere else"], board_titles
   end
 
   test "admins set where each member lives" do
@@ -89,7 +82,7 @@ class HousesTest < ActionDispatch::IntegrationTest
     get tasks_path(person: "family")
     assert_select ".house-title", text: /Our House/
     get locations_path
-    assert_select "##{ActionView::RecordIdentifier.dom_id(@ours)} .task-meta", text: /Home to Member/
+    assert_select "##{dom_id(@ours)} .task-meta", text: /Home to Member/
   end
 
   test "moving house keeps where they lived before" do

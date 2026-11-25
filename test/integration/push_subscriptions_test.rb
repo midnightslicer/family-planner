@@ -10,9 +10,7 @@ class PushSubscriptionsTest < ActionDispatch::IntegrationTest
   end
 
   def browser_subscription(endpoint = ENDPOINT, key: @browser)
-    { endpoint: endpoint, expirationTime: nil,
-      keys: { p256dh: WebPush::Base64Url.encode(key.public_key.to_octet_string(:uncompressed)),
-              auth: WebPush::Base64Url.encode(SecureRandom.random_bytes(16)) } }
+    { endpoint: endpoint, expirationTime: nil, keys: push_keys(key) }
   end
 
   def subscribe(subscription = browser_subscription, user_agent: "Mozilla/5.0 (Linux; Android 14) Chrome/131.0 Mobile")
@@ -38,13 +36,6 @@ class PushSubscriptionsTest < ActionDispatch::IntegrationTest
     assert_not_includes raw, subscription.p256dh
   end
 
-  test "subscribing again updates the same row" do
-    sign_in @member
-    subscribe
-    subscribe
-    assert_equal 1, PushSubscription.count
-  end
-
   test "endpoints off the push-service allowlist, or over http, are refused" do
     sign_in @member
     ["http://fcm.googleapis.com/fcm/send/x", "https://127.0.0.1/x", "https://evil.example/push", "https://169.254.169.254/"].each do |endpoint|
@@ -65,9 +56,11 @@ class PushSubscriptionsTest < ActionDispatch::IntegrationTest
     assert_equal 0, PushSubscription.count
   end
 
-  test "a device moves to whoever signs in on it next" do
+  test "subscribing again updates the same row, moving the device to whoever signs in on it next" do
     sign_in @member
     subscribe
+    subscribe
+    assert_equal 1, PushSubscription.count
     sign_out @member
     sign_in @admin
     subscribe

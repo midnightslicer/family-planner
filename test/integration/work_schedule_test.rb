@@ -8,8 +8,6 @@ class WorkScheduleTest < ActionDispatch::IntegrationTest
     @little = @smiths.locations.create!(name: "Little house", kind: "house")
   end
 
-  def card(user) = "##{ActionView::RecordIdentifier.dom_id(user, :person_card)}"
-
   def weekdays(from: "09:00", until_time: "17:00", place: "Little house")
     (1..5).to_h { |wday| [wday.to_s, { on: "1", from_time: from, until_time: until_time, place: place }] }
   end
@@ -33,9 +31,13 @@ class WorkScheduleTest < ActionDispatch::IntegrationTest
     assert_equal [1, 2, 3, 4, 5], @member.work_shifts.pluck(:weekday)
     assert_equal "busy", @member.reload.work_availability
 
-    # Unticking a day removes it.
-    patch work_schedule_path, params: { work_schedule: { availability: "busy", days: weekdays.except("5") } }
-    assert_equal [1, 2, 3, 4], @member.work_shifts.reload.pluck(:weekday)
+    # Unticking a day removes it, and each save keeps a dated copy.
+    patch work_schedule_path, params: { work_schedule: { availability: "text", days: weekdays.slice("1") } }
+    assert_equal [1], @member.work_shifts.reload.pluck(:weekday)
+    versions = @member.work_schedule_versions.order(:effective_at)
+    assert_equal [5, 1], versions.map { |v| v.shifts.size }
+    assert_equal %w[busy text], versions.map(&:availability)
+    assert_equal({ "weekday" => 1, "from_time" => "09:00", "until_time" => "17:00", "place" => "Little house" }, versions.last.shifts.first)
   end
 
   test "work place is picked from Office, Remote and your houses, or typed under Other" do
@@ -55,16 +57,6 @@ class WorkScheduleTest < ActionDispatch::IntegrationTest
     assert_select "select[name='work_schedule[days][1][place]'] option[selected]", text: "Office"
     assert_select "select[name='work_schedule[days][2][place]'] option[selected]", text: "Other…"
     assert_select "input[name='work_schedule[days][2][place_other]'][value='Client site']"
-  end
-
-  test "each save keeps a dated copy of the schedule" do
-    sign_in @member
-    patch work_schedule_path, params: { work_schedule: { availability: "busy", days: weekdays } }
-    patch work_schedule_path, params: { work_schedule: { availability: "text", days: weekdays.slice("1") } }
-    versions = @member.work_schedule_versions.order(:effective_at)
-    assert_equal [5, 1], versions.map { |v| v.shifts.size }
-    assert_equal %w[busy text], versions.map(&:availability)
-    assert_equal({ "weekday" => 1, "from_time" => "09:00", "until_time" => "17:00", "place" => "Little house" }, versions.last.shifts.first)
   end
 
   test "a bad time is explained and nothing changes" do
@@ -101,16 +93,6 @@ class WorkScheduleTest < ActionDispatch::IntegrationTest
       sign_in @member
       get root_path
       assert_select "#{card(@member)} .person-now", text: "Standup · until 10:30 AM"
-    end
-  end
-
-  test "before work, it's what's next" do
-    @member.work_shifts.create!(weekday: 1, from_time: "09:00", until_time: "17:00", place: "Remote")
-    travel_to monday_at(7) do
-      sign_in @member
-      get root_path
-      assert_select "#{card(@member)} .avail-free", text: "Free"
-      assert_select "#{card(@member)} .person-next", text: "Next: Work · 9 AM"
     end
   end
 

@@ -7,10 +7,7 @@ class NotifierDeliveryTest < ActiveSupport::TestCase
     @member = users(:member)
     @smiths = households(:smiths)
     @smiths.update!(time_zone: "Central Time (US & Canada)")
-    browser = OpenSSL::PKey::EC.generate("prime256v1")
-    @member.push_subscriptions.create!(endpoint: "https://fcm.googleapis.com/fcm/send/x",
-                                       p256dh: WebPush::Base64Url.encode(browser.public_key.to_octet_string(:uncompressed)),
-                                       auth: WebPush::Base64Url.encode(SecureRandom.random_bytes(16)))
+    @member.push_subscriptions.create!(endpoint: "https://fcm.googleapis.com/fcm/send/x", **push_keys)
     Setting.set("smtp_host", "smtp.example.com")
   end
 

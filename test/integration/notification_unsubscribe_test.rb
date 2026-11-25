@@ -50,7 +50,7 @@ class NotificationUnsubscribeTest < ActionDispatch::IntegrationTest
     tampered = other.sub(/.\z/) { |c| c == "A" ? "B" : "A" }
     [tampered, "nonsense", Rails.application.message_verifier(:x).generate([@member.id, "pets"])].each do |token|
       post "/notifications/unsubscribe/#{CGI.escape(token)}"
-      assert_includes [404], response.status, token
+      assert_response :not_found, token
     end
     @member.notification_preferences.reset
     assert @member.notification_preference("pets").email
