@@ -12,7 +12,7 @@ class ReminderJobTest < ActiveJob::TestCase
 
   def at(*args) = ActiveSupport::TimeZone[ZONE].local(*args)
 
-  def event(starts_at, title: "Church", people: [@member], status: "accepted", **attributes)
+  def event(starts_at, title: "Church", people: [ @member ], status: "accepted", **attributes)
     Task.create!(household: @smiths, title: title, starts_at: starts_at, ends_at: starts_at + 1.hour, **attributes).tap do |task|
       people.each { |person| task.assignments.create!(user: person, status: status) }
     end
@@ -23,7 +23,7 @@ class ReminderJobTest < ActiveJob::TestCase
     calls = []
     original = Notifier.method(:notify)
     Notifier.define_singleton_method(:notify) do |user, **options|
-      calls << [user, options[:title], options[:body], options[:category], options[:ttl]]
+      calls << [ user, options[:title], options[:body], options[:category], options[:ttl] ]
       original.call(user, **options)
     end
     yield
@@ -52,11 +52,11 @@ class ReminderJobTest < ActiveJob::TestCase
 
   test "each person's own lead time, and the place" do
     @admin.update!(reminder_lead_minutes: 60)
-    event(at(2026, 11, 29, 10, 0), people: [@member, @admin], place: "Grace Church")
+    event(at(2026, 11, 29, 10, 0), people: [ @member, @admin ], place: "Grace Church")
     early = sent { ReminderJob.perform_now(at(2026, 11, 29, 9, 0)) }
-    assert_equal [[@admin, "Starts in 1 hour · Grace Church"]], early.map { |c| [c[0], c[2]] }
+    assert_equal [ [ @admin, "Starts in 1 hour · Grace Church" ] ], early.map { |c| [ c[0], c[2] ] }
     later = sent { ReminderJob.perform_now(at(2026, 11, 29, 9, 45)) }
-    assert_equal [@member], later.map(&:first)
+    assert_equal [ @member ], later.map(&:first)
   end
 
   test "a missed tick still reminds before the start, never after" do
@@ -88,7 +88,7 @@ class ReminderJobTest < ActiveJob::TestCase
     church.roll_forward!(at(2026, 11, 29, 11, 30))
     next_week = Task.where(title: "Church").where.not(id: church.id).sole
     assert_equal at(2026, 12, 6, 10, 0), next_week.starts_at
-    assert_equal [@member], sent { ReminderJob.perform_now(at(2026, 12, 6, 9, 45)) }.map(&:first)
+    assert_equal [ @member ], sent { ReminderJob.perform_now(at(2026, 12, 6, 9, 45)) }.map(&:first)
   end
 
   test "a retimed event is reminded again at its new time" do
@@ -101,7 +101,7 @@ class ReminderJobTest < ActiveJob::TestCase
   test "private events are only reminded to their own people, with their title" do
     event(at(2026, 11, 29, 10, 0), title: "Surprise party", private: true, created_by: @admin)
     calls = sent { ReminderJob.perform_now(at(2026, 11, 29, 9, 45)) }
-    assert_equal [[@member, "Surprise party at 10:00 AM"]], calls.map { |c| c[0, 2] }
+    assert_equal [ [ @member, "Surprise party at 10:00 AM" ] ], calls.map { |c| c[0, 2] }
   end
 
   test "times are on the household's clock across a DST change" do
@@ -120,7 +120,7 @@ class ReminderJobTest < ActiveJob::TestCase
 
     assert_empty(sent { ReminderJob.perform_now(at(2026, 11, 29, 6, 59)) })
     calls = sent { ReminderJob.perform_now(at(2026, 11, 29, 7, 0)) }
-    assert_equal [[@member, "2 to-dos for today", "Pay rent and Call vet", "todo_digest"]], calls.map { |c| c[0, 4] }
+    assert_equal [ [ @member, "2 to-dos for today", "Pay rent and Call vet", "todo_digest" ] ], calls.map { |c| c[0, 4] }
     assert_empty(sent { ReminderJob.perform_now(at(2026, 11, 29, 7, 1)) })
     # 7:00 UTC is 1:00 AM in Chicago: not the hour.
     assert_empty(sent { ReminderJob.perform_now(Time.utc(2026, 11, 30, 7, 0)) })

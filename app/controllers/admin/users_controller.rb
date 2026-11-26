@@ -3,7 +3,7 @@ module Admin
   # their phone back in, or delete an account.
   class UsersController < BaseController
     before_action :set_user, except: :index
-    before_action :protect_self, only: [:update, :destroy]
+    before_action :protect_self, only: [ :update, :destroy ]
 
     def index
       @users = User.includes(:households).order(:display_name)

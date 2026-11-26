@@ -66,7 +66,7 @@ class LocationReport < ApplicationRecord
 
   # "outside, penned up" / "inside" / "penned up" / nil.
   def spot_words
-    [spot, ("penned up" if penned?)].compact.join(", ").presence
+    [ spot, ("penned up" if penned?) ].compact.join(", ").presence
   end
 
   private
@@ -87,7 +87,7 @@ class LocationReport < ApplicationRecord
 
   def broadcast
     if subject_type == "User"
-      household.broadcast_member_cards([subject_id])
+      household.broadcast_member_cards([ subject_id ])
     end
     household.broadcast_refresh
   rescue StandardError => error

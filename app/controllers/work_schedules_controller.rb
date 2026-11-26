@@ -7,7 +7,7 @@ class WorkSchedulesController < ApplicationController
 
   before_action :require_managed_person
 
-  WEEK = [1, 2, 3, 4, 5, 6, 0].freeze # Monday first
+  WEEK = [ 1, 2, 3, 4, 5, 6, 0 ].freeze # Monday first
 
   def edit
     load_page

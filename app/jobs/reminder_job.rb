@@ -38,7 +38,7 @@ class ReminderJob < ApplicationJob
 
     zone = task.household.zone || Time.zone_default
     minutes = ((task.starts_at - now) / 60).ceil
-    details = ["Starts in #{minutes == 60 ? '1 hour' : "#{minutes} minutes"}", (task.place_name if task.visible_to?(person))].compact
+    details = [ "Starts in #{minutes == 60 ? '1 hour' : "#{minutes} minutes"}", (task.place_name if task.visible_to?(person)) ].compact
     Notifier.notify(person, category: "event_reminders", household: task.household, now: now,
                             title: "#{task.title_for(person)} at #{task.starts_at.in_time_zone(zone).strftime('%-l:%M %p')}",
                             body: details.join(" · "), path: routes.task_path(task), tag: "reminder-#{task.id}",

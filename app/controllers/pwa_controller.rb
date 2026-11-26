@@ -55,7 +55,7 @@ class PwaController < ActionController::Base
   def service_worker
     @version = worker_version
     @app_name = AppSettings.app_name
-    render template: "pwa/service-worker", formats: [:js], layout: false, content_type: "text/javascript"
+    render template: "pwa/service-worker", formats: [ :js ], layout: false, content_type: "text/javascript"
   end
 
   private
@@ -109,7 +109,7 @@ class PwaController < ActionController::Base
       start_url: "/h/#{slug}",
       scope: "/h/#{slug}",
       display: "fullscreen",
-      display_override: ["fullscreen", "standalone"],
+      display_override: [ "fullscreen", "standalone" ],
       theme_color: WALL_COLOR,
       background_color: WALL_COLOR,
       icons: [
@@ -129,7 +129,7 @@ class PwaController < ActionController::Base
     return squeezed if squeezed.length <= SHORT_NAME_MAX
 
     words = name.split.each_with_object([]) do |word, kept|
-      break kept if [*kept, word].join(" ").length > SHORT_NAME_MAX
+      break kept if [ *kept, word ].join(" ").length > SHORT_NAME_MAX
 
       kept << word
     end
@@ -139,7 +139,7 @@ class PwaController < ActionController::Base
   # Changes whenever the worker or the offline page it precaches changes, so
   # the new worker installs and replaces the old cache.
   def worker_version
-    files = [Rails.root.join("public/offline.html"), Rails.root.join("app/views/pwa/service-worker.js.erb")]
+    files = [ Rails.root.join("public/offline.html"), Rails.root.join("app/views/pwa/service-worker.js.erb") ]
     Digest::SHA256.hexdigest(files.map { |file| File.read(file) }.join)[0, 12]
   end
 end

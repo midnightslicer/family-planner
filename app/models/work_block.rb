@@ -21,7 +21,7 @@ class WorkBlock
 
   # The block on now, counting a night shift that started yesterday.
   def self.current(user, now = Time.current, locations: [])
-    [now.to_date, now.to_date - 1].filter_map { |date| on(user, date, locations: locations) }
+    [ now.to_date, now.to_date - 1 ].filter_map { |date| on(user, date, locations: locations) }
                                   .find { |block| block.happening_at?(now) }
   end
 

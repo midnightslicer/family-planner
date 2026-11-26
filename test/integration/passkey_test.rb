@@ -46,7 +46,7 @@ class PasskeyTest < ActionDispatch::IntegrationTest
       post user_password_path, params: { user: { email: @member.email } }
     end
     mail = ActionMailer::Base.deliveries.last
-    assert_equal [@member.email], mail.to
+    assert_equal [ @member.email ], mail.to
     token = mail.body.encoded[/reset_password_token=([^"&\s]+)/, 1]
     assert token
 

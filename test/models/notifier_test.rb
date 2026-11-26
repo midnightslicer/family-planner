@@ -24,7 +24,7 @@ class NotifierTest < ActiveSupport::TestCase
   test "toasts open tabs and queues a push per device, named for the household" do
     add_device(@member, "phone")
     add_device(@member, "laptop")
-    assert_turbo_stream_broadcasts [@member, :notifications], count: 1 do
+    assert_turbo_stream_broadcasts [ @member, :notifications ], count: 1 do
       Notifier.notify(@member, category: "assigned", title: "Sam added you to Church", body: "Bring snacks.",
                                path: "/tasks/5", household: @smiths, tag: "task-5-1")
     end
@@ -44,15 +44,15 @@ class NotifierTest < ActiveSupport::TestCase
   end
 
   test "the toast says whether it may buzz, for browsers without push" do
-    assert_turbo_stream_broadcasts [@member, :notifications], count: 1 do
+    assert_turbo_stream_broadcasts [ @member, :notifications ], count: 1 do
       Notifier.notify(@member, category: "pets", title: "Fed Rex", path: "/pets", household: @smiths, tag: "pets")
     end
-    assert_includes capture_turbo_stream_broadcasts([@member, :notifications]).last.to_html, 'data-toast-alert-value="true"'
+    assert_includes capture_turbo_stream_broadcasts([ @member, :notifications ]).last.to_html, 'data-toast-alert-value="true"'
 
     @member.notification_preferences.create!(category: "pets", push: false)
     @member.notification_preferences.reload
     Notifier.notify(@member, category: "pets", title: "Fed Rex", path: "/pets", household: @smiths, tag: "pets")
-    assert_includes capture_turbo_stream_broadcasts([@member, :notifications]).last.to_html, 'data-toast-alert-value="false"'
+    assert_includes capture_turbo_stream_broadcasts([ @member, :notifications ]).last.to_html, 'data-toast-alert-value="false"'
   end
 
   test "no devices, no pushes" do
@@ -78,7 +78,7 @@ class NotifierTest < ActiveSupport::TestCase
     add_device(@admin, "admin")
     Current.user = @admin
     task = Task.create!(household: @smiths, title: "Surprise party", private: true, created_by: @admin)
-    TaskAssigner.new(task, actor: @admin).assign([@member.id])
+    TaskAssigner.new(task, actor: @admin).assign([ @member.id ])
     payloads = queued_pushes.map { |job| payload_of(job) }
     assert_equal 1, payloads.size, "the person saving it isn't notified"
     assert_includes payloads.sole["body"], "Surprise party"
@@ -94,7 +94,7 @@ class NotifierTest < ActiveSupport::TestCase
     Current.user = @member
     task.complete!
     bodies = queued_pushes.map { |job| payload_of(job)["body"] }
-    assert_equal ["Member User finished Dishes"], bodies
+    assert_equal [ "Member User finished Dishes" ], bodies
   ensure
     Current.reset
   end

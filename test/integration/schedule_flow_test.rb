@@ -9,7 +9,7 @@ class ScheduleFlowTest < ActionDispatch::IntegrationTest
   end
 
   test "quick add puts a to-do on your own list" do
-    post tasks_path, params: { task: { title: "Call the doctor", assignee_ids: [@member.id] } }
+    post tasks_path, params: { task: { title: "Call the doctor", assignee_ids: [ @member.id ] } }
     assert_redirected_to tasks_path
     task = Task.find_by!(title: "Call the doctor")
     assert task.planned?
@@ -22,12 +22,12 @@ class ScheduleFlowTest < ActionDispatch::IntegrationTest
 
   test "a time makes it an event, an hour long unless an end is given" do
     travel_to Time.zone.local(2026, 11, 22, 8, 0) do
-      post tasks_path, params: { task: { title: "Church", assignee_ids: [@member.id], on_date: "2026-11-22", from_time: "10:00" } }
+      post tasks_path, params: { task: { title: "Church", assignee_ids: [ @member.id ], on_date: "2026-11-22", from_time: "10:00" } }
       church = Task.find_by!(title: "Church")
       assert_equal Time.zone.local(2026, 11, 22, 10, 0), church.starts_at
       assert_equal Time.zone.local(2026, 11, 22, 11, 0), church.ends_at
 
-      post tasks_path, params: { task: { title: "Late shift", assignee_ids: [@member.id], from_time: "22:00", until_time: "01:00" } }
+      post tasks_path, params: { task: { title: "Late shift", assignee_ids: [ @member.id ], from_time: "22:00", until_time: "01:00" } }
       shift = Task.find_by!(title: "Late shift")
       assert_equal Time.zone.local(2026, 11, 23, 1, 0), shift.ends_at
     end
@@ -35,7 +35,7 @@ class ScheduleFlowTest < ActionDispatch::IntegrationTest
 
   test "a day without a time holds a to-do back until then" do
     travel_to Time.zone.local(2026, 11, 22, 8, 0) do
-      post tasks_path, params: { task: { title: "Email Bob", assignee_ids: [@member.id], on_date: "2026-11-25" } }
+      post tasks_path, params: { task: { title: "Email Bob", assignee_ids: [ @member.id ], on_date: "2026-11-25" } }
       get tasks_path
       assert_select ".schedule-columns .sched-todo .sched-title", text: "Email Bob", count: 0
       assert_select ".section-title", text: /Coming up/

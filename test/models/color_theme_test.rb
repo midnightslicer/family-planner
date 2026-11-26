@@ -18,9 +18,9 @@ class ColorThemeTest < ActiveSupport::TestCase
     hue = ->(hex) { ColorTheme::Oklch.from_hex(hex.delete("#"))[2] }
     %w[#ec4899 #22c55e #3b82f6 #f97316].each do |colour|
       theme = ColorTheme.for(colour)
-      [theme.light["--accent"], theme.dark["--accent"]].each do |accent|
+      [ theme.light["--accent"], theme.dark["--accent"] ].each do |accent|
         drift = (hue.(accent) - hue.(colour)).abs
-        assert_operator [drift, 360 - drift].min, :<, 6, "#{colour} -> #{accent}"
+        assert_operator [ drift, 360 - drift ].min, :<, 6, "#{colour} -> #{accent}"
       end
     end
   end

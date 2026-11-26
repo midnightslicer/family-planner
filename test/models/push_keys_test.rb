@@ -25,7 +25,7 @@ class PushKeysTest < ActiveSupport::TestCase
 
     PushKeys.reset!
     assert_equal public_key, PushKeys.public_key
-    assert_equal [".vapid_key"], Dir.children(@dir), "no temporary files left behind"
+    assert_equal [ ".vapid_key" ], Dir.children(@dir), "no temporary files left behind"
   end
 
   test "VAPID_PRIVATE_KEY wins over the file, and a mismatched public key turns push off" do

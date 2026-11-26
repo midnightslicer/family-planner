@@ -90,10 +90,10 @@ class QrCode
     data.each { |byte| bits << byte.to_s(2).rjust(8, "0") }
 
     capacity = data_bit_capacity(@version)
-    bits << "0" * [4, capacity - bits.length].min
+    bits << "0" * [ 4, capacity - bits.length ].min
     bits << "0" * ((8 - bits.length % 8) % 8)
     codewords = bits.scan(/.{8}/).map { |byte| byte.to_i(2) }
-    pad = [0xEC, 0x11]
+    pad = [ 0xEC, 0x11 ]
     index = 0
     while codewords.length < data_codewords(@version)
       codewords << pad[index % 2]
@@ -118,7 +118,7 @@ class QrCode
       block = data[offset, length]
       offset += length
       ecc = reed_solomon_remainder(block, divisor)
-      block += [0] if i < num_short_blocks
+      block += [ 0 ] if i < num_short_blocks
       block + ecc
     end
 
@@ -133,7 +133,7 @@ class QrCode
   end
 
   def reed_solomon_divisor(degree)
-    result = Array.new(degree - 1, 0) + [1]
+    result = Array.new(degree - 1, 0) + [ 1 ]
     root = 1
     degree.times do
       degree.times do |j|
@@ -202,7 +202,7 @@ class QrCode
         y = cy + dy
         next unless x.between?(0, @size - 1) && y.between?(0, @size - 1)
 
-        distance = [dx.abs, dy.abs].max
+        distance = [ dx.abs, dy.abs ].max
         set_function(x, y, distance != 2 && distance != 4)
       end
     end
@@ -211,7 +211,7 @@ class QrCode
   def draw_alignment(cx, cy)
     (-2..2).each do |dy|
       (-2..2).each do |dx|
-        set_function(cx + dx, cy + dy, [dx.abs, dy.abs].max != 1)
+        set_function(cx + dx, cy + dy, [ dx.abs, dy.abs ].max != 1)
       end
     end
   end
@@ -318,8 +318,8 @@ class QrCode
   end
 
   FINDER_LIKE = [
-    [true, false, true, true, true, false, true, false, false, false, false],
-    [false, false, false, false, true, false, true, true, true, false, true]
+    [ true, false, true, true, true, false, true, false, false, false, false ],
+    [ false, false, false, false, true, false, true, true, true, false, true ]
   ].freeze
 
   def penalty_score

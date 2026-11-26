@@ -76,7 +76,7 @@ class TaskRecurrenceTest < ActiveSupport::TestCase
                             display_name: "Outsider", password: "secret123")
     task = Task.new(household: @household, title: "Bad assignee", assigned_to: outsider)
     assert_not task.valid?
-    assert_equal ["must be in the household"], task.assignments.first.errors[:user]
+    assert_equal [ "must be in the household" ], task.assignments.first.errors[:user]
   end
 
   test "status transitions only move along allowed paths" do

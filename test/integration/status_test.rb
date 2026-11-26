@@ -87,7 +87,7 @@ class StatusTest < ActionDispatch::IntegrationTest
                  starts_at: 10.minutes.ago, ends_at: 50.minutes.from_now)
     get root_path
     labels = css_select(".person-card .status-chip").map { |chip| chip.text.strip }.uniq
-    assert_empty labels - ["Free", "Text only", "Do not disturb"]
+    assert_empty labels - [ "Free", "Text only", "Do not disturb" ]
     css_select(".person-card .avail-free").each { |chip| assert_select chip, ".icon-sun" }
   end
 

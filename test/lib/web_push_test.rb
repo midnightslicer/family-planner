@@ -89,9 +89,9 @@ class WebPushTest < ActiveSupport::TestCase
 
     raw = B64.decode(signature)
     assert_equal 64, raw.bytesize
-    der = OpenSSL::ASN1::Sequence([raw[0, 32], raw[32, 32]].map { |half| OpenSSL::ASN1::Integer(OpenSSL::BN.new(half, 2)) }).to_der
+    der = OpenSSL::ASN1::Sequence([ raw[0, 32], raw[32, 32] ].map { |half| OpenSSL::ASN1::Integer(OpenSSL::BN.new(half, 2)) }).to_der
     verifier = OpenSSL::PKey::EC.new(OpenSSL::ASN1::Sequence([
-      OpenSSL::ASN1::Sequence([OpenSSL::ASN1::ObjectId("id-ecPublicKey"), OpenSSL::ASN1::ObjectId("prime256v1")]),
+      OpenSSL::ASN1::Sequence([ OpenSSL::ASN1::ObjectId("id-ecPublicKey"), OpenSSL::ASN1::ObjectId("prime256v1") ]),
       OpenSSL::ASN1::BitString(B64.decode(public_key))
     ]).to_der)
     assert verifier.verify("SHA256", der, "#{head}.#{claims}")
@@ -167,7 +167,7 @@ class WebPushTest < ActiveSupport::TestCase
 
     { "201" => :ok, "404" => :gone, "410" => :gone, "429" => :retry, "503" => :retry, "400" => :failed, "403" => :failed }.each do |code, status|
       sent = nil
-      transport = ->(uri, request) { sent = [uri, request]; fake_response(code, "nope") }
+      transport = ->(uri, request) { sent = [ uri, request ]; fake_response(code, "nope") }
       result = WebPush::Client.new(vapid, transport: transport)
                               .deliver(endpoint: "https://fcm.googleapis.com/fcm/send/abc", p256dh: p256dh, auth: auth,
                                        payload: '{"title":"hi"}', ttl: 60, urgency: "high", topic: "task-1")

@@ -12,7 +12,7 @@ module WebAuthn
     module_function
 
     def encode(bytes)
-      [bytes].pack("m0").tr("+/", "-_").delete("=")
+      [ bytes ].pack("m0").tr("+/", "-_").delete("=")
     end
 
     def decode(text)

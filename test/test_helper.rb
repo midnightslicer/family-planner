@@ -26,7 +26,7 @@ PushKeys.path = Rails.root.join("tmp/storage/.vapid_key")
 module PushKeys
   def self.stub_unavailable
     LOCK.synchronize do
-      @saved = defined?(@key) ? [@key] : nil
+      @saved = defined?(@key) ? [ @key ] : nil
       @key = nil
     end
     yield
@@ -50,7 +50,7 @@ class FakePushService
   end
 
   def call(uri, request)
-    @requests << [uri, request]
+    @requests << [ uri, request ]
     Net::HTTPResponse::CODE_TO_OBJ.fetch(@code).new("1.1", @code, "").tap do |response|
       response.instance_variable_set(:@body, "")
       response.instance_variable_set(:@read, true)

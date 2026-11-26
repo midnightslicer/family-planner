@@ -48,7 +48,7 @@ class NotificationUnsubscribeTest < ActionDispatch::IntegrationTest
   test "a tampered or foreign token does nothing" do
     other = NotificationUnsubscribe.token_for(users(:admin), "pets")
     tampered = other.sub(/.\z/) { |c| c == "A" ? "B" : "A" }
-    [tampered, "nonsense", Rails.application.message_verifier(:x).generate([@member.id, "pets"])].each do |token|
+    [ tampered, "nonsense", Rails.application.message_verifier(:x).generate([ @member.id, "pets" ]) ].each do |token|
       post "/notifications/unsubscribe/#{CGI.escape(token)}"
       assert_response :not_found, token
     end

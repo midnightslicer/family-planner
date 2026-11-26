@@ -12,17 +12,17 @@ class TurboStreamsChannelTest < ActionCable::Channel::TestCase
   end
 
   test "members hear their household and their own notifications" do
-    subscribe signed_stream_name: Turbo::StreamsChannel.signed_stream_name([@household, :members])
+    subscribe signed_stream_name: Turbo::StreamsChannel.signed_stream_name([ @household, :members ])
     assert subscription.confirmed?
-    subscribe signed_stream_name: Turbo::StreamsChannel.signed_stream_name([@member, :notifications])
+    subscribe signed_stream_name: Turbo::StreamsChannel.signed_stream_name([ @member, :notifications ])
     assert subscription.confirmed?
   end
 
   test "a signed name is no use to someone who left, or for another person's toasts" do
     @member.household_memberships.destroy_all
-    subscribe signed_stream_name: Turbo::StreamsChannel.signed_stream_name([@household, :members])
+    subscribe signed_stream_name: Turbo::StreamsChannel.signed_stream_name([ @household, :members ])
     assert subscription.rejected?
-    subscribe signed_stream_name: Turbo::StreamsChannel.signed_stream_name([users(:admin), :notifications])
+    subscribe signed_stream_name: Turbo::StreamsChannel.signed_stream_name([ users(:admin), :notifications ])
     assert subscription.rejected?
   end
 end

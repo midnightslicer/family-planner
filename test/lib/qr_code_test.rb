@@ -2,10 +2,10 @@ require "test_helper"
 
 class QrCodeTest < ActiveSupport::TestCase
   test "reed-solomon matches the worked HELLO WORLD 1-M example" do
-    data = [32, 91, 11, 120, 209, 114, 220, 77, 67, 64, 236, 17, 236, 17, 236, 17]
+    data = [ 32, 91, 11, 120, 209, 114, 220, 77, 67, 64, 236, 17, 236, 17, 236, 17 ]
     qr = QrCode.new("x")
     divisor = qr.send(:reed_solomon_divisor, 10)
-    assert_equal [196, 35, 39, 119, 235, 215, 231, 226, 93, 23], qr.send(:reed_solomon_remainder, data, divisor)
+    assert_equal [ 196, 35, 39, 119, 235, 215, 231, 226, 93, 23 ], qr.send(:reed_solomon_remainder, data, divisor)
   end
 
   test "picks the smallest version that fits" do
@@ -16,7 +16,7 @@ class QrCodeTest < ActiveSupport::TestCase
 
   test "draws finder patterns in three corners" do
     qr = QrCode.new("hello")
-    [[0, 0], [qr.size - 7, 0], [0, qr.size - 7]].each do |x0, y0|
+    [ [ 0, 0 ], [ qr.size - 7, 0 ], [ 0, qr.size - 7 ] ].each do |x0, y0|
       assert qr.dark?(x0, y0)
       assert qr.dark?(x0 + 6, y0 + 6)
       assert_not qr.dark?(x0 + 1, y0 + 1)

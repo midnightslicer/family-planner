@@ -149,7 +149,7 @@ module WebAuthn
       raise Error, "user presence required" if flags & FLAG_USER_PRESENT == 0
       raise Error, "user verification required" if flags & FLAG_USER_VERIFIED == 0
 
-      [flags, auth_data.byteslice(33, 4).unpack1("N")]
+      [ flags, auth_data.byteslice(33, 4).unpack1("N") ]
     end
   end
 end

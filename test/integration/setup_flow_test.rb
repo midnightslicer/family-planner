@@ -55,7 +55,7 @@ class SetupFlowTest < ActionDispatch::IntegrationTest
 
     user = User.sole
     assert user.admin?
-    assert_equal ["The Smiths"], user.households.map(&:name)
+    assert_equal [ "The Smiths" ], user.households.map(&:name)
     assert_equal "The Smiths", AppSettings.app_name
     assert_equal "http://www.example.com", Setting.get("app_url")
 
@@ -78,7 +78,7 @@ class SetupFlowTest < ActionDispatch::IntegrationTest
 
     user = User.sole
     assert_not user.password_set?
-    assert_equal [authenticator.encoded_id], user.passkeys.pluck(:external_id)
+    assert_equal [ authenticator.encoded_id ], user.passkeys.pluck(:external_id)
     assert_equal options.dig("user", "id"), user.webauthn_id
   end
 

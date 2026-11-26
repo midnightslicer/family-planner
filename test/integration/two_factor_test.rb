@@ -16,7 +16,7 @@ class TwoFactorTest < ActionDispatch::IntegrationTest
     codes = css_select(".recovery-codes code").map(&:text)
     assert_equal User::RECOVERY_CODE_COUNT, codes.size
     delete destroy_user_session_path
-    [secret, codes]
+    [ secret, codes ]
   end
 
   def password_step

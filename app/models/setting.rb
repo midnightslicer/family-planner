@@ -17,7 +17,7 @@ class Setting < ApplicationRecord
   end
 
   def self.all_by_key
-    Current.settings ||= all.to_h { |setting| [setting.key, setting.readable_value] }
+    Current.settings ||= all.to_h { |setting| [ setting.key, setting.readable_value ] }
   rescue ActiveRecord::StatementInvalid, ActiveRecord::NoDatabaseError, ActiveRecord::ConnectionNotEstablished
     {} # no database or table yet (first boot, asset precompile)
   end

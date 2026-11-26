@@ -32,8 +32,8 @@ class CreatePetsAndLocations < ActiveRecord::Migration[8.1]
       t.string :comment
       t.datetime :created_at, null: false
     end
-    add_index :location_reports, [:subject_type, :subject_id, :id]
-    add_index :location_reports, [:household_id, :subject_type, :id]
+    add_index :location_reports, [ :subject_type, :subject_id, :id ]
+    add_index :location_reports, [ :household_id, :subject_type, :id ]
 
     create_table :feedings do |t|
       t.references :household, null: false, foreign_key: true
@@ -42,7 +42,7 @@ class CreatePetsAndLocations < ActiveRecord::Migration[8.1]
       t.string :comment
       t.datetime :created_at, null: false
     end
-    add_index :feedings, [:pet_id, :created_at]
+    add_index :feedings, [ :pet_id, :created_at ]
 
     add_column :users, :birthday, :date
   end

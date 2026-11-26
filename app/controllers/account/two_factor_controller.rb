@@ -1,7 +1,7 @@
 module Account
   # Turns authenticator-app (TOTP) two-factor authentication on and off.
   class TwoFactorController < BaseController
-    rate_limit to: 10, within: 10.minutes, only: [:create, :destroy], with: -> {
+    rate_limit to: 10, within: 10.minutes, only: [ :create, :destroy ], with: -> {
       redirect_to account_root_path, alert: "Too many attempts. Wait a few minutes and try again."
     }
 

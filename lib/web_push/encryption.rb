@@ -42,7 +42,7 @@ module WebPush
       # 0x02: this is the last (only) record; no further padding.
       ciphertext = cipher.update(plaintext + "\x02".b) + cipher.final + cipher.auth_tag(TAG_LENGTH)
 
-      salt + [RECORD_SIZE].pack("N") + [as_public.bytesize].pack("C") + as_public + ciphertext
+      salt + [ RECORD_SIZE ].pack("N") + [ as_public.bytesize ].pack("C") + as_public + ciphertext
     end
 
     # The browser's public key as a point on P-256 (rejects anything else).

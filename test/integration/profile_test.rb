@@ -65,7 +65,7 @@ class ProfileTest < ActionDispatch::IntegrationTest
   end
 
   test "a swatch sets the colour, and a custom colour wins over it" do
-    { ["#ec4899", ""] => "#ec4899", ["#22c55e", "123ABC"] => "#123abc" }.each do |(color, custom), expected|
+    { [ "#ec4899", "" ] => "#ec4899", [ "#22c55e", "123ABC" ] => "#123abc" }.each do |(color, custom), expected|
       patch account_profile_path, params: profile_params(color: color, custom_color: custom)
       assert_redirected_to account_root_path
       assert_equal expected, @member.reload.color
@@ -80,7 +80,7 @@ class ProfileTest < ActionDispatch::IntegrationTest
   end
 
   test "saving the profile re-renders the person card on the board" do
-    assert_turbo_stream_broadcasts [@smiths, :members] do
+    assert_turbo_stream_broadcasts [ @smiths, :members ] do
       patch account_profile_path, params: profile_params(color: "#ec4899", custom_color: "")
     end
   end

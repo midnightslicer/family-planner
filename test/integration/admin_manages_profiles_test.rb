@@ -23,7 +23,7 @@ class AdminManagesProfilesTest < ActionDispatch::IntegrationTest
                                                   home_id: @house.id }
     assert_redirected_to edit_person_profile_path(@member)
     @member.reload
-    assert_equal ["Mom", Date.new(1960, 3, 2)], [@member.display_name, @member.birthday]
+    assert_equal [ "Mom", Date.new(1960, 3, 2) ], [ @member.display_name, @member.birthday ]
     assert @member.avatar_saved?
     assert_equal @house, @member.home_in(@smiths)
   end
@@ -36,7 +36,7 @@ class AdminManagesProfilesTest < ActionDispatch::IntegrationTest
     patch work_schedule_path, params: { person_id: @member.id,
                                         work_schedule: { availability: "busy", days: { "1" => { on: "1", from_time: "08:00", until_time: "16:00", place: "Remote" } } } }
     assert_redirected_to edit_work_schedule_path(person_id: @member.id)
-    assert_equal [1], @member.work_shifts.pluck(:weekday)
+    assert_equal [ 1 ], @member.work_shifts.pluck(:weekday)
     assert_equal "busy", @member.reload.work_availability
     assert_empty @admin.work_shifts
 

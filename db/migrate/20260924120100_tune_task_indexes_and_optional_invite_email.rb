@@ -7,7 +7,7 @@ class TuneTaskIndexesAndOptionalInviteEmail < ActiveRecord::Migration[8.1]
     # a household's tasks by status. Both lead with household_id, which makes
     # the single-column index redundant.
     remove_index :tasks, :household_id
-    add_index :tasks, [:household_id, :status, :starts_at]
-    add_index :tasks, [:household_id, :assigned_to_id, :status, :starts_at], name: "index_tasks_on_household_assignee_status"
+    add_index :tasks, [ :household_id, :status, :starts_at ]
+    add_index :tasks, [ :household_id, :assigned_to_id, :status, :starts_at ], name: "index_tasks_on_household_assignee_status"
   end
 end

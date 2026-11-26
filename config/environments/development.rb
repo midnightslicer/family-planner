@@ -82,5 +82,5 @@ Rails.application.configure do
   # Reach the dev server from a phone over the tailnet: the machines' MagicDNS
   # names, bare or fully qualified (stardrift.<tailnet>.ts.net). bin/dev
   # listens on every interface (Procfile.dev) so they can connect.
-  config.hosts += ["stardrift", "novacore", /\A(stardrift|novacore)\.[a-z0-9-]+\.ts\.net\z/]
+  config.hosts += [ "stardrift", "novacore", /\A(stardrift|novacore)\.[a-z0-9-]+\.ts\.net\z/ ]
 end

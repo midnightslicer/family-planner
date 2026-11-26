@@ -10,7 +10,7 @@ class CreateNotificationPreferences < ActiveRecord::Migration[8.1]
       t.boolean :email, null: false
       t.timestamps
     end
-    add_index :notification_preferences, [:user_id, :category], unique: true
+    add_index :notification_preferences, [ :user_id, :category ], unique: true
 
     change_table :users, bulk: true do |t|
       t.integer :reminder_lead_minutes, null: false, default: 15

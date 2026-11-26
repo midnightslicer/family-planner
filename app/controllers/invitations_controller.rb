@@ -7,7 +7,7 @@ class InvitationsController < ApplicationController
   include AccountSignup
 
   before_action :set_invitation
-  rate_limit to: 10, within: 1.minute, only: [:join, :passkey_options, :accept], with: -> {
+  rate_limit to: 10, within: 1.minute, only: [ :join, :passkey_options, :accept ], with: -> {
     redirect_to invitation_path(params[:token]), alert: "Too many attempts. Wait a minute and try again."
   }
 

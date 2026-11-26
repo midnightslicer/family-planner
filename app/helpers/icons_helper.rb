@@ -74,7 +74,7 @@ module IconsHelper
     # grow the cache without limit.
     return build_icon(name, label, css) if RENDERED.size > 2_000
 
-    RENDERED.compute_if_absent([name.to_sym, label, css]) { build_icon(name, label, css).to_str.freeze }.html_safe
+    RENDERED.compute_if_absent([ name.to_sym, label, css ]) { build_icon(name, label, css).to_str.freeze }.html_safe
   end
 
   # A flash line with its icon. Also rendered into turbo streams by
@@ -84,7 +84,7 @@ module IconsHelper
   def flash_message(message, kind)
     alert = kind.to_sym == :alert
     dismiss = tag.button(icon(:x), type: "button", class: "btn btn-quiet btn-icon", "aria-label": "Dismiss", data: { action: "toast#dismiss" })
-    tag.div(safe_join([icon(alert ? :alert_circle : :check_circle), tag.span(message, class: "toast-body"), dismiss]),
+    tag.div(safe_join([ icon(alert ? :alert_circle : :check_circle), tag.span(message, class: "toast-body"), dismiss ]),
             class: "flash-#{kind} toast", role: alert ? "alert" : "status",
             data: { controller: "toast", toast_delay_value: alert ? 10_000 : 4000,
                     action: "mouseenter->toast#hold mouseleave->toast#start focusin->toast#hold focusout->toast#start" })
@@ -92,7 +92,7 @@ module IconsHelper
 
   # Icon then text, for buttons and links: `link_to icon_label(:plus, "Add"), ...`
   def icon_label(name, text)
-    safe_join([icon(name), tag.span(text)])
+    safe_join([ icon(name), tag.span(text) ])
   end
 
   private
@@ -100,7 +100,7 @@ module IconsHelper
   def build_icon(name, label, css)
     paths = ICONS.fetch(name.to_sym)
     attrs = {
-      class: ["icon", "icon-#{name.to_s.tr('_', '-')}", css].compact.join(" "),
+      class: [ "icon", "icon-#{name.to_s.tr('_', '-')}", css ].compact.join(" "),
       viewBox: "0 0 24 24", width: 24, height: 24, fill: "none", stroke: "currentColor",
       "stroke-width": 2, "stroke-linecap": "round", "stroke-linejoin": "round",
       focusable: "false"

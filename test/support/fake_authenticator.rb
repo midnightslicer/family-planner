@@ -24,7 +24,7 @@ class FakeAuthenticator
 
   def create(challenge:, origin: @origin, rp_id: @rp_id, flags: 0x45, type: "webauthn.create")
     client_data = client_data_json(type, challenge, origin)
-    attested = [0].pack("C") * 16 + [credential_id.bytesize].pack("n") + credential_id + cbor(cose_key)
+    attested = [ 0 ].pack("C") * 16 + [ credential_id.bytesize ].pack("n") + credential_id + cbor(cose_key)
     auth_data = authenticator_data(rp_id, flags) + attested
     attestation = cbor({ "fmt" => "none", "attStmt" => {}, "authData" => auth_data })
     {
@@ -34,7 +34,7 @@ class FakeAuthenticator
       "response" => {
         "clientDataJSON" => b64(client_data),
         "attestationObject" => b64(attestation),
-        "transports" => ["internal", "bogus"]
+        "transports" => [ "internal", "bogus" ]
       }
     }
   end
@@ -69,7 +69,7 @@ class FakeAuthenticator
   end
 
   def authenticator_data(rp_id, flags)
-    OpenSSL::Digest::SHA256.digest(rp_id) + [flags].pack("C") + [@sign_count].pack("N")
+    OpenSSL::Digest::SHA256.digest(rp_id) + [ flags ].pack("C") + [ @sign_count ].pack("N")
   end
 
   def cose_key
@@ -98,10 +98,10 @@ class FakeAuthenticator
 
   def cbor_head(major, argument)
     type = major << 5
-    if argument < 24 then [type | argument].pack("C")
-    elsif argument < 256 then [type | 24, argument].pack("CC")
-    elsif argument < 65_536 then [type | 25, argument].pack("Cn")
-    else [type | 26, argument].pack("CN")
+    if argument < 24 then [ type | argument ].pack("C")
+    elsif argument < 256 then [ type | 24, argument ].pack("CC")
+    elsif argument < 65_536 then [ type | 25, argument ].pack("Cn")
+    else [ type | 26, argument ].pack("CN")
     end
   end
 end

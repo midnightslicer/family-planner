@@ -3,7 +3,7 @@
 # birthday, and the house they live in within `household` (one of its
 # houses, nothing, or a new house typed right there).
 class ProfileUpdate
-  PERMITTED = [:display_name, :color, :custom_color, :avatar, :remove_avatar, :birthday].freeze
+  PERMITTED = [ :display_name, :color, :custom_color, :avatar, :remove_avatar, :birthday ].freeze
 
   attr_reader :user
 

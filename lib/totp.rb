@@ -23,7 +23,7 @@ module Totp
   end
 
   def code_at(secret, step)
-    hmac = OpenSSL::HMAC.digest("SHA1", base32_decode(secret), [step].pack("Q>"))
+    hmac = OpenSSL::HMAC.digest("SHA1", base32_decode(secret), [ step ].pack("Q>"))
     offset = hmac.getbyte(-1) & 0x0f
     value = hmac.byteslice(offset, 4).unpack1("N") & 0x7fff_ffff
     (value % (10**DIGITS)).to_s.rjust(DIGITS, "0")
@@ -64,7 +64,7 @@ module Totp
       index = BASE32_ALPHABET.index(char) or raise ArgumentError, "invalid base32 character"
       index.to_s(2).rjust(5, "0")
     end.join
-    [bits[0, bits.length / 8 * 8]].pack("B*")
+    [ bits[0, bits.length / 8 * 8] ].pack("B*")
   end
 
   def uri_escape(text)

@@ -1,7 +1,7 @@
 class LocationsController < ApplicationController
   include HouseholdScoped
 
-  before_action :set_location, only: [:edit, :update, :destroy]
+  before_action :set_location, only: [ :edit, :update, :destroy ]
   before_action -> { require_creator_or_admin(@location) }, only: :destroy
 
   # GET /locations: every place, and who's there right now.

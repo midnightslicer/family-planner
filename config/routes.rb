@@ -64,22 +64,22 @@ Rails.application.routes.draw do
       post :back
     end
     # Follow / unfollow: notifications when it's moved or fed.
-    resource :subscription, only: [:create, :destroy], controller: "pet_subscriptions"
+    resource :subscription, only: [ :create, :destroy ], controller: "pet_subscriptions"
   end
   resources :locations, except: :show
   # Your regular work hours (optional) and days off.
-  resource :work_schedule, only: [:edit, :update]
+  resource :work_schedule, only: [ :edit, :update ]
   post   "days_off",     to: "days_off#create",  as: :days_off
   delete "days_off/:id", to: "days_off#destroy", as: :day_off
   resources :people, only: :show do
     # Admins: someone else's profile (ManagesPerson).
-    resource :profile, only: [:edit, :update], controller: "person_profiles"
+    resource :profile, only: [ :edit, :update ], controller: "person_profiles"
   end
   post "people/me/location", to: "people#locate", as: :locate_me
   post "people/me/status", to: "people#set_status", as: :status_me
 
   # Devices that get push notifications (always the signed-in person's own).
-  resources :push_subscriptions, only: [:create, :destroy] do
+  resources :push_subscriptions, only: [ :create, :destroy ] do
     collection do
       post :test
       post :unsubscribe
@@ -97,13 +97,13 @@ Rails.application.routes.draw do
     root to: "profiles#show"
     resource :profile, only: :update
     resource :password, only: :update
-    resources :passkeys, only: [:create, :update, :destroy] do
+    resources :passkeys, only: [ :create, :update, :destroy ] do
       post :options, on: :collection
     end
-    resource :two_factor, only: [:new, :create, :destroy], controller: "two_factor"
+    resource :two_factor, only: [ :new, :create, :destroy ], controller: "two_factor"
     resource :recovery_codes, only: :create
     # How you hear about updates: devices, and push/email per kind of update.
-    resource :notifications, only: [:show, :update] do
+    resource :notifications, only: [ :show, :update ] do
       post :pause
       post :resume
     end
@@ -112,20 +112,20 @@ Rails.application.routes.draw do
   # Admin namespace (admin check in Admin::BaseController)
   namespace :admin do
     root to: "households#index", as: :root
-    resources :households, only: [:index, :create, :edit, :update, :destroy] do
-      resources :memberships, only: [:update, :destroy]
+    resources :households, only: [ :index, :create, :edit, :update, :destroy ] do
+      resources :memberships, only: [ :update, :destroy ]
     end
-    resources :invitations, only: [:index, :new, :create, :show, :destroy] do
+    resources :invitations, only: [ :index, :new, :create, :show, :destroy ] do
       post :resend, on: :member
     end
-    resources :users, only: [:index, :update, :destroy] do
+    resources :users, only: [ :index, :update, :destroy ] do
       post :reset_security, on: :member
       post :password_link, on: :member
     end
-    resource :settings, only: [:show, :update] do
+    resource :settings, only: [ :show, :update ] do
       post :test_email, on: :collection
     end
     # The whole app as a zip (Backup); restoring is on a fresh server's setup page.
-    resource :backup, only: [:show, :create]
+    resource :backup, only: [ :show, :create ]
   end
 end

@@ -31,7 +31,7 @@ class Passkey < ApplicationRecord
       when /Chrome\// then "Chrome"
       when /Safari\// then "Safari"
       end
-    [device, browser].compact.join(" · ")
+    [ device, browser ].compact.join(" · ")
   end
 
   def self.attributes_from(registration, name:)

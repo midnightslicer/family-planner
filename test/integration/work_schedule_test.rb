@@ -9,7 +9,7 @@ class WorkScheduleTest < ActionDispatch::IntegrationTest
   end
 
   def weekdays(from: "09:00", until_time: "17:00", place: "Little house")
-    (1..5).to_h { |wday| [wday.to_s, { on: "1", from_time: from, until_time: until_time, place: place }] }
+    (1..5).to_h { |wday| [ wday.to_s, { on: "1", from_time: from, until_time: until_time, place: place } ] }
   end
 
   # Monday 2026-11-23.
@@ -28,14 +28,14 @@ class WorkScheduleTest < ActionDispatch::IntegrationTest
     sign_in @member
     patch work_schedule_path, params: { work_schedule: { availability: "busy", days: weekdays } }
     assert_redirected_to edit_work_schedule_path
-    assert_equal [1, 2, 3, 4, 5], @member.work_shifts.pluck(:weekday)
+    assert_equal [ 1, 2, 3, 4, 5 ], @member.work_shifts.pluck(:weekday)
     assert_equal "busy", @member.reload.work_availability
 
     # Unticking a day removes it, and each save keeps a dated copy.
     patch work_schedule_path, params: { work_schedule: { availability: "text", days: weekdays.slice("1") } }
-    assert_equal [1], @member.work_shifts.reload.pluck(:weekday)
+    assert_equal [ 1 ], @member.work_shifts.reload.pluck(:weekday)
     versions = @member.work_schedule_versions.order(:effective_at)
-    assert_equal [5, 1], versions.map { |v| v.shifts.size }
+    assert_equal [ 5, 1 ], versions.map { |v| v.shifts.size }
     assert_equal %w[busy text], versions.map(&:availability)
     assert_equal({ "weekday" => 1, "from_time" => "09:00", "until_time" => "17:00", "place" => "Little house" }, versions.last.shifts.first)
   end
@@ -50,7 +50,7 @@ class WorkScheduleTest < ActionDispatch::IntegrationTest
       "1" => { on: "1", from_time: "09:00", until_time: "17:00", place: "Office" },
       "2" => { on: "1", from_time: "09:00", until_time: "17:00", place: "new", place_other: "Client site" }
     } } }
-    assert_equal ["Office", "Client site"], @member.work_shifts.order(:weekday).pluck(:place)
+    assert_equal [ "Office", "Client site" ], @member.work_shifts.order(:weekday).pluck(:place)
     assert_equal 1, @smiths.locations.count, "Office is only a label, not a location"
 
     get edit_work_schedule_path

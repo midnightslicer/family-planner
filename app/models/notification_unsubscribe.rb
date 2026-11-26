@@ -6,7 +6,7 @@ module NotificationUnsubscribe
   module_function
 
   def token_for(user, category)
-    verifier.generate([user.id, NotificationPreference.category(category).key], purpose: :unsubscribe)
+    verifier.generate([ user.id, NotificationPreference.category(category).key ], purpose: :unsubscribe)
   end
 
   # [user, category key], or nil for a bad token or a deleted account.
@@ -15,7 +15,7 @@ module NotificationUnsubscribe
     return unless NotificationPreference::CATEGORIES.key?(category)
 
     user = User.find_by(id: user_id) or return
-    [user, category]
+    [ user, category ]
   rescue ActiveSupport::MessageVerifier::InvalidSignature, ArgumentError, TypeError
     nil
   end

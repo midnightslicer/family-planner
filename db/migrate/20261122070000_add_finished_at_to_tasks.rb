@@ -5,7 +5,7 @@ class AddFinishedAtToTasks < ActiveRecord::Migration[8.1]
   def up
     add_column :tasks, :finished_at, :datetime
     execute "UPDATE tasks SET finished_at = updated_at WHERE status IN (2, 3)"
-    add_index :tasks, [:household_id, :finished_at]
+    add_index :tasks, [ :household_id, :finished_at ]
   end
 
   def down

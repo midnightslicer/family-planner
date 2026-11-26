@@ -38,7 +38,7 @@ class PushSubscriptionsTest < ActionDispatch::IntegrationTest
 
   test "endpoints off the push-service allowlist, or over http, are refused" do
     sign_in @member
-    ["http://fcm.googleapis.com/fcm/send/x", "https://127.0.0.1/x", "https://evil.example/push", "https://169.254.169.254/"].each do |endpoint|
+    [ "http://fcm.googleapis.com/fcm/send/x", "https://127.0.0.1/x", "https://evil.example/push", "https://169.254.169.254/" ].each do |endpoint|
       subscribe(browser_subscription(endpoint))
       assert_response :unprocessable_content, endpoint
     end

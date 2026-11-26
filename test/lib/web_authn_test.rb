@@ -15,19 +15,19 @@ class WebAuthnTest < ActiveSupport::TestCase
 
   test "registration options describe a discoverable, verified passkey" do
     options = @rp.registration_options(challenge: "abc", user_handle: "\x01\x02".b, user_name: "sam@example.com",
-                                       display_name: "Sam", exclude: ["cred1"])
+                                       display_name: "Sam", exclude: [ "cred1" ])
     assert_equal "status.example.com", options[:rp][:id]
     assert_equal "AQI", options[:user][:id]
     assert_equal "required", options[:authenticatorSelection][:residentKey]
     assert_equal "required", options[:authenticatorSelection][:userVerification]
-    assert_equal [{ type: "public-key", id: "cred1" }], options[:excludeCredentials]
+    assert_equal [ { type: "public-key", id: "cred1" } ], options[:excludeCredentials]
   end
 
   test "registration returns the credential and a loadable public key" do
     registration = register
     assert_equal @authenticator.encoded_id, registration.credential_id
     assert_equal WebAuthn::CoseKey::ES256, registration.algorithm
-    assert_equal ["internal"], registration.transports
+    assert_equal [ "internal" ], registration.transports
     assert_equal @authenticator.key.public_to_der, registration.public_key
   end
 
@@ -45,7 +45,7 @@ class WebAuthnTest < ActiveSupport::TestCase
   end
 
   test "registration rejects garbage without raising anything else" do
-    ["", nil, {}, { "response" => { "clientDataJSON" => "!!", "attestationObject" => "AA" } }].each do |junk|
+    [ "", nil, {}, { "response" => { "clientDataJSON" => "!!", "attestationObject" => "AA" } } ].each do |junk|
       assert_raises(WebAuthn::Error) { @rp.verify_registration(junk, challenge: "c") }
     end
   end
@@ -104,7 +104,7 @@ class WebAuthnTest < ActiveSupport::TestCase
   end
 
   test "cbor decoder handles the common types and refuses truncation" do
-    assert_equal({ 1 => [-1, "a", "\x00".b], "k" => true },
+    assert_equal({ 1 => [ -1, "a", "\x00".b ], "k" => true },
                  WebAuthn::Cbor.decode("\xA2\x01\x83\x20\x61\x61\x41\x00\x61\x6B\xF5".b))
     assert_raises(WebAuthn::Error) { WebAuthn::Cbor.decode("\x5A\xFF\xFF\xFF\xFF".b) }
     assert_raises(WebAuthn::Error) { WebAuthn::Cbor.decode("\x9B\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF".b) }

@@ -65,7 +65,7 @@ class SecurityTest < ActionDispatch::IntegrationTest
 
   test "members can't reach the admin area" do
     sign_in @member
-    [admin_users_path, admin_settings_path, admin_households_path, admin_invitations_path].each do |path|
+    [ admin_users_path, admin_settings_path, admin_households_path, admin_invitations_path ].each do |path|
       get path
       assert_response :forbidden, path
     end
@@ -144,7 +144,7 @@ class SecurityTest < ActionDispatch::IntegrationTest
     Task.create!(household: @household, title: "Therapy", private: true, created_by: @admin, assigned_to: @admin,
                  starts_at: starts, ends_at: starts + 1.hour)
     sign_in @member
-    post tasks_path, params: { task: { title: "Church", assignee_ids: [@admin.id], on_date: starts.to_date.iso8601, from_time: "10:00" } }
+    post tasks_path, params: { task: { title: "Church", assignee_ids: [ @admin.id ], on_date: starts.to_date.iso8601, from_time: "10:00" } }
     follow_redirect!
     assert_select ".flash-notice", text: /Admin User has Busy then/
     assert_no_match(/Therapy/, response.body)

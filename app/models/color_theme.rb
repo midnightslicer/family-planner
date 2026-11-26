@@ -37,7 +37,7 @@ class ColorTheme
   def light
     @light ||= begin
       bg = tint(0.972, 0.010)
-      accent = readable(on: bg, from: [@l, 0.62].min, step: -0.01)
+      accent = readable(on: bg, from: [ @l, 0.62 ].min, step: -0.01)
       {
         "--bg" => bg,
         "--surface-sunken" => tint(0.983, 0.007),
@@ -45,7 +45,7 @@ class ColorTheme
         "--border-strong" => tint(0.872, 0.016),
         "--accent" => accent,
         "--accent-hover" => shade(accent, -0.06),
-        "--accent-soft" => Oklch.to_hex(0.957, [@c * 0.3, 0.035].min, @h),
+        "--accent-soft" => Oklch.to_hex(0.957, [ @c * 0.3, 0.035 ].min, @h),
         "--accent-fg" => "#ffffff"
       }.freeze
     end
@@ -54,7 +54,7 @@ class ColorTheme
   def dark
     @dark ||= begin
       bg = tint(0.172, 0.012)
-      accent = readable(on: bg, from: [@l, 0.74].max, step: 0.01)
+      accent = readable(on: bg, from: [ @l, 0.74 ].max, step: 0.01)
       {
         "--bg" => bg,
         "--surface" => tint(0.215, 0.015),
@@ -78,7 +78,7 @@ class ColorTheme
   def surface(scheme) = scheme == :dark ? dark["--surface"] : "#ffffff"
 
   def self.contrast(hex_a, hex_b)
-    a, b = [hex_a, hex_b].map { |hex| Oklch.luminance(hex) }.minmax
+    a, b = [ hex_a, hex_b ].map { |hex| Oklch.luminance(hex) }.minmax
     (b + 0.05) / (a + 0.05)
   end
 
@@ -125,7 +125,7 @@ class ColorTheme
       lightness = 0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s
       a = 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s
       bb = 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s
-      [lightness, Math.hypot(a, bb), Math.atan2(bb, a) * 180 / Math::PI % 360]
+      [ lightness, Math.hypot(a, bb), Math.atan2(bb, a) * 180 / Math::PI % 360 ]
     end
 
     def to_hex(lightness, chroma, hue)

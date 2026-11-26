@@ -22,7 +22,7 @@ class User < ApplicationRecord
   validates :work_availability, inclusion: { in: %w[free text busy] }
 
   # Notification settings (the Notifications page).
-  REMINDER_LEADS = [5, 15, 30, 60].freeze
+  REMINDER_LEADS = [ 5, 15, 30, 60 ].freeze
   DIGEST_HOURS = (0..23).freeze
   QUIET_STEP = 30 # quiet hours start and end on the hour or half hour
   validates :reminder_lead_minutes, inclusion: { in: REMINDER_LEADS }
@@ -77,7 +77,7 @@ class User < ApplicationRecord
   # The person card for this user, re-rendered on every board they're on
   # (after a name, colour or photo change).
   def broadcast_card
-    households.each { |household| household.broadcast_member_cards([id]) }
+    households.each { |household| household.broadcast_member_cards([ id ]) }
   end
 
   def works?
@@ -240,7 +240,7 @@ class User < ApplicationRecord
     remaining = Array(otp_recovery_codes)
     return false unless remaining.any? { |stored| ActiveSupport::SecurityUtils.secure_compare(stored, digest) }
 
-    update!(otp_recovery_codes: remaining - [digest])
+    update!(otp_recovery_codes: remaining - [ digest ])
     true
   end
 

@@ -39,19 +39,19 @@ class NotificationSettingsTest < ActionDispatch::IntegrationTest
 
   test "saving the matrix creates and then updates rows" do
     smtp_on!
-    patch account_notifications_path, params: { notifications: matrix(pets: [false, true], assigned: [true, false]) }
+    patch account_notifications_path, params: { notifications: matrix(pets: [ false, true ], assigned: [ true, false ]) }
     assert_redirected_to account_notifications_path
-    assert_equal [false, true], @member.notification_preference("pets").then { [it.push, it.email] }
-    assert_equal [true, false], @member.reload.notification_preference("assigned").then { [it.push, it.email] }
+    assert_equal [ false, true ], @member.notification_preference("pets").then { [ it.push, it.email ] }
+    assert_equal [ true, false ], @member.reload.notification_preference("assigned").then { [ it.push, it.email ] }
 
-    patch account_notifications_path, params: { notifications: matrix(pets: [true, true]) }
+    patch account_notifications_path, params: { notifications: matrix(pets: [ true, true ]) }
     assert_equal 1, @member.notification_preferences.where(category: "pets").count
     assert @member.reload.notification_preference("pets").push
   end
 
   test "unknown categories are ignored, and only your own settings change" do
     smtp_on!
-    patch account_notifications_path, params: { notifications: matrix(hacking: [true, true]).deep_merge(user_id: @admin.id, categories: { pets: { push: "0" } }) }
+    patch account_notifications_path, params: { notifications: matrix(hacking: [ true, true ]).deep_merge(user_id: @admin.id, categories: { pets: { push: "0" } }) }
     assert_redirected_to account_notifications_path
     assert_equal %w[pets], @member.notification_preferences.pluck(:category)
     assert_empty @admin.notification_preferences
@@ -60,20 +60,20 @@ class NotificationSettingsTest < ActionDispatch::IntegrationTest
   test "lead time, digest hour and quiet hours only take allowed values" do
     patch account_notifications_path, params: { notifications: { reminder_lead_minutes: "30", digest_hour: "6" } }
     assert_redirected_to account_notifications_path
-    assert_equal [30, 6], @member.reload.then { [it.reminder_lead_minutes, it.digest_hour] }
+    assert_equal [ 30, 6 ], @member.reload.then { [ it.reminder_lead_minutes, it.digest_hour ] }
 
-    [{ reminder_lead_minutes: "7" }, { digest_hour: "24" }, { reminder_lead_minutes: "abc" },
+    [ { reminder_lead_minutes: "7" }, { digest_hour: "24" }, { reminder_lead_minutes: "abc" },
      { quiet_hours: "1", quiet_hours_start: "1325", quiet_hours_end: "420" },
-     { quiet_hours: "1", quiet_hours_start: "1320", quiet_hours_end: "" }].each do |bad|
+     { quiet_hours: "1", quiet_hours_start: "1320", quiet_hours_end: "" } ].each do |bad|
       patch account_notifications_path, params: { notifications: bad }
       assert_response :unprocessable_content, bad.inspect
     end
-    assert_equal [30, 6, nil], @member.reload.then { [it.reminder_lead_minutes, it.digest_hour, it.quiet_hours_start] }
+    assert_equal [ 30, 6, nil ], @member.reload.then { [ it.reminder_lead_minutes, it.digest_hour, it.quiet_hours_start ] }
   end
 
   test "quiet hours turn on and off" do
     patch account_notifications_path, params: { notifications: { quiet_hours: "1", quiet_hours_start: "1320", quiet_hours_end: "420" } }
-    assert_equal [1320, 420], @member.reload.then { [it.quiet_hours_start, it.quiet_hours_end] }
+    assert_equal [ 1320, 420 ], @member.reload.then { [ it.quiet_hours_start, it.quiet_hours_end ] }
     patch account_notifications_path, params: { notifications: { quiet_hours: "0", quiet_hours_start: "1320", quiet_hours_end: "420" } }
     assert_not @member.reload.quiet_hours?
   end
@@ -85,7 +85,7 @@ class NotificationSettingsTest < ActionDispatch::IntegrationTest
     assert_select ".matrix-hints", text: /Email isn't set up/
 
     # Disabled boxes don't submit; even a forged "0" mustn't wipe the choice.
-    patch account_notifications_path, params: { notifications: matrix(pets: [false, false]) }
+    patch account_notifications_path, params: { notifications: matrix(pets: [ false, false ]) }
     pets = @member.reload.notification_preference("pets")
     assert_not pets.push
     assert pets.email
@@ -97,7 +97,7 @@ class NotificationSettingsTest < ActionDispatch::IntegrationTest
     PushKeys.stub_unavailable do
       get account_notifications_path
       assert_select "input[type=checkbox][name='notifications[categories][pets][push]'][disabled]"
-      patch account_notifications_path, params: { notifications: matrix(pets: [false, true]) }
+      patch account_notifications_path, params: { notifications: matrix(pets: [ false, true ]) }
     end
     pets = @member.reload.notification_preference("pets")
     assert pets.push

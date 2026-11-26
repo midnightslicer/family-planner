@@ -10,6 +10,6 @@ class CreateStatusUpdates < ActiveRecord::Migration[8.1]
       t.datetime :expires_at, null: false
       t.datetime :created_at, null: false
     end
-    add_index :status_updates, [:user_id, :id]
+    add_index :status_updates, [ :user_id, :id ]
   end
 end

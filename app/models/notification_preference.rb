@@ -19,7 +19,7 @@ class NotificationPreference < ApplicationRecord
   belongs_to :user
 
   validates :category, inclusion: { in: CATEGORIES.keys }, uniqueness: { scope: :user_id }
-  validates :push, :email, inclusion: { in: [true, false] }
+  validates :push, :email, inclusion: { in: [ true, false ] }
 
   after_initialize :apply_defaults, if: :new_record?
 

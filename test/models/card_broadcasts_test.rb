@@ -14,7 +14,7 @@ class CardBroadcastsTest < ActiveSupport::TestCase
   end
 
   def card_replaces(user)
-    capture_turbo_stream_broadcasts([@smiths, :members])
+    capture_turbo_stream_broadcasts([ @smiths, :members ])
       .count { |stream| stream["action"] == "replace" && stream["target"] == "person_card_user_#{user.id}" }
   end
 
@@ -63,10 +63,10 @@ class CardBroadcastsPerRequestTest < ActionDispatch::IntegrationTest
     smiths = households(:smiths)
     admin, member = users(:admin), users(:member)
     sign_in admin
-    post tasks_path, params: { task: { title: "Picnic", assignee_ids: [admin.id, member.id] } }
+    post tasks_path, params: { task: { title: "Picnic", assignee_ids: [ admin.id, member.id ] } }
     assert_redirected_to tasks_path
 
-    replaces = capture_turbo_stream_broadcasts([smiths, :members]).select { |stream| stream["action"] == "replace" }
-    assert_equal ["person_card_user_#{admin.id}", "person_card_user_#{member.id}"].sort, replaces.map { |stream| stream["target"] }.sort
+    replaces = capture_turbo_stream_broadcasts([ smiths, :members ]).select { |stream| stream["action"] == "replace" }
+    assert_equal [ "person_card_user_#{admin.id}", "person_card_user_#{member.id}" ].sort, replaces.map { |stream| stream["target"] }.sort
   end
 end

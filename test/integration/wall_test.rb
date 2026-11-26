@@ -42,7 +42,7 @@ class WallTest < ActionDispatch::IntegrationTest
     wall
     assert_select "body.kiosk[data-controller='wall-drift']"
     colours = JSON.parse(css_select("body").first["data-wall-drift-colors-value"])
-    assert_equal [@admin.color], colours # each colour once
+    assert_equal [ @admin.color ], colours # each colour once
   end
 
   test "a pet's inside, outside or penned up shows as a chip" do
@@ -131,7 +131,7 @@ class WallTest < ActionDispatch::IntegrationTest
     LocationReport.create!(household: @smiths, subject: @member, location: @pool, reported_by: @member)
     LocationReport.create!(household: @smiths, subject: @admin, location: @house, reported_by: @admin)
     wall # one each: a house before a pool
-    assert_equal ["Big house", "Pool"], css_select(".wall-place h2").map(&:text)
+    assert_equal [ "Big house", "Pool" ], css_select(".wall-place h2").map(&:text)
 
     rex = @smiths.pets.create!(name: "Rex")
     LocationReport.create!(household: @smiths, subject: rex, location: @pool, reported_by: @member)
@@ -140,6 +140,6 @@ class WallTest < ActionDispatch::IntegrationTest
     LocationReport.create!(household: @smiths, subject: bo, location: @yard, reported_by: @member)
     assert_nil tom.status.report
     wall # pool 2, big house 1, yard 1, somewhere else 1 (Tom)
-    assert_equal ["Pool", "Big house", "Yard", "Somewhere else"], css_select(".wall-place h2").map(&:text)
+    assert_equal [ "Pool", "Big house", "Yard", "Somewhere else" ], css_select(".wall-place h2").map(&:text)
   end
 end

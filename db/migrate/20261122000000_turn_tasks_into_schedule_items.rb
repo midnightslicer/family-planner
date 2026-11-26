@@ -8,7 +8,7 @@ class TurnTasksIntoScheduleItems < ActiveRecord::Migration[8.1]
     add_column :tasks, :place, :string
     add_column :tasks, :due_on, :date
     add_column :tasks, :started_at, :datetime
-    add_index :tasks, [:household_id, :assigned_to_id, :due_on]
+    add_index :tasks, [ :household_id, :assigned_to_id, :due_on ]
 
     # Start used to stamp starts_at on to-dos; move that stamp to started_at
     # where the task had no end time (so it was never a scheduled event).
@@ -20,7 +20,7 @@ class TurnTasksIntoScheduleItems < ActiveRecord::Migration[8.1]
 
   def down
     execute "UPDATE tasks SET starts_at = started_at WHERE starts_at IS NULL AND started_at IS NOT NULL"
-    remove_index :tasks, [:household_id, :assigned_to_id, :due_on]
+    remove_index :tasks, [ :household_id, :assigned_to_id, :due_on ]
     remove_column :tasks, :started_at
     remove_column :tasks, :due_on
     remove_column :tasks, :place

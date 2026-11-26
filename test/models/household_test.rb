@@ -65,9 +65,9 @@ class HouseholdTest < ActiveSupport::TestCase
       picnic.assignments.create!(user: member, status: "accepted")
       Task.create!(household: smiths, title: "Lunch", assigned_to: member, starts_at: 2.hours.from_now)
 
-      [smiths.member_statuses, smiths.member_statuses(members: smiths.board_members, places: smiths.places)].each do |statuses|
-        assert_equal ["Picnic", "Picnic"], [statuses[admin.id][:current].title, statuses[member.id][:current].title]
-        assert_equal [yard, yard], [statuses[admin.id][:at], statuses[member.id][:at]]
+      [ smiths.member_statuses, smiths.member_statuses(members: smiths.board_members, places: smiths.places) ].each do |statuses|
+        assert_equal [ "Picnic", "Picnic" ], [ statuses[admin.id][:current].title, statuses[member.id][:current].title ]
+        assert_equal [ yard, yard ], [ statuses[admin.id][:at], statuses[member.id][:at] ]
         assert_equal "Lunch", statuses[member.id][:next].title
         assert_nil statuses[admin.id][:next]
       end

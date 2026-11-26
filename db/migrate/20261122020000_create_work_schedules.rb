@@ -11,7 +11,7 @@ class CreateWorkSchedules < ActiveRecord::Migration[8.1]
       t.string :place
       t.timestamps
     end
-    add_index :work_shifts, [:user_id, :weekday], unique: true
+    add_index :work_shifts, [ :user_id, :weekday ], unique: true
 
     create_table :days_off do |t|
       t.references :user, null: false, foreign_key: true, index: false
@@ -20,7 +20,7 @@ class CreateWorkSchedules < ActiveRecord::Migration[8.1]
       t.string :note
       t.timestamps
     end
-    add_index :days_off, [:user_id, :starts_on, :ends_on]
+    add_index :days_off, [ :user_id, :starts_on, :ends_on ]
 
     add_column :users, :work_availability, :string, null: false, default: "text"
   end

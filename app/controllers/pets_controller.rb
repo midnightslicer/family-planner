@@ -3,7 +3,7 @@ class PetsController < ApplicationController
 
   HISTORY_LIMIT = 15
 
-  before_action :set_pet, only: [:show, :edit, :update, :destroy, :away, :back]
+  before_action :set_pet, only: [ :show, :edit, :update, :destroy, :away, :back ]
   before_action -> { require_creator_or_admin(@pet) }, only: :destroy
 
   # GET /pets: every pet's card, with what to do next right on it.

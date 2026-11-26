@@ -1,6 +1,6 @@
 module Admin
   class HouseholdsController < BaseController
-    before_action :set_household, only: [:edit, :update, :destroy]
+    before_action :set_household, only: [ :edit, :update, :destroy ]
 
     def index
       @households = Household.left_joins(:household_memberships)

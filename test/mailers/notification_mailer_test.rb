@@ -14,11 +14,11 @@ class NotificationMailerTest < ActionMailer::TestCase
 
   test "says what happened, links to it on the public address, and how to stop" do
     email = mail
-    assert_equal [@member.email], email.to
+    assert_equal [ @member.email ], email.to
     assert_equal "[The Smiths] Sam added you to Church", email.subject
     html = email.html_part.body.to_s
     text = email.text_part.body.to_s
-    [html, text].each do |part|
+    [ html, text ].each do |part|
       assert_includes part, "Bring snacks."
       assert_includes part, "https://status.example.com/tasks/5?household=#{@smiths.id}"
       assert_includes part, "https://status.example.com/account/notifications"

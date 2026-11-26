@@ -27,10 +27,10 @@ class PersonScheduleTest < ActiveSupport::TestCase
         %i[today todos later done].each do |list|
           assert_equal own.public_send(list).map(&:title), batched.public_send(list).map(&:title), "#{member.display_name} #{list}"
         end
-        assert_equal [own.now&.title, own.work&.starts_at], [batched.now&.title, batched.work&.starts_at]
+        assert_equal [ own.now&.title, own.work&.starts_at ], [ batched.now&.title, batched.work&.starts_at ]
       end
-      assert_equal ["Shared"], family.fetch(@admin).today.map(&:title)
-      assert_equal ["Shared", "Work"], family.fetch(@member).today.map(&:title)
+      assert_equal [ "Shared" ], family.fetch(@admin).today.map(&:title)
+      assert_equal [ "Shared", "Work" ], family.fetch(@member).today.map(&:title)
       assert_not_includes family.fetch(@member).todos.map(&:title), "Secret", "others' private to-dos stay hidden"
     end
   end

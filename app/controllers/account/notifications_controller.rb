@@ -4,7 +4,7 @@ module Account
   # own: admins don't manage other people's (like sign-in security), and no
   # user id is ever read from params.
   class NotificationsController < BaseController
-    PAUSE_HOURS = [1, 8, 24].freeze
+    PAUSE_HOURS = [ 1, 8, 24 ].freeze
 
     before_action :load_page, only: :show
 

@@ -43,7 +43,7 @@ class PrivateAndLinkedEventsTest < ActionDispatch::IntegrationTest
 
   test "the private box saves from the form, and you see your own private items in full" do
     sign_in @member
-    post tasks_path, params: { task: { title: "Buy Mom's present", assignee_ids: [@member.id], private: "1" } }
+    post tasks_path, params: { task: { title: "Buy Mom's present", assignee_ids: [ @member.id ], private: "1" } }
     assert Task.find_by!(title: "Buy Mom's present").private?
     get tasks_path
     assert_select ".sched-title", text: "Buy Mom's present"

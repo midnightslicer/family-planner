@@ -7,7 +7,7 @@ class PushSubscriptionsController < ApplicationController
   # at all: knowing the old endpoint, a secret only that browser and we
   # hold, is what authorises it.
   skip_forgery_protection only: :renew
-  rate_limit to: 20, within: 1.minute, only: [:create, :test, :unsubscribe, :renew], with: -> { rate_limited_json }
+  rate_limit to: 20, within: 1.minute, only: [ :create, :test, :unsubscribe, :renew ], with: -> { rate_limited_json }
 
   # POST /push_subscriptions (JSON: { subscription: PushSubscription.toJSON() })
   #

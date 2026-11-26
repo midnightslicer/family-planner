@@ -5,8 +5,8 @@
 class TasksController < ApplicationController
   include HouseholdScoped
 
-  before_action :set_task, only: [:show, :edit, :update, :destroy, :start, :pause, :complete, :cancel, :accept, :decline]
-  before_action :require_editor, only: [:edit, :update, :destroy]
+  before_action :set_task, only: [ :show, :edit, :update, :destroy, :start, :pause, :complete, :cancel, :accept, :decline ]
+  before_action :require_editor, only: [ :edit, :update, :destroy ]
 
   # GET /tasks
   def index
@@ -24,8 +24,8 @@ class TasksController < ApplicationController
                 @members.find { |member| member == current_user } || current_user
       @schedule = PersonSchedule.new(current_household, @person, viewer: current_user, places: places)
       @task = current_household.tasks.new
-      @assignee_ids = [@person.id]
-      @where = LocationReport.latest_for(current_household, "User", [@person.id])[@person.id]
+      @assignee_ids = [ @person.id ]
+      @where = LocationReport.latest_for(current_household, "User", [ @person.id ])[@person.id]
       # Their event's place, unless they've said where they are since it started.
       @at = @schedule.at unless @where&.newer_than?(@schedule.now)
       if @person == current_user
@@ -39,7 +39,7 @@ class TasksController < ApplicationController
   # usual way in).
   def new
     @task = current_household.tasks.new(on_date: params[:on])
-    @assignee_ids = [current_user.id]
+    @assignee_ids = [ current_user.id ]
   end
 
   # POST /tasks: "start_now" adds it and starts it. It goes on the chosen
@@ -153,7 +153,7 @@ class TasksController < ApplicationController
   # sent, so ticking nobody means "anyone"). Missing entirely: yourself.
   def assignee_ids
     ids = params.dig(:task, :assignee_ids)
-    ids.nil? ? [current_user.id] : Array(ids).compact_blank.map(&:to_i)
+    ids.nil? ? [ current_user.id ] : Array(ids).compact_blank.map(&:to_i)
   end
 
   # A button pressed on a stale page (it already moved on) says so instead

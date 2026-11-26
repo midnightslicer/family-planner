@@ -25,7 +25,7 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
   end
 
   test "the feed and where screens group pets by type" do
-    [new_feeding_path, new_pet_location_path].each do |path|
+    [ new_feeding_path, new_pet_location_path ].each do |path|
       get path
       assert_response :success
       assert_select ".pick-group", 2
@@ -69,11 +69,11 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
   end
 
   test "report several pets at once with a comment" do
-    get new_pet_location_path(pet_ids: [@rex.id])
+    get new_pet_location_path(pet_ids: [ @rex.id ])
     assert_select "input[name='check_in[pet_ids][]'][value='#{@rex.id}'][checked]"
     assert_select "input[name='check_in[pet_ids][]'][value='#{@tom.id}']:not([checked])"
 
-    post pet_locations_path, params: { check_in: { pet_ids: [@rex.id, @tom.id], location_id: @yard.id, comment: "Gate shut" } }
+    post pet_locations_path, params: { check_in: { pet_ids: [ @rex.id, @tom.id ], location_id: @yard.id, comment: "Gate shut" } }
     assert_redirected_to pets_path
     follow_redirect!
     assert_select ".flash-notice", text: /Rex and Tom are at Yard/
@@ -86,7 +86,7 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_content
     assert_select ".flash-alert", text: /Pick at least one pet/
 
-    post pet_locations_path, params: { check_in: { pet_ids: [@rex.id], location_id: "new", new_location_name: "" } }
+    post pet_locations_path, params: { check_in: { pet_ids: [ @rex.id ], location_id: "new", new_location_name: "" } }
     assert_response :unprocessable_content
     assert_select ".flash-alert", text: /New location can't be blank/
     assert_select "input[name='check_in[pet_ids][]'][value='#{@rex.id}'][checked]"
@@ -97,7 +97,7 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     get new_feeding_path
     assert_select ".feeding-notes", text: /One cup at 7am/
 
-    post feedings_path, params: { check_in: { pet_ids: [@rex.id, @tom.id] } }
+    post feedings_path, params: { check_in: { pet_ids: [ @rex.id, @tom.id ] } }
     follow_redirect!
     assert_select ".flash-notice", text: /Fed Rex and Tom/
     assert_equal 1, @rex.feedings.count
@@ -129,7 +129,7 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     assert_select ".spot-field input[name='check_in[spot]'][value='outside']"
     assert_select ".pick-house input[value='#{@house.id}']"
 
-    post pet_locations_path, params: { check_in: { pet_ids: [@rex.id], location_id: @house.id, spot: "outside" } }
+    post pet_locations_path, params: { check_in: { pet_ids: [ @rex.id ], location_id: @house.id, spot: "outside" } }
     follow_redirect!
     assert_select ".flash-notice", text: "Rex is at House (outside)."
     assert_select "##{dom_id(@rex, :pet_card)} .pet-where-name", text: "House"
@@ -140,7 +140,7 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     get new_pet_location_path
     assert_select ".pen-field input[type=checkbox][name='check_in[penned]']"
 
-    post pet_locations_path, params: { check_in: { pet_ids: [@rex.id], location_id: @house.id, spot: "outside", penned: "1" } }
+    post pet_locations_path, params: { check_in: { pet_ids: [ @rex.id ], location_id: @house.id, spot: "outside", penned: "1" } }
     follow_redirect!
     assert_select ".flash-notice", text: "Rex is at House (outside, penned up)."
     assert_select "##{dom_id(@rex, :pet_card)} .pet-where-name", text: "House"
@@ -152,15 +152,15 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
   end
 
   test "inside, outside and penned up only count at a house, and penned up only outside" do
-    post pet_locations_path, params: { check_in: { pet_ids: [@rex.id], location_id: @yard.id, spot: "inside", penned: "1" } }
+    post pet_locations_path, params: { check_in: { pet_ids: [ @rex.id ], location_id: @yard.id, spot: "inside", penned: "1" } }
     assert_nil @rex.status.report.spot
     assert_not @rex.status.report.penned?
     follow_redirect!
     assert_select ".flash-notice", text: "Rex is at #{@yard.name}."
 
-    post pet_locations_path, params: { check_in: { pet_ids: [@rex.id], location_id: @house.id, spot: "inside", penned: "1" } }
+    post pet_locations_path, params: { check_in: { pet_ids: [ @rex.id ], location_id: @house.id, spot: "inside", penned: "1" } }
     assert_not @rex.status.report.penned?
-    post pet_locations_path, params: { check_in: { pet_ids: [@rex.id], location_id: @house.id, penned: "1" } }
+    post pet_locations_path, params: { check_in: { pet_ids: [ @rex.id ], location_id: @house.id, penned: "1" } }
     assert_not @rex.status.report.penned?
     follow_redirect!
     assert_select ".flash-notice", text: "Rex is at House."
@@ -193,7 +193,7 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     assert_select ".wall-pet", text: /Rex/, count: 0
 
     # Even posted directly, an away pet isn't fed or moved.
-    post feedings_path, params: { check_in: { pet_ids: [@rex.id] } }
+    post feedings_path, params: { check_in: { pet_ids: [ @rex.id ] } }
     assert_equal 0, @rex.feedings.count
 
     get pet_path(@rex)
@@ -257,12 +257,12 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
   end
 
   test "a new place can be added right in the report form; typing an existing one's name reuses it" do
-    post pet_locations_path, params: { check_in: { pet_ids: [@rex.id, @tom.id], location_id: "new", new_location_name: " Pool " } }
+    post pet_locations_path, params: { check_in: { pet_ids: [ @rex.id, @tom.id ], location_id: "new", new_location_name: " Pool " } }
     pool = @smiths.locations.find_by!(name: "Pool")
     assert_equal @member, pool.created_by
-    assert_equal [pool, pool], [@rex, @tom].map { |pet| pet.status.report.location }
+    assert_equal [ pool, pool ], [ @rex, @tom ].map { |pet| pet.status.report.location }
 
-    post pet_locations_path, params: { check_in: { pet_ids: [@rex.id], location_id: "new", new_location_name: "yard" } }
+    post pet_locations_path, params: { check_in: { pet_ids: [ @rex.id ], location_id: "new", new_location_name: "yard" } }
     assert_equal 3, @smiths.locations.count
     assert_equal @yard, @rex.status.report.location
   end
@@ -292,13 +292,13 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     assert @rex.followed_by?(@member)
 
     sign_in @admin
-    assert_turbo_stream_broadcasts [@member, :notifications], count: 1 do
-      post feedings_path, params: { check_in: { pet_ids: [@rex.id, @tom.id], comment: "half a cup" } }
+    assert_turbo_stream_broadcasts [ @member, :notifications ], count: 1 do
+      post feedings_path, params: { check_in: { pet_ids: [ @rex.id, @tom.id ], comment: "half a cup" } }
     end
     # Not for your own reports.
     sign_in @member
-    assert_turbo_stream_broadcasts [@member, :notifications], count: 0 do
-      post pet_locations_path, params: { check_in: { pet_ids: [@rex.id], location_id: @yard.id } }
+    assert_turbo_stream_broadcasts [ @member, :notifications ], count: 0 do
+      post pet_locations_path, params: { check_in: { pet_ids: [ @rex.id ], location_id: @yard.id } }
     end
 
     delete pet_subscription_path(@rex)

@@ -1,6 +1,6 @@
 module Account
   class PasskeysController < BaseController
-    rate_limit to: 20, within: 1.minute, only: [:options, :create], with: -> { rate_limited_json }
+    rate_limit to: 20, within: 1.minute, only: [ :options, :create ], with: -> { rate_limited_json }
 
     # POST /account/passkeys/options: registration options for this account.
     def options

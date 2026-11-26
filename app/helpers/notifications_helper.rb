@@ -12,17 +12,17 @@ module NotificationsHelper
   end
 
   def reminder_lead_options(selected)
-    options = User::REMINDER_LEADS.map { |minutes| [minutes == 60 ? "1 hour before" : "#{minutes} minutes before", minutes] }
+    options = User::REMINDER_LEADS.map { |minutes| [ minutes == 60 ? "1 hour before" : "#{minutes} minutes before", minutes ] }
     options_for_select(options, selected)
   end
 
   def digest_hour_options(selected)
-    options_for_select(User::DIGEST_HOURS.map { |hour| ["at #{clock_label(hour * 60)}", hour] }, selected)
+    options_for_select(User::DIGEST_HOURS.map { |hour| [ "at #{clock_label(hour * 60)}", hour ] }, selected)
   end
 
   # Every half hour of the day, for quiet hours (minutes after midnight).
   def quiet_hours_options(selected)
-    options_for_select((0...24 * 60).step(User::QUIET_STEP).map { |minute| [clock_label(minute), minute] }, selected)
+    options_for_select((0...24 * 60).step(User::QUIET_STEP).map { |minute| [ clock_label(minute), minute ] }, selected)
   end
 
   # 0 -> "12:00 AM", 1290 -> "9:30 PM" (the app's clock style elsewhere).

@@ -53,7 +53,7 @@ class HousesTest < ActionDispatch::IntegrationTest
     report(@me, @ours)
 
     get root_path
-    assert_equal ["Our House", "Red Brick House"], board_titles
+    assert_equal [ "Our House", "Red Brick House" ], board_titles
     assert_select "#board_place_elsewhere", count: 0
   end
 
@@ -62,12 +62,12 @@ class HousesTest < ActionDispatch::IntegrationTest
     report(@me, off_property: true)
 
     get root_path
-    assert_equal ["Somewhere else", "Red Brick House"], board_titles
+    assert_equal [ "Somewhere else", "Red Brick House" ], board_titles
     assert_select "#board_place_elsewhere .person-card", 1
 
     sign_in @admin
     get root_path
-    assert_equal ["Red Brick House", "Somewhere else"], board_titles
+    assert_equal [ "Red Brick House", "Somewhere else" ], board_titles
   end
 
   test "admins set where each member lives" do
@@ -91,9 +91,9 @@ class HousesTest < ActionDispatch::IntegrationTest
     travel_to(Time.zone.local(2026, 6, 1)) { membership.update!(home: @brick) }
     travel_to(Time.zone.local(2026, 9, 1)) { @brick.archive! }
 
-    history = @me.residences.order(:started_at).map { |r| [r.location.name, r.started_at.to_date, r.ended_at&.to_date] }
-    assert_equal [["Our House", Date.new(2026, 1, 1), Date.new(2026, 6, 1)],
-                  ["Red Brick House", Date.new(2026, 6, 1), Date.new(2026, 9, 1)]], history
+    history = @me.residences.order(:started_at).map { |r| [ r.location.name, r.started_at.to_date, r.ended_at&.to_date ] }
+    assert_equal [ [ "Our House", Date.new(2026, 1, 1), Date.new(2026, 6, 1) ],
+                  [ "Red Brick House", Date.new(2026, 6, 1), Date.new(2026, 9, 1) ] ], history
   end
 
   test "deleting a house leaves its people with no house set" do

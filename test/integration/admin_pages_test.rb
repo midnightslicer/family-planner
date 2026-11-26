@@ -45,7 +45,7 @@ class AdminPagesTest < ActionDispatch::IntegrationTest
   end
 
   test "pages with a Notifications heading keep #notifications for the toasts" do
-    [admin_settings_path, account_root_path, account_notifications_path].each do |path|
+    [ admin_settings_path, account_root_path, account_notifications_path ].each do |path|
       get path
       assert_select "[id=notifications]", 1, path
       assert_select "#notifications.toast-stack", 1

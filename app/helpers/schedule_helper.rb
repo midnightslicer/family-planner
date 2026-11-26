@@ -3,9 +3,9 @@ module ScheduleHelper
   # [label, icon, css] for each availability: how reachable someone is.
   # These three are the only statuses a person ever shows.
   AVAILABILITY = {
-    "free" => ["Free", :sun, "avail-free"],
-    "text" => ["Text only", :message, "avail-text"],
-    "busy" => ["Do not disturb", :bell_off, "avail-busy"]
+    "free" => [ "Free", :sun, "avail-free" ],
+    "text" => [ "Text only", :message, "avail-text" ],
+    "busy" => [ "Do not disturb", :bell_off, "avail-busy" ]
   }.freeze
 
   # Longer wording for the form's choices.
@@ -36,7 +36,7 @@ module ScheduleHelper
   # The chip for a task, a StatusUpdate, or a bare availability ("free").
   def availability_chip(task, prefix: nil)
     label, icon_name, css = AVAILABILITY.fetch(task.respond_to?(:availability) ? task.availability : task.to_s)
-    tag.span(safe_join([icon(icon_name), [prefix, label].compact.join(" ")]), class: "status-chip #{css}")
+    tag.span(safe_join([ icon(icon_name), [ prefix, label ].compact.join(" ") ]), class: "status-chip #{css}")
   end
 
   # "9 AM", "9:30 AM".
@@ -70,7 +70,7 @@ module ScheduleHelper
   # when they've said where they are since it began (moved_on?).
   def now_line(task, viewer = nil, place: true)
     visible = task.visible_to?(viewer)
-    parts = [task.title_for(viewer)]
+    parts = [ task.title_for(viewer) ]
     parts << "until #{clock(task.finishes_at)}" if task.timed?
     parts << task.place_name if place && visible && task.place_name
     parts.join(" · ")
@@ -79,6 +79,6 @@ module ScheduleHelper
   # "Church · 10 AM" or "Church · Sun 10 AM".
   def next_line(task, viewer = nil)
     when_text = task.starts_at.to_date == Date.current ? clock(task.starts_at) : "#{day_name(task.starts_at.to_date)} #{clock(task.starts_at)}"
-    [task.title_for(viewer), when_text].join(" · ")
+    [ task.title_for(viewer), when_text ].join(" · ")
   end
 end

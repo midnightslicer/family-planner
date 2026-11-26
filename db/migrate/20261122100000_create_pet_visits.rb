@@ -11,7 +11,7 @@ class CreatePetVisits < ActiveRecord::Migration[8.1]
       t.datetime :left_at
       t.timestamps
     end
-    add_index :pet_visits, [:pet_id, :arrived_at]
+    add_index :pet_visits, [ :pet_id, :arrived_at ]
 
     # Everyone so far: here since they were added, until they went away or
     # were removed.

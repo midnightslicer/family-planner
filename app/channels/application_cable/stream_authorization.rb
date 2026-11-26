@@ -17,7 +17,7 @@ module ApplicationCable
     private
 
     def allowed_stream_names
-      [[current_user, :notifications], *current_user.households.map { |household| [household, :members] }]
+      [ [ current_user, :notifications ], *current_user.households.map { |household| [ household, :members ] } ]
         .map { |streamables| self.class.send(:stream_name_from, streamables) }
     end
   end

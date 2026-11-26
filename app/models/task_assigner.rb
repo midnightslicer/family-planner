@@ -23,7 +23,7 @@ class TaskAssigner
 
   def assign(user_ids, retimed: false)
     wanted = task.household.users.where(id: Array(user_ids).compact_blank).to_a
-                 .sort_by { |user| [user == actor ? 0 : 1, user.display_name] }
+                 .sort_by { |user| [ user == actor ? 0 : 1, user.display_name ] }
     existing = task.assignments.reload.index_by(&:user_id)
 
     gone = existing.values.reject { |assignment| wanted.any? { |user| user.id == assignment.user_id } }
@@ -47,7 +47,7 @@ class TaskAssigner
     sentences = []
     if added.any?
       names = added.map { |user| user == actor ? "you" : user.display_name }
-      just_me = added == [actor] && waiting.empty? && removed.empty? && declined.empty?
+      just_me = added == [ actor ] && waiting.empty? && removed.empty? && declined.empty?
       sentences << (just_me ? "Added #{task.title}." : "Added #{task.title} for #{names.to_sentence}.")
     end
     waiting.each do |user, clashes|
@@ -70,7 +70,7 @@ class TaskAssigner
     else
       assignment.update!(status: "pending", conflict_note: "Clashes with #{clashes.to_sentence}")
       # The summary is the actor's to read: someone's private event is "Busy".
-      @waiting << [user, TaskAssignment.conflicts_for(task, user, viewer: actor)]
+      @waiting << [ user, TaskAssignment.conflicts_for(task, user, viewer: actor) ]
       # Waiting on their answer: urgent, so it gets through quiet hours.
       notify(user, "#{actor.display_name} asked you to #{task.title_for(user)}#{when_text}.",
              body: "It clashes with #{clashes.to_sentence}: accept or decline on your day.", urgent: true)

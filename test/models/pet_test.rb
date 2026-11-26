@@ -16,11 +16,11 @@ class PetTest < ActiveSupport::TestCase
   test "a check-in reports several pets at once and the newest report is where they are" do
     LocationReport.create!(household: @smiths, subject: @rex, location: @house, reported_by: @member)
     check_in = PetCheckIn.new(household: @smiths, actor: @member, kind: "location",
-                              pet_ids: [@rex.id, @tom.id], location_id: @yard.id, comment: "Gate shut")
+                              pet_ids: [ @rex.id, @tom.id ], location_id: @yard.id, comment: "Gate shut")
     assert check_in.save
     assert_equal "Rex and Tom are at Yard.", check_in.summary
 
-    statuses = Pet.statuses(@smiths, [@rex, @tom])
+    statuses = Pet.statuses(@smiths, [ @rex, @tom ])
     assert_equal "Yard", statuses[@rex.id].report.location.name
     assert_equal "Gate shut", statuses[@tom.id].report.comment
   end
@@ -28,12 +28,12 @@ class PetTest < ActiveSupport::TestCase
   test "a location check-in needs pets and a place from this household" do
     other = Household.create!(name: "Others")
     their_place = other.locations.create!(name: "Theirs")
-    check_in = PetCheckIn.new(household: @smiths, actor: @member, kind: "location", pet_ids: [@rex.id], location_id: their_place.id)
+    check_in = PetCheckIn.new(household: @smiths, actor: @member, kind: "location", pet_ids: [ @rex.id ], location_id: their_place.id)
     assert_not check_in.save
     assert_includes check_in.errors.full_messages, "Pick where they are."
 
     their_pet = other.pets.create!(name: "Stray")
-    check_in = PetCheckIn.new(household: @smiths, actor: @member, kind: "feeding", pet_ids: [their_pet.id])
+    check_in = PetCheckIn.new(household: @smiths, actor: @member, kind: "feeding", pet_ids: [ their_pet.id ])
     assert_not check_in.save
     assert_includes check_in.errors.full_messages, "Pick at least one pet."
     assert_equal 0, Feeding.count
@@ -44,12 +44,12 @@ class PetTest < ActiveSupport::TestCase
     Feeding.create!(household: @smiths, pet: @rex, fed_by: @member, created_at: 1.day.ago)
     assert_equal :hungry, @rex.status.fed_state
 
-    PetCheckIn.new(household: @smiths, actor: @member, kind: "feeding", pet_ids: [@rex.id]).save
+    PetCheckIn.new(household: @smiths, actor: @member, kind: "feeding", pet_ids: [ @rex.id ]).save
     status = @rex.status
     assert_equal :partly, status.fed_state
     assert_equal 1, status.fed_today
 
-    PetCheckIn.new(household: @smiths, actor: @member, kind: "feeding", pet_ids: [@rex.id]).save
+    PetCheckIn.new(household: @smiths, actor: @member, kind: "feeding", pet_ids: [ @rex.id ]).save
     assert_equal :fed, @rex.status.fed_state
 
     @tom.update!(meals_per_day: 0)

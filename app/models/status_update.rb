@@ -19,7 +19,7 @@ class StatusUpdate < ApplicationRecord
     where(id: newest).where("expires_at > ?", now).index_by(&:user_id)
   end
 
-  def self.active_for_user(user, now = Time.current) = active_for([user.id], now)[user.id]
+  def self.active_for_user(user, now = Time.current) = active_for([ user.id ], now)[user.id]
 
   # Duck-types with a task for availability_chip.
   def title = nil

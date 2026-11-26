@@ -43,7 +43,7 @@ class TaskAssignment < ApplicationRecord
 
   def broadcast
     household = task&.household or return
-    household.broadcast_member_cards([user_id])
+    household.broadcast_member_cards([ user_id ])
     household.broadcast_refresh
   rescue StandardError => error
     Rails.logger.warn("Live update failed for assignment #{id}: #{error.class}: #{error.message}")

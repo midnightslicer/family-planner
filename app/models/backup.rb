@@ -130,7 +130,7 @@ class Backup
       lost = Setting.all.select { |setting| unreadable.(setting, :value) }
       Setting.where(id: lost.map(&:id)).delete_all
       Current.settings = nil
-      [reset.size, lost.any? { |setting| setting.key == "smtp_password" }]
+      [ reset.size, lost.any? { |setting| setting.key == "smtp_password" } ]
     end
 
     def restore_files(zip)
@@ -147,7 +147,7 @@ class Backup
       rescue ActiveStorage::IntegrityError
         missing += 1
       end
-      [restored, missing]
+      [ restored, missing ]
     end
 
     # SQLite's online backup: page by page, consistent, works on a live

@@ -36,31 +36,31 @@ module WebAuthn
       raise Error, "truncated CBOR" if major.between?(2, 5) && argument > buffer.bytesize - position
 
       case major
-      when 0 then [argument, position]
-      when 1 then [-1 - argument, position]
+      when 0 then [ argument, position ]
+      when 1 then [ -1 - argument, position ]
       when 2, 3
         string = buffer.byteslice(position, argument)
         string.force_encoding(Encoding::UTF_8) if major == 3
-        [string, position + argument]
+        [ string, position + argument ]
       when 4
         items = Array.new(argument) do
           item, position = read(buffer, position, depth + 1)
           item
         end
-        [items, position]
+        [ items, position ]
       when 5
         map = {}
         argument.times do
           key, position = read(buffer, position, depth + 1)
           map[key], position = read(buffer, position, depth + 1)
         end
-        [map, position]
+        [ map, position ]
       when 6 then read(buffer, position, depth + 1) # tag: keep the tagged value
       when 7
         case argument
-        when 20 then [false, position]
-        when 21 then [true, position]
-        when 22, 23 then [nil, position]
+        when 20 then [ false, position ]
+        when 21 then [ true, position ]
+        when 22, 23 then [ nil, position ]
         else raise Error, "unsupported CBOR simple value"
         end
       end
@@ -68,12 +68,12 @@ module WebAuthn
 
     def read_argument(buffer, position, info)
       width = { 24 => 1, 25 => 2, 26 => 4, 27 => 8 }[info]
-      return [info, position] if info < 24
+      return [ info, position ] if info < 24
       raise Error, "unsupported CBOR length" unless width
       raise Error, "truncated CBOR" if position + width > buffer.bytesize
 
       value = buffer.byteslice(position, width).bytes.inject(0) { |acc, byte| (acc << 8) | byte }
-      [value, position + width]
+      [ value, position + width ]
     end
   end
 end

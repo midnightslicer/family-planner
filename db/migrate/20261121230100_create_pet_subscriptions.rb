@@ -6,6 +6,6 @@ class CreatePetSubscriptions < ActiveRecord::Migration[8.1]
       t.references :user, null: false, foreign_key: true
       t.datetime :created_at, null: false
     end
-    add_index :pet_subscriptions, [:pet_id, :user_id], unique: true
+    add_index :pet_subscriptions, [ :pet_id, :user_id ], unique: true
   end
 end

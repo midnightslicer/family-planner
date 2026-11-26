@@ -27,7 +27,7 @@ class Whereabouts
   def sections(first: nil)
     all = ordered
     mine = first && all.index { |section| section.people.include?(first) }
-    mine ? [all[mine], *all[0...mine], *all[(mine + 1)..]] : all
+    mine ? [ all[mine], *all[0...mine], *all[(mine + 1)..] ] : all
   end
 
   private
@@ -41,11 +41,11 @@ class Whereabouts
       section unless section.everyone.empty?
     end
     # Busiest first; sort_by isn't stable, so the place order breaks ties.
-    placed = placed.each_with_index.sort_by { |section, index| [-section.everyone.size, index] }.map(&:first)
+    placed = placed.each_with_index.sort_by { |section, index| [ -section.everyone.size, index ] }.map(&:first)
     known = @locations.to_set(&:id)
     elsewhere = Section.new(nil, @members.reject { |m| known.include?(person_location_id(m)) },
                             @pets.reject { |p| known.include?(pet_location_id(p)) })
-    elsewhere.everyone.empty? ? placed : placed + [elsewhere]
+    elsewhere.everyone.empty? ? placed : placed + [ elsewhere ]
   end
 
   def person_location_id(member)

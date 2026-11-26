@@ -43,8 +43,8 @@ class Pet < ApplicationRecord
   # The type menu: the usual ones, then whatever else this household has
   # added (custom types), plus `current` so editing never drops a type.
   def self.kinds_for(household, current = nil)
-    used = household.all_pets.where.not(species: [nil, ""]).distinct.pluck(:species)
-    (KINDS + [*used, current].compact_blank).uniq { |kind| kind.downcase }.sort_by(&:downcase)
+    used = household.all_pets.where.not(species: [ nil, "" ]).distinct.pluck(:species)
+    (KINDS + [ *used, current ].compact_blank).uniq { |kind| kind.downcase }.sort_by(&:downcase)
   end
 
   # For the dashboard and pet cards, everything in a few queries instead of a
@@ -52,14 +52,14 @@ class Pet < ApplicationRecord
   def self.statuses(household, pets)
     pets = pets.to_a
     ids = pets.map(&:id)
-    reports = LocationReport.latest_for(household, "Pet", ids, preload: [:location, :reported_by])
+    reports = LocationReport.latest_for(household, "Pet", ids, preload: [ :location, :reported_by ])
     today = Feeding.where(pet_id: ids).today
     fed_counts = today.group(:pet_id).count
     last_fed = Feeding.where(id: Feeding.where(pet_id: ids).group(:pet_id).select("MAX(id)"))
                       .includes(:fed_by).index_by(&:pet_id)
 
     pets.to_h do |pet|
-      [pet.id, PetStatus.new(pet: pet, report: reports[pet.id], fed_today: fed_counts.fetch(pet.id, 0), last_feeding: last_fed[pet.id])]
+      [ pet.id, PetStatus.new(pet: pet, report: reports[pet.id], fed_today: fed_counts.fetch(pet.id, 0), last_feeding: last_fed[pet.id]) ]
     end
   end
 
@@ -107,7 +107,7 @@ class Pet < ApplicationRecord
   end
 
   def status
-    self.class.statuses(household, [self]).fetch(id)
+    self.class.statuses(household, [ self ]).fetch(id)
   end
 
   private

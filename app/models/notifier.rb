@@ -51,7 +51,7 @@ module Notifier
 
   Note = Struct.new(:category, :title, :body, :path, :household, :tag, :urgent, :ttl, keyword_init: true) do
     # "Sam added you to Church. It clashes with Work: accept or decline."
-    def text = [title, body].compact.join(" ")
+    def text = [ title, body ].compact.join(" ")
   end
 
   # `alert`: whether this update may buzz (the push rule above). A browser

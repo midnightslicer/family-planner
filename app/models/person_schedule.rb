@@ -36,7 +36,7 @@ class PersonSchedule
   # midnight, starting before the horizon.
   def self.window(tasks, now)
     tasks.where("tasks.status IN (:open) OR tasks.finished_at >= :midnight",
-                open: [Task.statuses[:planned], Task.statuses[:in_progress]], midnight: now.beginning_of_day)
+                open: [ Task.statuses[:planned], Task.statuses[:in_progress] ], midnight: now.beginning_of_day)
          .where("tasks.starts_at IS NULL OR tasks.starts_at < :horizon", horizon: now + UPCOMING_DAYS.days)
   end
 
@@ -68,12 +68,12 @@ class PersonSchedule
     @work = WorkBlock.on(person, today, locations: places)
     midnight = now.beginning_of_day
     @today = (items.select { |task| task.timed? && task.starts_at.to_date <= today && task.finishes_at > midnight && !task.undone? } +
-              [@work].compact).sort_by(&:starts_at)
+              [ @work ].compact).sort_by(&:starts_at)
     @now = open.find { |task| task.happening_at?(now) } || open.find(&:in_progress?) ||
            WorkBlock.current(person, now, locations: places)
     @at = @now&.whereabouts(now)
     @todos = open.reject(&:timed?).reject { |task| task.later?(today) }
-                 .sort_by { |task| [task.in_progress? ? 0 : 1, task.due_on || Date.new(9999), task.created_at] }
+                 .sort_by { |task| [ task.in_progress? ? 0 : 1, task.due_on || Date.new(9999), task.created_at ] }
     @later = open.select { |task| task.timed? ? task.starts_at.to_date > today : task.later?(today) }
                  .sort_by { |task| task.timed? ? task.starts_at : task.due_on.in_time_zone }
   end
@@ -83,7 +83,7 @@ class PersonSchedule
   def following_for(household, person, now)
     household.tasks.where(created_by: person, follow_up: true).where.not(id: household.tasks.for_person(person).select(:id))
              .where("status IN (:open) OR finished_at >= :midnight",
-                    open: [Task.statuses[:planned], Task.statuses[:in_progress]], midnight: now.beginning_of_day)
+                    open: [ Task.statuses[:planned], Task.statuses[:in_progress] ], midnight: now.beginning_of_day)
         .includes(:created_by, :location, assignments: { user: { avatar_attachment: :blob } }).order(:created_at).to_a
   end
 end

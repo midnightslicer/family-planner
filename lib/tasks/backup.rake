@@ -2,7 +2,7 @@
 # and restoring one onto a fresh install. See app/models/backup.rb.
 namespace :backup do
   desc "Write a backup zip (default: storage/backups/<name>-backup-<time>.zip)"
-  task :create, [:path] => :environment do |_, args|
+  task :create, [ :path ] => :environment do |_, args|
     path = args[:path].presence || Rails.root.join("storage/backups", Backup.filename).to_s
     FileUtils.mkdir_p(File.dirname(path))
     Backup.write(path)
@@ -10,7 +10,7 @@ namespace :backup do
   end
 
   desc "Restore a backup zip onto this server; only while it has no accounts"
-  task :restore, [:path] => :environment do |_, args|
+  task :restore, [ :path ] => :environment do |_, args|
     path = args[:path].presence or abort "Usage: bin/rails \"backup:restore[path/to/backup.zip]\""
     result = Backup.restore(path)
     puts "Restored #{result.people} people in #{result.households} households, #{result.files} files."

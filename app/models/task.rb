@@ -61,7 +61,7 @@ class Task < ApplicationRecord
   }
   # Items nobody has taken: for anyone.
   scope :for_anyone, -> { where.not(id: TaskAssignment.active.select(:task_id)) }
-  scope :open, -> { where(status: [:planned, :in_progress]) }
+  scope :open, -> { where(status: [ :planned, :in_progress ]) }
   scope :timed, -> { where.not(starts_at: nil) }
   scope :untimed, -> { where(starts_at: nil) }
   # Recurring events that have ended without anyone marking them.
@@ -223,7 +223,7 @@ class Task < ApplicationRecord
       new_starts_at = next_start_from(starts_at) or return
       attributes.merge!(starts_at: new_starts_at, ends_at: ends_at&.then { |e| e + (new_starts_at - starts_at) })
     else
-      base = [due_on, Date.current].compact.max
+      base = [ due_on, Date.current ].compact.max
       attributes[:due_on] = next_start_from(base.in_time_zone).to_date
     end
 
@@ -273,7 +273,7 @@ class Task < ApplicationRecord
   def next_month_from(base)
     next_month = base.to_date >> 1
     last_day = Date.new(next_month.year, next_month.month, -1).day
-    day = [base.day, last_day].min
+    day = [ base.day, last_day ].min
     Time.zone.local(next_month.year, next_month.month, day, base.hour, base.min, base.sec)
   end
 
@@ -304,7 +304,7 @@ class Task < ApplicationRecord
     return if recurrence_copy || actor.nil? || !saved_change_to_status?
 
     recipients = people
-    recipients += [created_by] if follow_up? && created_by
+    recipients += [ created_by ] if follow_up? && created_by
     verb = STATUS_VERBS.fetch(status, "updated")
     recipients.compact.uniq.reject { |person| person == actor }.each do |person|
       Notifier.notify(person, category: "task_updates", title: "#{actor.display_name} #{verb} #{title_for(person)}",

@@ -49,9 +49,9 @@ class Household < ApplicationRecord
     homes = household_memberships.pluck(:user_id, :home_id).to_h
     people = members.group_by { |member| homes[member.id] }
     animals = pets.group_by(&:home_id)
-    groups = houses.map { |house| [house, people.fetch(house.id, []), animals.fetch(house.id, [])] }
+    groups = houses.map { |house| [ house, people.fetch(house.id, []), animals.fetch(house.id, []) ] }
     housed = houses.to_set(&:id)
-    groups << [nil, members.reject { |m| housed.include?(homes[m.id]) }, pets.reject { |p| housed.include?(p.home_id) }]
+    groups << [ nil, members.reject { |m| housed.include?(homes[m.id]) }, pets.reject { |p| housed.include?(p.home_id) } ]
     groups.reject { |_, who, pets_here| who.empty? && pets_here.empty? }
   end
 
@@ -83,7 +83,7 @@ class Household < ApplicationRecord
       status[:at] = status[:current]&.whereabouts(now)
       upcoming_work = WorkBlock.on(user, today, locations: places)
       upcoming_work = nil unless upcoming_work&.starts_at&.>(now)
-      status[:next] = [items.find { |task| task.timed? && task.planned? && task.starts_at > now }, upcoming_work]
+      status[:next] = [ items.find { |task| task.timed? && task.planned? && task.starts_at > now }, upcoming_work ]
                       .compact.min_by(&:starts_at)
       status[:off] = user.day_off_on(today)
       statuses.delete(user.id) if status.compact.empty?
@@ -122,7 +122,7 @@ class Household < ApplicationRecord
     return if user_ids.empty?
 
     if (pending = Current.pending_cards)
-      pending[id] ||= [self, Set.new]
+      pending[id] ||= [ self, Set.new ]
       pending[id].last.merge(user_ids)
     else
       broadcast_cards_now(user_ids)

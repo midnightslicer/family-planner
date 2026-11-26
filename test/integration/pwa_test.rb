@@ -17,10 +17,10 @@ class PwaTest < ActionDispatch::IntegrationTest
     assert manifest["start_url"].start_with?("/")
     assert_operator manifest["short_name"].length, :<=, PwaController::SHORT_NAME_MAX
 
-    icons = manifest["icons"].index_by { |icon| [icon["sizes"], icon["purpose"]] }
-    assert icons[["192x192", "any"]]
-    assert icons[["512x512", "any"]]
-    assert icons[["512x512", "maskable"]]
+    icons = manifest["icons"].index_by { |icon| [ icon["sizes"], icon["purpose"] ] }
+    assert icons[[ "192x192", "any" ]]
+    assert icons[[ "512x512", "any" ]]
+    assert icons[[ "512x512", "maskable" ]]
     manifest["icons"].each { |icon| assert Rails.public_path.join(icon["src"].delete_prefix("/")).file?, "#{icon['src']} is missing" }
   end
 
@@ -124,7 +124,7 @@ class PwaTest < ActionDispatch::IntegrationTest
     assert_equal "The Smiths wall", manifest["name"]
     assert_equal "The Smiths", manifest["short_name"]
     assert_equal({ "192x192 any" => true, "512x512 any" => true, "512x512 maskable" => true },
-                 manifest["icons"].to_h { |icon| ["#{icon['sizes']} #{icon['purpose']}", true] })
+                 manifest["icons"].to_h { |icon| [ "#{icon['sizes']} #{icon['purpose']}", true ] })
     manifest["icons"].each { |icon| assert Rails.public_path.join(icon["src"].delete_prefix("/")).file?, "#{icon['src']} is missing" }
   end
 
