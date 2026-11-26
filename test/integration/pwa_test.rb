@@ -53,7 +53,7 @@ class PwaTest < ActionDispatch::IntegrationTest
 
   test "short names fit under an iPhone icon" do
     assert_equal "Home", PwaController.short_name("Home")
-    assert_equal "FamilyStatus", PwaController.short_name("Family Status")
+    assert_equal "OurOwnPlace", PwaController.short_name("Our Own Place")
     assert_equal "Grandma's", PwaController.short_name("Grandma's lake house board")
     assert_equal "The O'Briens", PwaController.short_name("The O'Briens")
     assert_equal "Supercalifra", PwaController.short_name("Supercalifragilistic")
@@ -131,12 +131,12 @@ class PwaTest < ActionDispatch::IntegrationTest
   test "signed out or not a member, the wall manifest names nothing but the app" do
     get wall_manifest_path(households(:smiths).slug)
     assert_response :success
-    assert_equal "Family Status wall", JSON.parse(response.body)["name"]
+    assert_equal "Whereabouts wall", JSON.parse(response.body)["name"]
 
     stranger = User.create!(email: "x@example.com", password: "password123", display_name: "X")
     sign_in stranger
     get wall_manifest_path(households(:smiths).slug)
-    assert_equal "Family Status wall", JSON.parse(response.body)["name"]
+    assert_equal "Whereabouts wall", JSON.parse(response.body)["name"]
 
     get wall_manifest_path("no-such-wall")
     assert_response :success, "unknown slugs look the same as everyone else's"

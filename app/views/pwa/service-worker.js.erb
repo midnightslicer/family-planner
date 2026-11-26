@@ -1,4 +1,4 @@
-// family-status service worker, served by PwaController at /service-worker.js
+// Whereabouts service worker, served by PwaController at /service-worker.js
 // (scope "/", Cache-Control: no-cache).
 //
 // Deliberately small. It caches exactly one thing, the offline page, and
@@ -14,7 +14,7 @@
 
 const VERSION = "<%= @version %>"
 const APP_NAME = <%= raw @app_name.to_json %>
-const CACHE_PREFIX = "family-status-"
+const CACHE_PREFIX = "whereabouts-"
 const CACHE = `${CACHE_PREFIX}${VERSION}`
 const OFFLINE_URL = "/offline.html"
 

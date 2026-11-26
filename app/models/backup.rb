@@ -66,7 +66,7 @@ class Backup
 
     # A name for a download or a file on disk: "the-smiths-backup-2026-11-24-1335.zip".
     def filename(time = Time.current)
-      "#{AppSettings.app_name.parameterize.presence || 'family-status'}-backup-#{time.strftime('%Y-%m-%d-%H%M')}.zip"
+      "#{AppSettings.app_name.parameterize.presence || 'whereabouts'}-backup-#{time.strftime('%Y-%m-%d-%H%M')}.zip"
     end
 
     def restore(path)

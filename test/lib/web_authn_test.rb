@@ -4,7 +4,7 @@ class WebAuthnTest < ActiveSupport::TestCase
   ORIGIN = "https://status.example.com".freeze
 
   setup do
-    @rp = WebAuthn::RelyingParty.new(id: "status.example.com", origin: ORIGIN, name: "Family Status")
+    @rp = WebAuthn::RelyingParty.new(id: "status.example.com", origin: ORIGIN, name: "Whereabouts")
     @authenticator = FakeAuthenticator.new(rp_id: "status.example.com", origin: ORIGIN)
   end
 

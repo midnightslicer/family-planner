@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1
 # check=error=true
 
-# family-status production image.
-#   docker build -t family-status .
-#   docker run -d -p 3000:3000 -v family_status:/rails/storage family-status
+# Whereabouts production image.
+#   docker build -t whereabouts .
+#   docker run -d -p 3000:3000 -v whereabouts_storage:/rails/storage whereabouts
 # No secrets are required: the entrypoint creates SECRET_KEY_BASE on the
 # storage volume the first time it starts.
 

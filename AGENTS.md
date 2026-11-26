@@ -4,7 +4,7 @@ Guide for AI assistants and humans working in this repo.
 
 ## What this is
 
-**family-status**: a multi-household family status board on Rails 8.1 + SQLite.
+**Whereabouts**: a multi-household family status board on Rails 8.1 + SQLite.
 Each person has their own Devise account; accounts join **only via email
 invitation** (no open signup). Members manage household-scoped tasks (including
 recurring ones), and everyone sees a live auto-updating dashboard of who's busy.

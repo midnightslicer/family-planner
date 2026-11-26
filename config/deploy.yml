@@ -1,10 +1,10 @@
-# Kamal 2+ deploy config for family-status. Fill in the three values marked
+# Kamal 2+ deploy config for Whereabouts. Fill in the three values marked
 # CHANGE ME, then run `bin/kamal setup` once and `bin/kamal deploy` after.
 # No application secrets are needed: SECRET_KEY_BASE is generated on first
 # boot and kept on the storage volume (see entrypoint.sh).
 
-service: family-status
-image: family-status
+service: whereabouts
+image: whereabouts
 
 servers:
   web:
@@ -47,7 +47,7 @@ aliases:
 
 # SQLite database, the generated secret, and uploads. Single app instance.
 volumes:
-  - "family_status_storage:/rails/storage"
+  - "whereabouts_storage:/rails/storage"
 
 # Bridge fingerprinted assets between deploys to avoid 404s mid-flight.
 asset_path: /rails/public/assets

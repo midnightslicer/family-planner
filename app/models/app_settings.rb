@@ -2,7 +2,7 @@
 # variables as a fallback, so a server can be configured either from the
 # admin screens or entirely from its env (handy for Kamal and Compose).
 module AppSettings
-  DEFAULT_APP_NAME = "Family Status".freeze
+  DEFAULT_APP_NAME = "Whereabouts".freeze
 
   module_function
 
@@ -65,7 +65,7 @@ module AppSettings
   # account exists. Printed to the server log at boot (see
   # config/initializers/setup_code.rb) and by `bin/rails setup:code`.
   def setup_code
-    digest = OpenSSL::HMAC.digest("SHA256", Rails.application.secret_key_base, "family-status setup code")
+    digest = OpenSSL::HMAC.digest("SHA256", Rails.application.secret_key_base, "whereabouts setup code")
     Totp.base32_encode(digest)[0, 16].downcase.scan(/.{4}/).join("-")
   end
 

@@ -1,5 +1,5 @@
 /*
- * family-status — application stylesheet
+ * Whereabouts — application stylesheet
  * Raw CSS, no framework, no build step (Propshaft serves this file directly).
  * Loaded via stylesheet_link_tag :app in the layouts, which picks up every
  * file in app/assets/stylesheets (this one plus kiosk.css).

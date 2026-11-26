@@ -14,7 +14,7 @@ if ENV["SECRET_KEY_BASE"].to_s.empty? && ENV["RAILS_MASTER_KEY"].to_s.empty? && 
   ENV["SECRET_KEY_BASE"] = File.read(secret_file).strip
 end
 
-module FamilyStatus
+module WhereaboutsApp
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 8.1

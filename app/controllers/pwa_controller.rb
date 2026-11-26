@@ -120,7 +120,7 @@ class PwaController < ActionController::Base
     }
   end
 
-  # "Family Status" → "FamilyStatus", "The O'Brien family" → "The O'Brien";
+  # "Our Own Place" → "OurOwnPlace", "The O'Brien family" → "The O'Brien";
   # a long single word is cut.
   def self.short_name(name)
     return name if name.length <= SHORT_NAME_MAX

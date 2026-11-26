@@ -12,10 +12,10 @@
   </head>
 
   <body>
-    <div class="mailer-header"><%= @app_name || "Family Status" %></div>
+    <div class="mailer-header"><%= @app_name || AppSettings::DEFAULT_APP_NAME %></div>
     <%= yield %>
     <div class="mailer-footer">
-      Sent by <%= @app_name || "Family Status" %>
+      Sent by <%= @app_name || AppSettings::DEFAULT_APP_NAME %>
     </div>
   </body>
 </html>

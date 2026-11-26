@@ -1,4 +1,4 @@
-# family-status
+# Whereabouts
 
 A small status board for a family. Everyone gets an account (invite-only, no
 open signup) and can see at a glance what everyone else is doing right now.
@@ -20,7 +20,7 @@ container; deploy it with Docker Compose or Kamal.
 With Docker installed:
 
 ```sh
-git clone <this repo> family-status && cd family-status
+git clone <this repo> whereabouts && cd whereabouts
 docker compose up -d --build
 docker compose logs web | grep -A2 "setup code"
 ```
@@ -94,7 +94,7 @@ container starts.
 
 Before you rely on it:
 
-- **Keep the `family_status_storage` volume.** It holds the database,
+- **Keep the `whereabouts_storage` volume.** It holds the database,
   photos and `.secret_key_base`, which signs sessions and links and
   encrypts two-step secrets and the SMTP password. Lose or change the
   secret and everyone is signed out and those have to be set up again.

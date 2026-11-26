@@ -13,7 +13,7 @@ Rails.application.config.after_initialize do
   $stdout.puts <<~BANNER
 
     ================================================================
-      Family Status is ready to set up.
+      Whereabouts is ready to set up.
       Open /setup in your browser and enter this setup code:
 
           #{AppSettings.setup_code}
