@@ -79,18 +79,44 @@ Admin > Settings also shows whether push and email are working.
 
 ### Deploy with Kamal (a VPS with a domain)
 
+You need Docker and the Ruby from `.ruby-version` on your machine
+(`bundle install` gets Kamal), SSH access to the server, and a container
+registry account.
+
 1. Point a DNS name at the server.
-2. In `config/deploy.yml`, fill in the three `CHANGE ME` lines (server, host,
-   registry) and set `APP_URL` to `https://` and that name. `APP_URL` is
-   also what turns on Host header checking.
-3. Export `KAMAL_REGISTRY_PASSWORD` (a registry token), then run
-   `bin/kamal setup`. Kamal installs Docker, gets a Let's Encrypt
-   certificate and boots the app.
+2. Copy the example settings and fill them in. `config/deploy.yml` reads
+   them, so you don't need to edit it.
+
+   ```sh
+   cp .env.kamal.example .env.kamal
+   chmod 600 .env.kamal
+   ```
+
+   | Variable | What it is |
+   | --- | --- |
+   | `DEPLOY_SERVER` | The server's hostname or IP, as you'd SSH to it |
+   | `DEPLOY_DOMAIN` | The DNS name from step 1, without `https://`. Sets the certificate, `APP_URL` and Host header checking |
+   | `KAMAL_REGISTRY_USERNAME` | Your registry user; the image is `<user>/whereabouts` |
+   | `KAMAL_REGISTRY_PASSWORD` | A registry token (on GitHub, a classic token with `write:packages`) |
+   | `DEPLOY_SSH_USER` | Optional, default `root`. Another user needs to be able to run Docker |
+   | `DEPLOY_ARCH` | Optional, default `amd64`; `arm64` for an ARM server |
+   | `KAMAL_REGISTRY_SERVER` | Optional, default `ghcr.io` |
+
+3. Load them and set up the server. Kamal installs Docker if needed (that
+   takes root), gets a Let's Encrypt certificate and boots the app.
+
+   ```sh
+   source .env.kamal
+   bin/kamal setup
+   ```
+
 4. `bin/kamal setup-code` prints the setup code. Open your domain and finish
    setup in the browser.
 
 Later deploys are `bin/kamal deploy`; migrations run by themselves when the
-container starts.
+container starts. Every `bin/kamal` command needs the settings loaded, so
+`source .env.kamal` in each new terminal. `.env.kamal` is ignored by Git:
+don't commit it.
 
 Before you rely on it:
 
@@ -122,10 +148,11 @@ bin/setup        # installs gems and npm packages, prepares the database, starts
 Open http://localhost:3000. In development the setup page doesn't ask for a
 code. Mail opens in the browser via letter_opener.
 
-`bin/dev` listens on every interface, and development allows the tailnet
-names `stardrift` and `novacore` (bare or `.ts.net`), so a phone on the
-tailnet can open http://stardrift:3000. Add others to `config.hosts` in
-`config/environments/development.rb`. Passkeys, push and installing the app
+`bin/dev` listens on every interface. To reach it from a phone or another
+machine, list the names you'll use in `DEV_HOSTS` (comma separated; a leading
+dot allows every subdomain), for example on a tailnet:
+`DEV_HOSTS=mymachine,.ts.net bin/dev`, then open http://mymachine:3000.
+Passkeys, push and installing the app
 need https: `tailscale serve --bg 3000` puts the dev server at
 https://<machine>.<tailnet>.ts.net (tailnet only; `tailscale serve --https=443 off`
 stops it). Passkeys belong to the address they were made on, so add one
@@ -182,3 +209,7 @@ complete backup, secrets included.
   (the lost phone too), so a password reset gets you in.
 - **Changing or resetting a password** signs you out on every other
   device, including ones kept signed in.
+
+## License
+
+[MIT](LICENSE)

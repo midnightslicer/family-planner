@@ -1,35 +1,38 @@
-# Kamal 2+ deploy config for Whereabouts. Fill in the three values marked
-# CHANGE ME, then run `bin/kamal setup` once and `bin/kamal deploy` after.
+# Kamal 2+ deploy config for Whereabouts. Nothing here needs editing: copy
+# .env.kamal.example to .env.kamal, fill it in, `source .env.kamal`, then
+# run `bin/kamal setup` once and `bin/kamal deploy` after.
 # No application secrets are needed: SECRET_KEY_BASE is generated on first
 # boot and kept on the storage volume (see entrypoint.sh).
 
 service: whereabouts
-image: whereabouts
+image: <%= ENV.fetch("KAMAL_REGISTRY_USERNAME").downcase %>/whereabouts
 
 servers:
   web:
-    - 192.168.0.1 # CHANGE ME: your server's IP or hostname
+    - <%= ENV.fetch("DEPLOY_SERVER") %>
+
+ssh:
+  user: <%= ENV.fetch("DEPLOY_SSH_USER", "root") %>
 
 # kamal-proxy gets a Let's Encrypt certificate for this host and forwards
 # to Thruster on port 3000 inside the container.
 proxy:
   ssl: true
-  host: status.example.com # CHANGE ME: a DNS name pointing at the server
+  host: <%= ENV.fetch("DEPLOY_DOMAIN") %>
   app_port: 3000
   healthcheck:
     path: /up
 
 registry:
-  # CHANGE ME: e.g. ghcr.io with your GitHub username, or Docker Hub.
-  server: ghcr.io
-  username: your-user
+  server: <%= ENV.fetch("KAMAL_REGISTRY_SERVER", "ghcr.io") %>
+  username: <%= ENV.fetch("KAMAL_REGISTRY_USERNAME") %>
   password:
     - KAMAL_REGISTRY_PASSWORD
 
 env:
   clear:
     # Email links use this; it also limits which Host headers are accepted.
-    APP_URL: https://status.example.com
+    APP_URL: https://<%= ENV.fetch("DEPLOY_DOMAIN") %>
   # Optional. Uncomment and add values to .kamal/secrets to configure email
   # from here instead of Admin > Settings.
   # secret:
@@ -53,6 +56,6 @@ volumes:
 asset_path: /rails/public/assets
 
 builder:
-  arch: amd64
+  arch: <%= ENV.fetch("DEPLOY_ARCH", "amd64") %>
   # Build on the server instead (faster from an arm64 laptop):
-  # remote: ssh://root@192.168.0.1
+  # remote: ssh://<%= ENV.fetch("DEPLOY_SSH_USER", "root") %>@<%= ENV.fetch("DEPLOY_SERVER") %>

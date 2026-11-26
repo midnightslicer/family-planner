@@ -364,7 +364,10 @@ server; see `Backup` below).
   3001, Solid Queue inside Puma). The entrypoint generates
   `storage/.secret_key_base` on first boot when neither `SECRET_KEY_BASE`
   nor `RAILS_MASTER_KEY` is set, then runs `bin/rails db:prepare` (so
-  migrations run on every boot).
+  migrations run on every boot). `config/deploy.yml` takes every
+  deployment-specific value from the environment (`.env.kamal`, ignored;
+  `.env.kamal.example` lists them): never hard-code a server, domain or
+  account in a tracked file.
 
 ## Conventions
 
