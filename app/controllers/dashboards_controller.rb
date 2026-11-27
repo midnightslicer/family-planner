@@ -22,12 +22,24 @@ class DashboardsController < ApplicationController
     redirect_to root_path, status: :see_other
   end
 
-  # POST /getting_started/skip/:step ("I don't have a work schedule").
+  # POST /getting_started/skip/:step ("I don't have a work schedule", "Skip email").
   def skip_step
     case params[:step]
     when "work" then current_user.update_column(:work_schedule_skipped_at, Time.current)
+    when "email"
+      return not_found unless current_user.admin?
+
+      current_user.update_column(:email_setup_skipped_at, Time.current)
     else return not_found
     end
     redirect_back_or_to root_path, status: :see_other
+  end
+
+  # POST /getting_started/wall_link: ticks off the wall step and shows the link.
+  def open_wall_link
+    return not_found unless current_user.admin? && current_household
+
+    current_user.update_column(:wall_link_opened_at, Time.current)
+    redirect_to edit_admin_household_path(current_household), status: :see_other
   end
 end

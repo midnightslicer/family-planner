@@ -39,6 +39,7 @@ Rails.application.routes.draw do
   root to: "dashboards#show"
   post "getting_started/dismiss", to: "dashboards#dismiss_checklist", as: :dismiss_checklist
   post "getting_started/skip/:step", to: "dashboards#skip_step", as: :skip_checklist_step
+  post "getting_started/wall_link", to: "dashboards#open_wall_link", as: :checklist_wall_link
   resources :tasks do
     member do
       post :start

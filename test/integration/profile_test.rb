@@ -47,6 +47,47 @@ class ProfileTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test "getting started asks an admin to set up email before inviting, or skip it" do
+    @member.update!(admin: true)
+
+    get root_path
+    titles = css_select(".checklist-step strong").map(&:text)
+    assert_equal [ "Set up email", "Invite your family" ], titles.first(2)
+    assert_select ".checklist-step:not(.is-done)", text: /Set up email/
+
+    post skip_checklist_step_path("email")
+    get root_path
+    assert_select ".checklist-step.is-skipped", text: /Set up email/
+
+    Setting.set("smtp_host", "smtp.example.com")
+    get root_path
+    assert_select ".checklist-step.is-done:not(.is-skipped)", text: /Set up email/
+  end
+
+  test "getting the wall link ticks off the tablet step" do
+    @member.update!(admin: true)
+
+    get root_path
+    assert_select ".checklist-step:not(.is-done) form[action=?]", checklist_wall_link_path, text: /Get the wall link/
+
+    post checklist_wall_link_path
+    assert_redirected_to edit_admin_household_path(@smiths)
+    get root_path
+    assert_select ".checklist-step.is-done", text: /spare tablet/
+  end
+
+  test "the admin checklist steps are for admins only" do
+    @member.update!(admin: false)
+
+    get root_path
+    assert_select ".checklist-step", text: /Set up email|spare tablet/, count: 0
+    post skip_checklist_step_path("email")
+    assert_response :not_found
+    post checklist_wall_link_path
+    assert_response :not_found
+    assert_nil @member.reload.wall_link_opened_at
+  end
+
   test "the app takes its accent from the signed-in person's colour" do
     get account_root_path
     theme = ColorTheme.for("#22c55e")

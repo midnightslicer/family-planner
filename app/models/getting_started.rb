@@ -2,7 +2,9 @@
 # ticked off from real state. On the dashboard until dismissed or done; at
 # the bottom of the account page until done.
 class GettingStarted
-  Step = Struct.new(:key, :title, :detail, :done, :link_label, :path, :skippable, :skipped, keyword_init: true)
+  # `skip_label`: the step can be skipped, with a button saying this.
+  # `post`: the step's own button is a POST (following it records something).
+  Step = Struct.new(:key, :title, :detail, :done, :link_label, :path, :post, :skip_label, :skipped, keyword_init: true)
 
   # `members`: the household's members, if the page has them loaded.
   def initialize(user, household, members: nil)
@@ -25,6 +27,7 @@ class GettingStarted
 
   def steps
     @steps ||= [
+      email_step,
       invite_step,
       time_zone_step,
       Step.new(key: :photo, title: "Add a profile picture",
@@ -56,8 +59,20 @@ class GettingStarted
     Step.new(key: :work, title: "Add your work schedule",
              detail: skipped && !works ? "Skipped. You can add one any time from your day." :
                      "Your work hours show on your card, with how reachable you are. No set schedule? Skip it.",
-             done: works || skipped, skipped: skipped && !works, skippable: true,
+             done: works || skipped, skipped: skipped && !works, skip_label: "I don't have one",
              link_label: "Add hours", path: routes.edit_work_schedule_path)
+  end
+
+  def email_step
+    return unless @user.admin?
+
+    configured = AppSettings.smtp_configured?
+    skipped = @user.email_setup_skipped_at.present? && !configured
+    Step.new(key: :email, title: "Set up email",
+             detail: skipped ? "Skipped. You can set it up any time under Admin > Settings." :
+                     "Add your SMTP details so invitations, password resets and notifications can be emailed.",
+             done: configured || skipped, skipped: skipped, skip_label: "Skip email",
+             link_label: "Set up email", path: routes.admin_settings_path(anchor: "email"))
   end
 
   def invite_step
@@ -82,7 +97,8 @@ class GettingStarted
 
     Step.new(key: :wall, title: "Put the board on a spare tablet (optional)",
              detail: "The wall page updates live. Open it on the tablet, sign in once and add it to the home screen.",
-             done: false, link_label: "Get the wall link", path: routes.edit_admin_household_path(@household))
+             done: @user.wall_link_opened_at.present?,
+             link_label: "Get the wall link", path: routes.checklist_wall_link_path, post: true)
   end
 
   def routes
