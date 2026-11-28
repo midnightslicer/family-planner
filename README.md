@@ -170,12 +170,27 @@ account, schedule, pet, place and photo. From a shell,
 with Compose); give it a path to write somewhere else:
 `bin/rails "backup:create[/path/to/family.zip]"`.
 
-To restore, start a fresh server, enter its setup code, and choose **Restore
-a backup** on the setup page instead of creating an account (or run
-`bin/rails "backup:restore[/path/to/family.zip]"`). It only works while the
-server has no accounts, so it can't overwrite a board in use. Backups from an
-older version of the app are brought up to date as they're restored; one
-from a newer version asks you to update the server first.
+There are two ways to restore:
+
+- **Onto a fresh server** (moving to a new one): start it, enter its setup
+  code, and choose **Restore a backup** on the setup page instead of creating
+  an account (or run `bin/rails "backup:restore[/path/to/family.zip]"`). This
+  only works while the server has no accounts.
+- **Over a server in use** (going back to an earlier backup): an admin opens
+  **Admin > Backup** and uses **Restore a backup** at the bottom. **This
+  overwrites the whole database**: every household, account, schedule, pet,
+  place and photo is replaced by what's in the zip, and anything added or
+  changed since the backup was made is lost. To make that hard to do by
+  accident, you type `RESTORE` and confirm once more. Before anything is
+  replaced, the server saves a backup of what's there now as
+  `storage/backups/before-restore-<name>-<time>.zip`, so a mistaken restore
+  can be undone by restoring that file. The zip is checked first; if it isn't
+  a backup the app can read, nothing changes. You're signed out afterwards and
+  sign in with the accounts from the backup.
+
+Either way, backups from an older version of the app are brought up to date
+as they're restored; one from a newer version asks you to update the server
+first.
 
 Everyone then signs in with their usual email and password. What doesn't
 come along, because it stays encrypted to the old server and never leaves it
