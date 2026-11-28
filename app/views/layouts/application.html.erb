@@ -50,8 +50,8 @@
     <div class="overlay-stack">
       <%# Always rendered, so a turbo stream can prepend a flash into #flash. %>
       <div class="flash-stack" id="flash">
-        <%= flash_message(notice, :notice) if notice %>
-        <%= flash_message(alert, :alert) if alert %>
+        <%= flash_message(notice, :notice) if notice.present? %>
+        <%= flash_message(alert, :alert) if alert.present? %>
       </div>
       <% if user_signed_in? %>
         <%# In-page notifications (Notifier) arrive here as toasts while the app

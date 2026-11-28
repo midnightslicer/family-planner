@@ -40,6 +40,15 @@ class HouseholdLinkTest < ActionDispatch::IntegrationTest
     assert_equal "Lake House", current_household_name
   end
 
+  test "being sent to sign in shows no \"you need to sign in\" toast" do
+    sign_out @member
+    get tasks_path
+    assert_redirected_to new_user_session_path
+    follow_redirect!
+    assert_response :success
+    assert_select "#flash .toast", count: 0
+  end
+
   test "a doubled slash can't turn the redirect into another site" do
     get "//tasks?household=#{@lake.id}"
     assert_equal "/tasks", response.location.delete_prefix("http://www.example.com")
