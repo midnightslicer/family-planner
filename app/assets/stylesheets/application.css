@@ -2325,6 +2325,11 @@ form:has(.work-days) { max-width: 860px; }
 .status-bar .where-chip.avail-free.is-current { color: var(--status-completed); background: var(--status-completed-bg); border-color: var(--status-completed); }
 .status-bar .where-chip.avail-text.is-current { color: var(--status-in_progress); background: var(--status-in_progress-bg); border-color: var(--status-in_progress); }
 .status-bar .where-chip.avail-busy.is-current { color: var(--danger); background: var(--danger-bg); border-color: var(--danger); }
+/* None set: the one your schedule gives you, outlined in its colour. */
+.status-bar .where-chip.is-auto { border-style: dashed; }
+.status-bar .where-chip.avail-free.is-auto { color: var(--status-completed); border-color: var(--status-completed); }
+.status-bar .where-chip.avail-text.is-auto { color: var(--status-in_progress); border-color: var(--status-in_progress); }
+.status-bar .where-chip.avail-busy.is-auto { color: var(--danger); border-color: var(--danger); }
 .status-until { flex-basis: 100%; }
 /* The note under the "I'm at" chips: one line, saved with a tap or Enter. */
 .where-note { flex-basis: 100%; display: flex; gap: 0.5rem; align-items: center; max-width: 560px; }

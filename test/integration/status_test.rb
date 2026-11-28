@@ -14,6 +14,10 @@ class StatusTest < ActionDispatch::IntegrationTest
     assert_select ".status-bar .where-chip.is-current", count: 0
     assert_select ".status-bar .where-chip.avail-free", text: "Free to call"
     assert_select ".status-bar .where-chip.avail-free .icon-phone"
+    # Nothing set: the schedule's own (Free, nothing on) is outlined, not lit.
+    assert_select ".status-bar .where-chip.is-auto", 1
+    assert_select ".status-bar .where-chip.avail-free.is-auto"
+    assert_select ".status-until", text: /Free to call: nothing on right now/
 
     post status_me_path, params: { availability: "busy" }, headers: { "Referer" => tasks_url }
     assert_redirected_to tasks_url
@@ -61,6 +65,9 @@ class StatusTest < ActionDispatch::IntegrationTest
     travel_to Time.utc(2026, 11, 23, 16, 0) do # Monday 10 AM in Chicago
       get root_path
       assert_select "#{card(@member)}.is-busy .avail-busy"
+      get tasks_path # the "I'm" chips say so too, from work
+      assert_select ".status-bar .where-chip.avail-busy.is-auto:not(.is-current)"
+      assert_select ".status-until", text: /Do not disturb for now, from Work until 5 PM/
 
       post status_me_path, params: { availability: "free" }
       get root_path
@@ -69,6 +76,7 @@ class StatusTest < ActionDispatch::IntegrationTest
       assert_select "#{card(@member)} .person-now", text: /Work/
       get tasks_path
       assert_select ".status-bar .where-chip.is-current", text: "Free to call"
+      assert_select ".status-bar .where-chip.is-auto", count: 0 # what you set is the one
       assert_select ".status-bar form:has(.is-current) input[name=availability][value=clear]"
 
       post status_me_path, params: { availability: "clear" }, headers: { "Referer" => tasks_url }

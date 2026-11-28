@@ -56,7 +56,7 @@
   <% end %>
 <% else %>
   <% s = @schedule %>
-  <%= render "tasks/person_header", person: @person, where: @where, at: @at, now_task: @schedule.now, locations: @locations, schedule: @schedule, status_set: @status_set %>
+  <%= render "tasks/person_header", person: @person, where: @where, at: @at, now_task: @schedule.now, locations: @locations, schedule: @schedule, status_now: @status_now %>
 
   <%= render "tasks/schedule_top", s: s, person: @person, where: @where %>
 

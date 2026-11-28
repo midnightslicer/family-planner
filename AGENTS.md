@@ -448,7 +448,11 @@ server; see `Backup` below).
   your own only) wins over work hours and events for 12 hours
   (`StatusUpdate::LASTS`); `member_statuses[:set]` carries it and
   `reachability(status)` picks it first. Tapping the lit chip again posts
-`availability=clear`, a row that ends at once (back to the schedule). A day off is Free with "Day off"
+`availability=clear`, a row that ends at once (back to the schedule). With none
+  set, the chip the schedule gives you now (your event's or work's
+  availability, else Free) is outlined (`is-auto`, dashed) and
+  `.status-until` says where it comes from; `TasksController#index` passes
+  `@status_now` (`member_statuses` for you alone). A day off is Free with "Day off"
   as the detail line. Where someone is: their current event or work
   block's place, unless their latest location report is newer than its
   start (`LocationReport#newer_than?`), so "I'm at" mid-shift moves them.

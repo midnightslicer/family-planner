@@ -3,7 +3,8 @@
     under them says more ("Back by 6") wherever you are. "I'm" chips set how reachable you are, over work and events, for
     12 hours (StatusUpdate::LASTS).
     Locals: person, where (their latest LocationReport), locations and
-    status_set (your StatusUpdate in force, if any; only for yourself). %>
+    status_now (your member status from Household#member_statuses; only
+    for yourself). %>
 <% me = person == current_user %>
 <header class="profile-header day-header" style="--user-color: <%= person.color %>; --user-fg: <%= contrast_color(person.color) %>">
   <span class="person-avatar profile-avatar" aria-hidden="true"><%= avatar_content(person) %></span>
@@ -83,9 +84,14 @@
     <% end %>
   </div>
 
-  <%# How reachable you are, in one tap. Nothing's lit until you set one;
-      tapping the lit one again hands back to your work hours and events. %>
-  <% set = local_assigns[:status_set] %>
+  <%# How reachable you are, in one tap. The one you set is lit; tapping it
+      again hands back to your work hours and events. With none set, the one
+      your schedule gives you now is outlined (is-auto) and the line under
+      says where it comes from. %>
+  <% status_now = local_assigns[:status_now] || {} %>
+  <% set = status_now[:set] %>
+  <% from = status_now[:current] %>
+  <% auto = set ? nil : (from&.availability || "free") %>
   <div class="where-bar status-bar">
     <span class="where-label"><%= icon(:phone) %>I'm</span>
     <div class="where-chips">
@@ -93,9 +99,17 @@
         <% current = set&.availability == value %>
         <%= button_to status_me_path, params: { availability: current ? "clear" : value }, method: :post,
                       title: (current ? "Tap again to go back to your schedule" : nil),
-                      class: "where-chip #{css}#{' is-current' if current}", "aria-pressed": current do %><%= icon(icon_name) %><span><%= label %></span><% end %>
+                      class: "where-chip #{css}#{' is-current' if current}#{' is-auto' if auto == value}", "aria-pressed": current do %><%= icon(icon_name) %><span><%= label %></span><% end %>
       <% end %>
     </div>
-    <small class="status-until"><%= set ? "Until #{clock(set.expires_at)}, then back to your schedule. Tap it again to go back now." : "Wins over work and events for 12 hours" %></small>
+    <small class="status-until">
+      <% if set %>
+        Until <%= clock(set.expires_at) %>, then back to your schedule. Tap it again to go back now.
+      <% elsif from %>
+        <%= ScheduleHelper::AVAILABILITY.fetch(auto).first %> for now, from <%= from.title_for(current_user) %><%= " until #{clock(from.finishes_at)}" if from.finishes_at %>. Tap one to change it for 12 hours.
+      <% else %>
+        Free to call: nothing on right now. Tap one to change it for 12 hours.
+      <% end %>
+    </small>
   </div>
 <% end %>

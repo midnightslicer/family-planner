@@ -31,7 +31,9 @@ class TasksController < ApplicationController
       @at = @schedule.at unless @where&.newer_than?(@schedule.now)
       if @person == current_user
         @locations = places
-        @status_set = StatusUpdate.active_for_user(current_user)
+        # What the "I'm" chips show: the status you set, else what your
+        # schedule makes you now (Household#member_statuses).
+        @status_now = current_household.member_statuses(members: [ current_user ], places: places)[current_user.id]
       end
     end
   end
