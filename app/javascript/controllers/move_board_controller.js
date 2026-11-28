@@ -138,7 +138,8 @@ export default class extends Controller {
       void pet.offsetWidth // restart the landing animation
       pet.classList.add("is-moved")
     })
-    this.say(`Saving: ${zone.dataset.label}…`)
+    // No "Saving…" line: the toast that comes back says it's done.
+    this.say("")
     this.save(zone, moving)
   }
 
