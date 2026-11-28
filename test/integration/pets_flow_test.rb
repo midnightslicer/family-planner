@@ -156,6 +156,9 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     assert_select "##{dom_id(@yard, :board_place)} ##{dom_id(@rex, :pet_card)} .pet-where small", text: /Seen/
     assert_select "##{dom_id(@rex, :pet_card)} .pet-where-name", count: 0
     assert_select ".pet-card button", text: "Fed"
+    # Whole cards are tap targets: each card's one card-link.
+    assert_select "##{dom_id(@rex, :pet_card)} a.card-link[href='#{pet_path(@rex)}']", 1
+    assert_select ".person-card a.card-link", minimum: 1
   end
 
   test "pets are on the wall, read-only, with where they are and whether they've eaten" do

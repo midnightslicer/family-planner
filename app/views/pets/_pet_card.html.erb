@@ -1,12 +1,13 @@
 <%# A pet's card: who, where, fed today, and the two things people do with
-    it, one tap away. Used on the pets page and the dashboard. Locals: pet,
+    it, one tap away. The rest of the card opens the pet (card-link). Used
+    on the pets page and the dashboard. Locals: pet,
     status (a PetStatus from Pet.statuses), grouped (the dashboard, whose
     section already names the place: the card shows inside / outside /
     penned up and how fresh that is instead, as the wall does). %>
 <% report = status.report
    placed = local_assigns[:grouped] && report&.location %>
 <article class="pet-card" id="<%= dom_id(pet, :pet_card) %>">
-  <%= link_to pet_path(pet), class: "pet-identity" do %>
+  <%= link_to pet_path(pet), class: "pet-identity card-link" do %>
     <span class="person-avatar" style="<%= PetsHelper::PET_DISC_STYLE %>" aria-hidden="true"><%= pet_avatar_content(pet) %></span>
     <span class="person-meta">
       <span class="person-name"><%= pet.name %><%= icon(:cake, label: "Birthday today", class: "birthday-cake") if birthday_today?(pet.birthday) %></span>

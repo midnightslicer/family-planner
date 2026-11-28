@@ -3,7 +3,8 @@
     status ({ current:, next:, location: } from Household#member_statuses,
     which pages compute once for every card). It answers "can I reach them
     right now?" first, then what they're doing, what's next and where they
-    are. The name links to their schedule; the wall makes links inert.
+    are. The name links to their schedule, and its card-link makes the
+    whole card a tap target; the wall makes links inert.
     The dashboard and the wall both group cards under the place each person
     is at, so a household location isn't repeated on the card: only a place
     that isn't one (off property, an event somewhere else) is, under
@@ -23,7 +24,7 @@
   <div class="person-identity">
     <span class="person-avatar" aria-hidden="true"><%= avatar_content(user) %></span>
     <span class="person-meta">
-      <%= link_to user.display_name, tasks_path(person: user.id), class: "person-name" %>
+      <%= link_to user.display_name, tasks_path(person: user.id), class: "person-name card-link" %>
     </span>
     <%= icon(:cake, label: "Birthday today", class: "birthday-cake") if birthday_today?(user.birthday) %>
   </div>

@@ -18,7 +18,7 @@
       <% schedule = @family.fetch(member) %>
       <% status = @statuses[member.id] %>
       <section class="family-column panel" style="--user-color: <%= member.color %>; --user-fg: <%= contrast_color(member.color) %>">
-        <%= link_to tasks_path(person: (member.id unless member == current_user)), class: "family-person" do %>
+        <%= link_to tasks_path(person: (member.id unless member == current_user)), class: "family-person card-link" do %>
           <span class="person-avatar" aria-hidden="true"><%= avatar_content(member) %></span>
           <span class="person-name"><%= member.display_name %></span>
         <% end %>

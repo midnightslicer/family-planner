@@ -22,7 +22,7 @@
         <%= location_picture(location) %>
         <div class="place-body">
           <div class="place-title">
-            <h2><%= location.name %></h2>
+            <h2><%= link_to location.name, edit_location_path(location), class: "card-link" %></h2>
             <%= link_to edit_location_path(location), class: "btn btn-quiet btn-icon", title: "Edit", "aria-label": "Edit #{location.name}" do %><%= icon(:pencil) %><% end %>
           </div>
           <p class="task-meta"><span><%= location_icon(location) %><%= location_kind_label(location.kind) %></span>

@@ -176,6 +176,9 @@ server; see `Backup` below).
   - forms: `form-card`, `form-field` (also on a `fieldset`), `form-actions`,
     `btn` + `btn-primary`/`btn-danger`/`btn-quiet`/`btn-small`, `devise-links`
   - tables: `table-wrap` (scroll container) + bare `table`, `table-actions`
+  - `card-link`: a card's main link, stretched over the whole card (the
+    person, pet and place cards and the schedule's family columns); the
+    card's own buttons and links sit above it
   - components: `dashboard-grid`, `person-card` > `person-identity` >
     `person-avatar` + `person-meta` > `person-name`, then
     `person-status` (> `person-now`), `person-next`; `status-chip status-*`

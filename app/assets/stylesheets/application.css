@@ -1623,6 +1623,8 @@ a.person-name:hover { color: var(--accent); text-decoration: none; }
   transition: transform var(--medium) var(--ease-out), box-shadow var(--medium) ease;
 }
 .place-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.place-title h2 a { color: inherit; }
+.place-title h2 a:hover { color: var(--accent); text-decoration: none; }
 .place-card > .place-photo { width: 5.5rem; }
 .place-body { flex: 1; min-width: 0; }
 .place-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; }
@@ -2510,3 +2512,10 @@ form[aria-busy="true"] .btn {
   }
   .btn:hover, .person-card:hover, .pet-card:hover, .place-card:hover, .pick-tile:hover { transform: none; }
 }
+
+/* A card that's one big tap target: its main link (card-link) stretches
+   over the whole card, and the card's own buttons and links sit above it. */
+:is(.person-card, .pet-card, .place-card, .family-column) { position: relative; }
+.card-link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: 0; }
+:is(.person-card, .pet-card, .place-card, .family-column) :is(a:not(.card-link), button, input, select, summary, label, form) { position: relative; z-index: 1; }
+:is(.person-card, .pet-card, .place-card, .family-column):has(.card-link) { cursor: pointer; }
