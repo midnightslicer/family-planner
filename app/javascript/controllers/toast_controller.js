@@ -14,6 +14,11 @@ export default class extends Controller {
   static values = { delay: { type: Number, default: 8000 }, alert: Boolean, title: String, body: String, path: String }
 
   connect() {
+    // A live refresh morphs the page to the server's copy, which has no
+    // toast in it; without this the morph removes a toast moments after it
+    // appears (a move on the Where board, then everyone's refresh).
+    this.keep = (event) => { if (event.target === this.element) event.preventDefault() }
+    this.element.addEventListener("turbo:before-morph-element", this.keep)
     const stack = this.element.parentElement
     while (stack && stack.children.length > KEEP) stack.firstElementChild.remove()
     this.start()
@@ -31,6 +36,7 @@ export default class extends Controller {
   }
 
   disconnect() {
+    this.element.removeEventListener("turbo:before-morph-element", this.keep)
     clearTimeout(this.timer)
   }
 
