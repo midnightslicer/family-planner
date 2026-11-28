@@ -8,6 +8,12 @@ class ScheduleFlowTest < ActionDispatch::IntegrationTest
     sign_in @member
   end
 
+  test "the schedule has no cached preview, so the permanent quick add isn't doubled by the morph" do
+    get tasks_path
+    assert_select "meta[name=turbo-cache-control][content=no-preview]"
+    assert_select "form.quick-add", 1
+  end
+
   test "quick add puts a to-do on your own list" do
     post tasks_path, params: { task: { title: "Call the doctor", assignee_ids: [ @member.id ] } }
     assert_redirected_to tasks_path

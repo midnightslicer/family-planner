@@ -1,5 +1,8 @@
 <% content_for :title, "Schedule" %>
 <%= render "shared/live" %>
+<%# No cached preview: Turbo would show the snapshot, then morph the fresh
+    page onto it, and the morph adds a second permanent quick-add form. %>
+<% content_for :head, tag.meta(name: "turbo-cache-control", content: "no-preview") %>
 <%= render "tasks/people_switch", members: @members, selected: @person || :family %>
 
 <% if @family %>

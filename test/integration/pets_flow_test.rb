@@ -47,6 +47,7 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     assert_select zone.(@yard, "", 0), 1
     assert_select ".move-unplaced ##{dom_id(@tom, :move)}"
     assert_select ".move-unplaced [data-move-board-target=zone]", count: 0 # you can't un-report a pet
+    assert_select "a.move-done[href='#{pets_path}']", text: /Done/
   end
 
   test "a drop on the board posts the move and gets the flash back as a stream" do

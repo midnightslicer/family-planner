@@ -211,7 +211,7 @@ server; see `Backup` below).
     compact row tiles); the Where board `move-board` > `move-place`
     (`is-house`) > `move-place-name` + `move-zones` > `move-zone`
     (`move-zone-label`, `is-over`) > `move-pet` (`is-selected`,
-    `is-dragging`), `move-ghost`, `move-note`, `move-status`, `move-manage`,
+    `is-dragging`), `move-ghost`, `move-note`, `move-status`, `move-done` (the Done link back to Pets), `move-manage`,
     driven by the `move-board` controller (pointer-event drag, or tap pets
     then a zone); `kind-options` > `kind-option`;
     `spot-chip` (`is-inside`/`is-outside`/`is-penned`, from `spot_chip`; the wall's `wall-pet-chips` and the dashboard's pet cards), `feeding-notes`, `form-row`, `form-card-wide`, `sticky-actions`,
@@ -462,7 +462,9 @@ server; see `Backup` below).
   replaces `tasks/_schedule_top` and `tasks/_schedule_lists` and the flash,
   so the box keeps focus and a phone keeps its keyboard up. The quick add
   form is `data-turbo-permanent` (id `quick-add-<person id>`), so the
-  minute refresh and live morphs never close it or wipe what's typed. A card's "now" is computed from the
+  minute refresh and live morphs never close it or wipe what's typed.
+  The schedule sets `turbo-cache-control: no-preview`: a cached preview
+  followed by the morph render would add a second copy of the permanent form. A card's "now" is computed from the
   clock, so the dashboard and schedule refresh every minute
   (`auto-refresh` interval) and `ScheduleTickJob` (production, every
   minute) broadcasts refreshes when events start or end. `ReminderJob`
@@ -565,7 +567,7 @@ server; see `Backup` below).
 ## Testing
 
 ```sh
-bin/rails test              # the whole suite (365 runs), with the Ruby in .ruby-version
+bin/rails test              # the whole suite (366 runs), with the Ruby in .ruby-version
 bin/ci                      # rubocop, bundler-audit, npm audit, brakeman, tests, seeds
 docker compose up --build   # smoke: setup page on localhost:3000, code in the logs
 ```
