@@ -218,7 +218,8 @@ server; see `Backup` below).
     heading names a household location, so the card doesn't repeat it), `birthday-cake`; `profile-header` > `profile-avatar` +
     `profile-heading`; `profile-panels` > `panel`;
     `place-now`, `place-photo` (rounded square; discs are for faces),
-    `place-grid` > `place-card` > `place-body` + `here-now`; `history` >
+    `place-grid` > `place-card` (the `place-photo` a banner across its top)
+    > `place-body` + `here-now`; `history` >
     `history-item` > `history-mark` + `history-body`; tile pickers
     `picker-field` > `picker-shortcuts` + `pick-grid` > `pick-tile`
     (`pick-check`, `pick-name`, `pick-meta`, `pick-place`, `pick-add`) driven
@@ -228,7 +229,10 @@ server; see `Backup` below).
     (`move-zone-label`, `is-over`) > `move-pet` (`is-selected`,
     `is-dragging`), `move-ghost`, `move-note`, `move-status`, `move-done` (Done: back where you came from, else Pets), `move-manage`,
     driven by the `move-board` controller (pointer-event drag, or tap pets
-    then a zone); `kind-options` > `kind-option`;
+    then a zone); `move-zones` wrap (auto-fit columns) so the board fits a
+    phone: under 480px a house keeps its three zones side by side, its
+    "Here" zone (`move-zone-plain`) takes a row, and pet names wrap;
+    `kind-options` > `kind-option`;
     `spot-chip` (`is-inside`/`is-outside`/`is-penned`, from `spot_chip`; the wall's `wall-pet-chips` and the dashboard's pet cards), `feeding-notes`, `form-row`, `form-card-wide`, `sticky-actions`,
     `btn-wide`, `danger-zone`; pickers group pets by type (`pick-group`; no All/None buttons). Pet types are a
     menu (`Pet.kinds_for`: defaults plus the household's own, "New type…"),
@@ -408,7 +412,12 @@ server; see `Backup` below).
   migrations run on every boot). `config/deploy.yml` takes every
   deployment-specific value from the environment (`.env.kamal`, ignored;
   `.env.kamal.example` lists them): never hard-code a server, domain or
-  account in a tracked file.
+  account in a tracked file. `config/deploy.test.yml` is a destination
+  layered over it (`bin/kamal … -d test`): service `whereabouts-test` at
+  `test.<DEPLOY_DOMAIN>` with its own `whereabouts_test_storage` volume, on
+  the same server and kamal-proxy as production. Secrets both read are in
+  `.kamal/secrets-common` (Kamal reads `.kamal/secrets.<destination>` instead
+  of `.kamal/secrets` for a destination).
 
 ## Conventions
 

@@ -137,6 +137,14 @@ times out. Too many sign-in tries from one address are slowed down;
 accounts are never locked. Admins are admins of the whole server: run
 one per family.
 
+#### Releasing a new version
+
+The version is `AppVersion::CURRENT` (`app/models/app_version.rb`), shown at
+the bottom of everyone's account page. For a release, bump it and add an
+entry at the top of `config/changelog.yml` in plain words; after the
+deploy everyone sees "What's new" once, and tapping the version shows it
+again.
+
 #### A test copy on the same server
 
 `config/deploy.test.yml` is a Kamal destination that puts whatever branch
