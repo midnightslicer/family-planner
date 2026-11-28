@@ -89,7 +89,10 @@ server; see `Backup` below).
   `Backup` (the whole app as a zip: `manifest.json`, `database.sqlite3`
   copied with SQLite's online backup API, and `files/<blob key>` for every
   Active Storage file; `Backup.write(path)` / `Backup.restore(path)`.
-  Restore only runs with no users, checks the zip (sizes, integrity, no
+  Restore runs with no users, or over a server in use with
+  `replace: true` (Admin > Backup), which first writes what's here to
+  `storage/backups/before-restore-*.zip` (`Backup.safety_dir`;
+  `Result#safety_copy`, `Result#summary` for the notice). It checks the zip (sizes, integrity, no
   migrations newer than this code), copies the database into the live
   connection, migrates, then clears what this server can't decrypt:
   encrypted columns stay encrypted to the old server's SECRET_KEY_BASE and
@@ -146,7 +149,9 @@ server; see `Backup` below).
   members, invitations, people, settings, backup; Settings also shows whether push
   and email work, the device count and the last failed push; Backup
   (`BackupsController#create`) builds the zip in `tmp/backups`, deleting
-  ones over an hour old, and sends it). `SetupController#restore` takes a
+  ones over an hour old, and sends it); `BackupsController#restore`
+  restores over everything (typed `RESTORE`, `data-turbo-confirm`, rate
+  limited, signs the admin out). `SetupController#restore` takes a
   zip on the setup page (behind the setup code, rate limited) and sends
   everyone to sign in. `walls_controller.rb`: the wall (signed in).
 - `config/initializers/mailer.rb` + `app/mailers/app_mail_delivery.rb`: SMTP
@@ -232,7 +237,9 @@ server; see `Backup` below).
     `passkey-signin`, `passkey-choice`, `passkey-hint`, `passkey-add`,
     `setup-steps`, `qr-frame` > `qr-code` (`qr-light`/`qr-dark`, coloured by
     the `--qr-*` tokens), `secret-key`, `recovery-codes`; backups:
-    `restore-card` (the setup page's restore `details`), `backup-notes`.
+    `restore-card` (the setup page's restore `details`), `backup-notes`,
+    `restore-over` (Admin > Backup's restore-over-everything section, a
+    `danger-zone` with a `flash-alert` warning).
   - notifications: `toast-stack` (the `#notifications` container,
     `data-turbo-permanent` so morph refreshes keep it, in the fixed
     bottom-corner `overlay-stack`) > `flash toast` > `toast-body` (household in `small`,
@@ -422,8 +429,8 @@ server; see `Backup` below).
   Stream requests an empty 404.
 - **Invitations are the only join path.** Devise `:registerable` is off (no
   `/users/sign_up`); accounts come from `InvitationsController#join`, the
-  setup wizard (first admin only), or a restored backup (only onto a server
-  with no accounts).
+  setup wizard (first admin only), or a restored backup (onto a server
+  with no accounts, or by an admin over everything from Admin > Backup).
 - **Admins can manage other members' details** (profile, house, work
   schedule, days off) through `concerns/manages_person.rb`: those pages
   act on `managed_person`, yourself unless an admin passes `person_id` for
@@ -574,7 +581,7 @@ server; see `Backup` below).
 ## Testing
 
 ```sh
-bin/rails test              # the whole suite (367 runs), with the Ruby in .ruby-version
+bin/rails test              # the whole suite (368 runs), with the Ruby in .ruby-version
 bin/ci                      # rubocop, bundler-audit, npm audit, brakeman, tests, seeds
 docker compose up --build   # smoke: setup page on localhost:3000, code in the logs
 ```

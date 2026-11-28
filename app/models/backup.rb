@@ -20,13 +20,17 @@
 # signs in as before; passkeys only on the same domain, as they're bound to
 # it. Still everything the board knows: keep the zip as safe as the server.
 #
-# Restore only goes onto a server with no accounts yet (a fresh install):
-# it replaces the whole database, runs any migrations newer than the
+# Restore goes onto a server with no accounts yet (a fresh install), or,
+# from Admin > Backup with `replace: true`, over a server in use: then it
+# first writes a backup of what's here now into storage/backups
+# (Result#safety_copy), so a wrong restore can be undone. Either way it
+# checks the whole zip before touching anything, then replaces the whole database, runs any migrations newer than the
 # backup, clears what it can't read and puts the files back. Only the named
 # entries are read, so nothing in the zip is written to a path it chooses.
 #
 #   Backup.write("family.zip")             # => "family.zip"
 #   Backup.restore("family.zip")           # => Backup::Result
+#   Backup.restore("family.zip", replace: true)
 class Backup
   FORMAT = 1
   MANIFEST = "manifest.json".freeze
@@ -39,9 +43,29 @@ class Backup
 
   class Invalid < StandardError; end
 
-  Result = Struct.new(:people, :households, :files, :missing_files, :two_factor_reset, :smtp_password_cleared, keyword_init: true)
+  # Where a restore over existing data saves what was here first (tests
+  # point it elsewhere with Backup.safety_dir=).
+  SAFETY_DIR = Rails.root.join("storage/backups")
+
+  Result = Struct.new(:people, :households, :files, :missing_files, :two_factor_reset, :smtp_password_cleared,
+                      :safety_copy, keyword_init: true) do
+    # What the person who restored is told.
+    def summary
+      [
+        "Restored #{people} #{'person'.pluralize(people)} in #{households} #{'household'.pluralize(households)}. Sign in as usual.",
+        ("#{missing_files} #{'photo'.pluralize(missing_files)} weren't in the backup." if missing_files.positive?),
+        ("Two-step verification was turned off for #{two_factor_reset} #{'person'.pluralize(two_factor_reset)}; set it up again in your account." if two_factor_reset.positive?),
+        ("Enter the email (SMTP) password again in Admin > Settings." if smtp_password_cleared),
+        ("What was here before is saved as #{File.basename(safety_copy)} in storage/backups." if safety_copy)
+      ].compact.join(" ")
+    end
+  end
 
   class << self
+    attr_writer :safety_dir
+
+    def safety_dir = @safety_dir || SAFETY_DIR
+
     def write(path)
       Dir.mktmpdir("backup") do |dir|
         database = File.join(dir, DATABASE)
@@ -69,9 +93,10 @@ class Backup
       "#{AppSettings.app_name.parameterize.presence || 'whereabouts'}-backup-#{time.strftime('%Y-%m-%d-%H%M')}.zip"
     end
 
-    def restore(path)
-      raise Invalid, "This server already has accounts. Restore only goes onto a fresh install." if User.exists?
+    def restore(path, replace: false)
+      raise Invalid, "This server already has accounts. Restore only goes onto a fresh install." if User.exists? && !replace
 
+      safety_copy = nil
       Zip::File.open(path) do |zip|
         check_size(zip)
         manifest = read_json(zip, MANIFEST)
@@ -81,6 +106,7 @@ class Backup
         Dir.mktmpdir("restore") do |dir|
           database = extract(zip, DATABASE, dir)
           check_database(database)
+          safety_copy = write_safety_copy(safety_dir) if User.exists?
           copy_database(from: database, to: ApplicationRecord.connection.raw_connection)
         end
         reload_schema
@@ -89,13 +115,19 @@ class Backup
         two_factor_reset, smtp_cleared = clear_unreadable_secrets
         files, missing = restore_files(zip)
         Result.new(people: User.count, households: Household.count, files: files, missing_files: missing,
-                   two_factor_reset: two_factor_reset, smtp_password_cleared: smtp_cleared)
+                   two_factor_reset: two_factor_reset, smtp_password_cleared: smtp_cleared, safety_copy: safety_copy)
       end
     rescue Zip::Error, JSON::ParserError, SQLite3::Exception => error
       raise Invalid, "That file isn't a backup this app can read (#{error.message.truncate(120)})."
     end
 
     private
+
+    # Everything here now, before a restore replaces it.
+    def write_safety_copy(dir)
+      FileUtils.mkdir_p(dir)
+      write(File.join(dir, "before-restore-#{filename}"))
+    end
 
     def manifest(database)
       versions = SQLite3::Database.open(database) { |db| db.execute("SELECT version FROM schema_migrations").flatten }

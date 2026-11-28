@@ -131,5 +131,6 @@ Rails.application.routes.draw do
     end
     # The whole app as a zip (Backup); restoring is on a fresh server's setup page.
     resource :backup, only: [ :show, :create ]
+    post "backup/restore", to: "backups#restore", as: :backup_restore
   end
 end

@@ -11,11 +11,13 @@ class BackupTest < ActionDispatch::IntegrationTest
     @admin = users(:admin)
     @member = users(:member)
     @dir = Dir.mktmpdir("backup-test")
+    Backup.safety_dir = File.join(@dir, "safety")
   end
 
   teardown do
     wipe!
     ActiveRecord::FixtureSet.reset_cache # the next test loads the fixtures again
+    Backup.safety_dir = nil
     FileUtils.rm_rf(@dir)
   end
 
@@ -130,5 +132,51 @@ class BackupTest < ActionDispatch::IntegrationTest
     assert_redirected_to setup_path
     assert_match(/isn't a backup/, flash[:alert])
     assert_equal 0, User.count
+  end
+
+  test "an admin restores over a server in use: a loud warning, typed RESTORE, and a copy of what was here first" do
+    kept = households(:smiths).locations.create!(name: "Red Barn", kind: "other")
+    Backup.write(zip_path)
+    later = households(:smiths).locations.create!(name: "Added later", kind: "other")
+    upload = -> { Rack::Test::UploadedFile.new(zip_path, "application/zip") }
+
+    sign_in @member
+    post admin_backup_restore_path, params: { backup: upload.(), confirm: "RESTORE" }
+    assert_response :forbidden
+    assert Location.exists?(later.id)
+
+    sign_in @admin
+    get admin_backup_path
+    assert_select ".restore-over .flash-alert", text: /overwrites the whole database/
+    assert_select ".restore-over form[data-turbo-confirm]"
+    assert_select ".restore-over input[name=confirm][required]"
+
+    post admin_backup_restore_path, params: { backup: upload.(), confirm: "restor" }
+    assert_redirected_to admin_backup_path
+    assert_match(/Type RESTORE to confirm. Nothing was changed./, flash[:alert])
+    assert Location.exists?(later.id)
+
+    post admin_backup_restore_path, params: { backup: Rack::Test::UploadedFile.new(file_fixture("avatar.png"), "image/png"), confirm: "RESTORE" }
+    assert_redirected_to admin_backup_path
+    assert_match(/isn't a backup.*Nothing was changed/, flash[:alert])
+    assert Location.exists?(later.id)
+    assert_empty Dir.glob(File.join(Backup.safety_dir, "*")), "no copy until the zip checks out"
+
+    post admin_backup_restore_path, params: { backup: upload.(), confirm: " restore " }
+    assert_redirected_to new_user_session_path
+    assert_match(/Restored 2 people in 1 household.*before-restore-.+\.zip/, flash[:notice])
+    assert_not Location.exists?(later.id), "what came after the backup is gone"
+    assert_equal "Red Barn", Location.find(kept.id).name
+
+    # What was here is saved, "Added later" and all.
+    copy = Dir.glob(File.join(Backup.safety_dir, "before-restore-*.zip")).sole
+    Zip::File.open(copy) do |zip|
+      File.binwrite(File.join(@dir, "before.sqlite3"), zip.read(Backup::DATABASE))
+    end
+    names = SQLite3::Database.open(File.join(@dir, "before.sqlite3")) { |db| db.execute("SELECT name FROM locations").flatten }
+    assert_includes names, "Added later"
+
+    get admin_backup_path # signed out
+    assert_redirected_to new_user_session_path
   end
 end

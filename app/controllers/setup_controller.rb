@@ -63,21 +63,12 @@ class SetupController < ApplicationController
     session.delete(:setup_unlocked)
     # Emailed links should point here now, as on a fresh setup.
     Setting.set("app_url", request.base_url) unless ENV["APP_URL"].present?
-    redirect_to new_user_session_path, notice: restore_notice(result)
+    redirect_to new_user_session_path, notice: result.summary
   rescue Backup::Invalid => error
     redirect_to setup_path, alert: error.message
   end
 
   private
-
-  def restore_notice(result)
-    [
-      "Restored #{helpers.pluralize(result.people, 'person')} in #{helpers.pluralize(result.households, 'household')}. Sign in as usual.",
-      ("#{helpers.pluralize(result.missing_files, 'photo')} weren't in the backup." if result.missing_files.positive?),
-      ("Two-step verification was turned off for #{helpers.pluralize(result.two_factor_reset, 'person')}; set it up again in your account." if result.two_factor_reset.positive?),
-      ("Enter the email (SMTP) password again in Admin > Settings." if result.smtp_password_cleared)
-    ].compact.join(" ")
-  end
 
   def create_first_account
     created = false

@@ -27,3 +27,39 @@
   <% end %>
   <p><small>From a shell: <code>bin/rails backup:create</code> writes one into <code>storage/backups</code>.</small></p>
 </div>
+
+<%# Restore over everything here. Loud on purpose: it can't be taken back
+    from this page, so it says what goes, takes a typed RESTORE, asks once
+    more, and saves a backup of what's here first. %>
+<section class="form-card danger-zone restore-over">
+  <h2><%= icon(:upload) %> Restore a backup</h2>
+  <div class="flash-alert" role="note">
+    <%= icon(:alert_circle) %>
+    <div>
+      <p><strong>This overwrites the whole database.</strong> Every household, account, schedule, pet, place and
+        photo on this server is replaced by what's in the backup. Anything added or changed since that backup
+        was made is lost.</p>
+      <p>You'll be signed out, and everyone signs in with the accounts from the backup.</p>
+    </div>
+  </div>
+  <ul class="backup-notes">
+    <li>A backup of everything here now is saved first, in <code>storage/backups</code> on the server
+      (<code>before-restore-&hellip;.zip</code>), so you can put it back if this was a mistake.</li>
+    <li>The zip is checked before anything changes. If it isn't a backup this app can read, nothing happens.</li>
+  </ul>
+  <%= form_with url: admin_backup_restore_path, method: :post, multipart: true,
+                data: { turbo_confirm: "Overwrite everything on this server with this backup? Anything since it was made is lost." } do |f| %>
+    <div class="form-field">
+      <%= f.label :backup, "Backup zip" %>
+      <%= f.file_field :backup, accept: ".zip,application/zip", required: true %>
+    </div>
+    <div class="form-field">
+      <%= f.label :confirm, "Type #{Admin::BackupsController::CONFIRM} to confirm" %>
+      <%= f.text_field :confirm, required: true, autocomplete: "off", autocapitalize: "characters", spellcheck: false,
+                       pattern: Admin::BackupsController::CONFIRM, title: "Type #{Admin::BackupsController::CONFIRM}" %>
+    </div>
+    <div class="form-actions">
+      <%= f.button type: "submit", class: "btn btn-danger" do %><%= icon_label(:upload, "Overwrite with this backup") %><% end %>
+    </div>
+  <% end %>
+</section>
