@@ -1,0 +1,19 @@
+# The test copy: `bin/kamal deploy -d test` puts the checked-out branch up at
+# test.<DEPLOY_DOMAIN> on the same server, next to production. Kamal layers
+# this over config/deploy.yml, so only what's different is here: its own
+# containers, address and storage volume (database, secret key, photos), so
+# nothing it does touches production. Every alias takes -d test too
+# (`bin/kamal setup-code -d test`). `bin/kamal remove -d test` takes it down;
+# the volume stays until it's deleted on the server.
+
+service: whereabouts-test
+
+proxy:
+  host: test.<%= ENV.fetch("DEPLOY_DOMAIN") %>
+
+env:
+  clear:
+    APP_URL: https://test.<%= ENV.fetch("DEPLOY_DOMAIN") %>
+
+volumes:
+  - "whereabouts_test_storage:/rails/storage"

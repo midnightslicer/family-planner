@@ -137,6 +137,22 @@ times out. Too many sign-in tries from one address are slowed down;
 accounts are never locked. Admins are admins of the whole server: run
 one per family.
 
+#### A test copy on the same server
+
+`config/deploy.test.yml` is a Kamal destination that puts whatever branch
+you have checked out at `test.<DEPLOY_DOMAIN>`, next to production, with its
+own containers and its own storage volume (database, secret key, photos):
+
+```sh
+bin/kamal deploy -d test          # point test.<your domain> at the server first
+bin/kamal setup-code -d test      # it starts empty, with its own setup code
+bin/kamal remove -d test          # take it down (the volume stays)
+```
+
+Plain `bin/kamal deploy` still goes to production. To try a branch with real
+data, restore a production backup on the test copy's setup page: it can't
+read production's secrets, so it sends no email or notifications.
+
 ## Run it locally for development
 
 Ruby is pinned in `.ruby-version`; Node (`.node-version`) builds the JS.

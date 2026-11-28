@@ -33,7 +33,7 @@ env:
   clear:
     # Email links use this; it also limits which Host headers are accepted.
     APP_URL: https://<%= ENV.fetch("DEPLOY_DOMAIN") %>
-  # Optional. Uncomment and add values to .kamal/secrets to configure email
+  # Optional. Uncomment and add values to .kamal/secrets-common to configure email
   # from here instead of Admin > Settings.
   # secret:
   #   - SMTP_HOST
