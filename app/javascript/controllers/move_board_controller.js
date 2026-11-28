@@ -175,7 +175,19 @@ export default class extends Controller {
     }
   }
 
-  say(text) {
+  // ---- Leaving ----
+
+  // Done goes back where you came from. Turbo numbers its history entries,
+  // so above 0 there's a page of ours to go back to; otherwise (opened from
+  // a link or a fresh tab) the link's own href, the Pets page.
+  done(event) {
+    if ((history.state?.turbo?.restorationIndex || 0) > 0) {
+      event.preventDefault()
+      history.back()
+    }
+  }
+
+    say(text) {
     if (this.hasStatusTarget) this.statusTarget.textContent = text
   }
 }

@@ -47,16 +47,17 @@
                          data: { move_board_target: "comment" } %>
     </div>
     <p class="move-status" data-move-board-target="status" role="status" aria-live="polite"></p>
-    <%# Moves save as they're made, so Done just leaves. %>
+    <%# Moves save as they're made, so Done just leaves: back to wherever
+        you came from (move_board#done), or the Pets page if there's nowhere. %>
     <div class="form-actions">
-      <%= link_to pets_path, class: "btn btn-primary move-done" do %><%= icon_label(:check, "Done") %><% end %>
+      <%= link_to pets_path, class: "btn btn-primary move-done", data: { action: "move-board#done" } do %><%= icon_label(:check, "Done") %><% end %>
     </div>
   </div>
 
   <%# Pets that never move (horses in their pasture) can leave this page. %>
   <details class="move-manage">
     <summary><%= icon(:eye_off) %>Pets on this page<%= " (#{@hidden.size} hidden)" if @hidden.any? %></summary>
-    <%= form_with url: pet_locations_visibility_path, method: :post, class: "move-manage-form" do %>
+    <%= form_with url: pet_locations_visibility_path, method: :post, class: "move-manage-form", data: { turbo_action: "replace" } do %>
       <input type="hidden" name="shown_ids[]" value="">
       <p class="form-hint"><small>Untick pets that stay put, like horses in their pasture. They still show on the Pets page and the wall.</small></p>
       <div class="move-manage-list">

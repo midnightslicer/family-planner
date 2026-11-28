@@ -211,7 +211,7 @@ server; see `Backup` below).
     compact row tiles); the Where board `move-board` > `move-place`
     (`is-house`) > `move-place-name` + `move-zones` > `move-zone`
     (`move-zone-label`, `is-over`) > `move-pet` (`is-selected`,
-    `is-dragging`), `move-ghost`, `move-note`, `move-status`, `move-done` (the Done link back to Pets), `move-manage`,
+    `is-dragging`), `move-ghost`, `move-note`, `move-status`, `move-done` (Done: back where you came from, else Pets), `move-manage`,
     driven by the `move-board` controller (pointer-event drag, or tap pets
     then a zone); `kind-options` > `kind-option`;
     `spot-chip` (`is-inside`/`is-outside`/`is-penned`, from `spot_chip`; the wall's `wall-pet-chips` and the dashboard's pet cards), `feeding-notes`, `form-row`, `form-card-wide`, `sticky-actions`,
