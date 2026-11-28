@@ -1625,10 +1625,12 @@ a.person-name:hover { color: var(--accent); text-decoration: none; }
 .place-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
 .place-title h2 a { color: inherit; }
 .place-title h2 a:hover { color: var(--accent); text-decoration: none; }
-/* Square at the top, not stretched to a tall card's height (a photo would
-   be cropped to a thin strip). */
-.place-card > .place-photo { width: 5.5rem; align-self: flex-start; }
-.place-body { flex: 1; min-width: 0; }
+/* The picture is a banner across the top, so the name, "Home to …" and
+   who's here get the card's whole width below it. */
+.place-card { flex-direction: column; gap: 0; padding: 0; overflow: hidden; }
+.place-card > .place-photo { width: 100%; height: 9rem; aspect-ratio: auto; border-radius: 0; }
+.place-card > .place-photo > .icon { width: 2.75rem; height: 2.75rem; }
+.place-body { flex: 1; min-width: 0; padding: 0.875rem 1rem 1rem; }
 .place-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; }
 .place-title h2 { font-size: 1.0625rem; margin: 0.25rem 0 0.25rem; }
 .place-body .task-meta { margin-bottom: 0.5rem; }
