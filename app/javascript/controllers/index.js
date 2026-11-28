@@ -39,6 +39,9 @@ application.register("photo-upload", PhotoUploadController)
 import QuickAddController from "./quick_add_controller"
 application.register("quick-add", QuickAddController)
 
+import MoveBoardController from "./move_board_controller"
+application.register("move-board", MoveBoardController)
+
 import WallFitController from "./wall_fit_controller"
 application.register("wall-fit", WallFitController)
 

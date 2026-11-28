@@ -53,6 +53,6 @@
                     class: "btn #{status.fed_state == :fed ? 'btn-quiet' : 'btn-primary btn-success'}",
                     data: { controller: "celebrate", action: "click->celebrate#burst" } do %><%= icon_label(:utensils, "Fed") %><% end %>
     <% end %>
-    <%= link_to new_pet_location_path(pet_ids: [pet.id]), class: "btn" do %><%= icon_label(:map_pin, "Where") %><% end %>
+    <%= link_to new_pet_location_path(pet_ids: [pet.id]), class: "btn" do %><%= icon_label(:map_pin, "Where") %><% end if pet.on_where_page? %>
   </div>
 </article>

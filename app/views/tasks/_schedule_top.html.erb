@@ -1,0 +1,23 @@
+<%# What's on now, and what's waiting for an OK. Locals: s (the PersonSchedule), person, where (their latest
+    LocationReport). Its own partial so a quick add can replace it in place. %>
+<% me = person == current_user %>
+<div id="schedule-top">
+  <% if s.now %>
+    <div class="now-banner <%= "is-#{s.now.availability}" %>">
+      <span class="banner-icon"><%= icon(s.now.timed? ? :clock : :zap) %></span>
+      <div>
+        <strong><%= me ? "You're on" : "Now" %>: <%= s.now.title_for(current_user) %></strong>
+        <small><% if s.now.timed? %>until <%= clock(s.now.finishes_at) %><% else %>started <%= time_tag_ago(s.now.started_at || s.now.updated_at) %><% end %><%= " · #{s.now.place_name}" if s.now.place_name && s.now.visible_to?(current_user) && !where&.newer_than?(s.now) %></small>
+      </div>
+      <%= availability_chip(s.now) %>
+    </div>
+  <% end %>
+
+  <% if s.waiting.any? %>
+    <section class="panel waiting-panel">
+      <h2><%= icon(:bell) %><%= me ? "Needs your OK" : "Waiting for #{person.display_name.split.first}'s OK" %> <span class="count"><%= s.waiting.size %></span></h2>
+      <ul class="sched-list"><%= render partial: "tasks/item", collection: s.waiting, as: :task, locals: { show_day: true, schedule_person: person } %></ul>
+    </section>
+  <% end %>
+
+</div>

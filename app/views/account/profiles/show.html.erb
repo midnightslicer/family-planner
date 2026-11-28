@@ -6,7 +6,7 @@
 
 <section class="account-section">
   <h2>Profile</h2>
-  <%= render "shared/form_errors", object: @user if @user.errors.any? && !@user.errors.include?(:password) && !@user.errors.include?(:current_password) %>
+  <%= render "shared/form_errors", object: @user if @user.errors.any? && !@email_errors && !@user.errors.include?(:password) && !@user.errors.include?(:current_password) %>
   <%= render "shared/profile_form", user: @user, url: account_profile_path %>
 </section>
 
@@ -65,9 +65,32 @@
   </div>
 </section>
 
+<section class="account-section" id="email">
+  <h2>Email</h2>
+  <%= render "shared/form_errors", object: @user if @email_errors %>
+  <div class="form-card">
+    <%= form_with model: @user, url: account_email_path, method: :patch do |f| %>
+      <div class="form-field">
+        <%= f.label :email, "Email" %>
+        <%= f.email_field :email, required: true, autocomplete: "email" %>
+        <small>You sign in with it, and it's where email updates and password resets go.</small>
+      </div>
+      <% if @user.password_set? %>
+        <div class="form-field">
+          <%= f.label :current_password, "Current password", for: "email_current_password" %>
+          <%= f.password_field :current_password, id: "email_current_password", autocomplete: "current-password", required: true %>
+        </div>
+      <% end %>
+      <div class="form-actions">
+        <%= f.submit "Change email", class: "btn btn-primary" %>
+      </div>
+    <% end %>
+  </div>
+</section>
+
 <section class="account-section" id="password">
   <h2>Password</h2>
-  <% if @user.errors.include?(:password) || @user.errors.include?(:current_password) %>
+  <% if !@email_errors && (@user.errors.include?(:password) || @user.errors.include?(:current_password)) %>
     <%= render "shared/form_errors", object: @user %>
   <% end %>
   <div class="form-card">

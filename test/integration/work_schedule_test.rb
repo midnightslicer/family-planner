@@ -21,7 +21,7 @@ class WorkScheduleTest < ActionDispatch::IntegrationTest
     assert_select "a", text: "Add work hours"
     assert_select "button", text: "I'm off today", count: 0
     get root_path
-    assert_select "#{card(@member)} .avail-free", text: "Free"
+    assert_select "#{card(@member)} .avail-free", text: "Free to call"
   end
 
   test "saving work hours, place and availability" do
@@ -112,10 +112,10 @@ class WorkScheduleTest < ActionDispatch::IntegrationTest
       sign_in @admin
       get root_path
       # Only three statuses: a day off is Free, saying why underneath.
-      assert_select "#{card(@member)} .status-chip.avail-free", text: "Free"
+      assert_select "#{card(@member)} .status-chip.avail-free", text: "Free to call"
       assert_select "#{card(@member)} .person-now", text: "Day off"
       get tasks_path(person: "family")
-      assert_select ".family-column .status-chip.avail-free", text: "Free"
+      assert_select ".family-column .status-chip.avail-free", text: "Free to call"
       assert_select ".family-column .person-now", text: "Day off"
 
       sign_in @member

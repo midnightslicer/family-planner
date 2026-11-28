@@ -1,0 +1,8 @@
+<%# One pet on the Where board: a small chip to drag, or tap to pick.
+    Locals: pet, selected (pet ids picked when the page opened). %>
+<button type="button" class="move-pet<%= ' is-selected' if selected.include?(pet.id) %>" id="<%= dom_id(pet, :move) %>"
+        data-pet-id="<%= pet.id %>" aria-pressed="<%= selected.include?(pet.id) %>"
+        data-action="pointerdown->move-board#press click->move-board#tapPet">
+  <span class="person-avatar" style="<%= PetsHelper::PET_DISC_STYLE %>" aria-hidden="true"><%= pet_avatar_content(pet) %></span>
+  <span class="move-pet-name"><%= pet.name %></span>
+</button>

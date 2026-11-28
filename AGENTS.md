@@ -67,7 +67,14 @@ server; see `Backup` below).
   location links to it (`location_id`), and while it's on that's where the
   person shows as being (`whereabouts`, the `:at` in member statuses); status enum `planned`, `in_progress`, `undone`, `completed`;
   `started_at` stamps "doing it now"; recurrence, with `roll_forward!`
-  moving ended recurring events on; broadcasts cards and assignee
+  moving ended recurring events on (`next_task` points at the copy a
+  finished one spawned); `doable_by?`: only whoever it's for (anyone, if
+  it's for anyone) starts, finishes, skips or brings it back
+  (`reopen!`/`reopenable?`, to-dos only: a repeating one deletes its
+  untouched next copy), while whoever added it can edit or delete it
+  (`editable_by?`); `place_choice`/`place_other` are the form's "Where"
+  menu (a location's name, or `Task::OTHER_PLACE` and a typed place that
+  never becomes a location); broadcasts cards and assignee
   notifications after commit), `TaskAssignment` (who an item is for: `accepted`,
   `pending` when it clashed with their schedule, or `declined`; several
   people can share one item, and none means "for anyone";
@@ -97,7 +104,9 @@ server; see `Backup` below).
   `Pet` (species, birthday, `meals_per_day`, `feeding_notes`, `home` =
   where it sleeps; `away_since` for pets that come and go: `Pet.here` is
   what every list but the Pets page's Away section uses; `Pet.statuses` loads every card's state in a few
-  queries into `PetStatus`), `LocationReport` (polymorphic `subject`: Pet or
+  queries into `PetStatus`; `on_where_page` false keeps a pet that never
+  moves off the Where board), `PetBoard` (the Where board's places and
+  zones), `LocationReport` (polymorphic `subject`: Pet or
   User; the newest per subject is where they are; `latest_for`; `spot`
   inside/outside, houses only), `Feeding`,
   `PetSubscription` (follow a pet), and `PetCheckIn`, the form object behind
@@ -115,15 +124,20 @@ server; see `Backup` below).
   `finish_ceremony`, `credential_param`).
 - `app/controllers/users/`: Devise sessions (password, then
   `two_factor#show` if TOTP is on), passkey sign-in, rate-limited resets.
-  `app/controllers/account/`: every member's profile, password, passkeys,
-  2FA and recovery codes. `concerns/account_signup.rb`: passkey-or-password
+  `app/controllers/account/`: every member's profile, email
+  (`EmailsController`, `User#change_email`: current password first if
+  there is one; the old address is told), password, passkeys, 2FA and
+  recovery codes. `concerns/account_signup.rb`: passkey-or-password
   sign-up shared by setup and invitations.
 - Pets & people: `PetsController`, `PetLocationsController` (GET/POST
-  `/pets/where`), `FeedingsController` (`/pets/feed`; a card's one-tap Fed
+  `/pets/where`: the drag-and-drop board, whose moves post as turbo stream
+  requests answered with just the flash; `visibility` picks which pets it
+  shows), `FeedingsController` (`/pets/feed`; a card's one-tap Fed
   button posts `quick=1` and stays on the page), `LocationsController`,
   `PeopleController` (`show` redirects to the person's day on the
   Schedule, which is their profile; `locate` sets *your own* location only,
-  from the "I'm at" chips: it never reads a person from params),
+  from the "I'm at" chips and the note box under them (`note`: a report at
+  the place you're shown at, with the note): it never reads a person from params),
   `PetSubscriptionsController`. They
   include `concerns/household_scoped.rb` (sign-in, household, creator-or-admin
   deletes, whitelisted `return_to`). Anyone in the household can add and edit
@@ -193,12 +207,20 @@ server; see `Backup` below).
     `history-item` > `history-mark` + `history-body`; tile pickers
     `picker-field` > `picker-shortcuts` + `pick-grid` > `pick-tile`
     (`pick-check`, `pick-name`, `pick-meta`, `pick-place`, `pick-add`) driven
-    by the `picker` Stimulus controller; `kind-options` > `kind-option`;
+    by the `picker` Stimulus controller (`pick-grid-pets`: the feed page's
+    compact row tiles); the Where board `move-board` > `move-place`
+    (`is-house`) > `move-place-name` + `move-zones` > `move-zone`
+    (`move-zone-label`, `is-over`) > `move-pet` (`is-selected`,
+    `is-dragging`), `move-ghost`, `move-note`, `move-status`, `move-manage`,
+    driven by the `move-board` controller (pointer-event drag, or tap pets
+    then a zone); `kind-options` > `kind-option`;
     `spot-chip` (`is-inside`/`is-outside`/`is-penned`, from `spot_chip`; the wall's `wall-pet-chips` and the dashboard's pet cards), `feeding-notes`, `form-row`, `form-card-wide`, `sticky-actions`,
     `btn-wide`, `danger-zone`; pickers group pets by type (`pick-group`; no All/None buttons). Pet types are a
     menu (`Pet.kinds_for`: defaults plus the household's own, "New type…"),
     and house choices on the pet and profile forms are `shared/_location_picker`
-    tiles (`blank_label` adds a "Not set" tile). A person's "Off property" is
+    tiles (`blank_label` adds a "Not set" tile). The "I'm at" bar's note is
+    `where-note`; a to-do someone else must tick off has a `sched-check
+    is-locked`. A person's "Off property" is
     a `LocationReport` with no location (people only). Partials: `shared/_photo_picker`,
     `shared/_pet_picker`, `shared/_location_picker`, `shared/_history`,
     `pets/_pet_card`, `shared/_live`.
@@ -419,7 +441,7 @@ server; see `Backup` below).
 - **Never interpolate user text into HTML strings**; build markup with
   `tag`/`content_tag` or partials (task titles once reached turbo stream
   flashes unescaped).
-- **A person shows one of three statuses**: Free (sun), Text only, Do not
+- **A person shows one of three statuses**: Free to call (phone), Text only, Do not
   disturb (`ScheduleHelper::AVAILABILITY`, drawn by `reach_chip` /
   `availability_chip`, never by hand). A status set from the "I'm" chips
   on your own day (`StatusUpdate`, append-only, `PeopleController#set_status`,
@@ -435,8 +457,12 @@ server; see `Backup` below).
   Availability reuses them: green free, amber text only, red (danger)
   do not disturb.
 - The Schedule lives at `/tasks` (`?person=<id>` or `?person=family`).
-  Every task action redirects back and the page morphs in place; there are
-  no task turbo-stream responses. A card's "now" is computed from the
+  Every task action redirects back and the page morphs in place. The one
+  turbo-stream response is the quick add's (`stay` + `person`): it
+  replaces `tasks/_schedule_top` and `tasks/_schedule_lists` and the flash,
+  so the box keeps focus and a phone keeps its keyboard up. The quick add
+  form is `data-turbo-permanent` (id `quick-add-<person id>`), so the
+  minute refresh and live morphs never close it or wipe what's typed. A card's "now" is computed from the
   clock, so the dashboard and schedule refresh every minute
   (`auto-refresh` interval) and `ScheduleTickJob` (production, every
   minute) broadcasts refreshes when events start or end. `ReminderJob`
@@ -539,7 +565,7 @@ server; see `Backup` below).
 ## Testing
 
 ```sh
-bin/rails test              # the whole suite (344 runs), with the Ruby in .ruby-version
+bin/rails test              # the whole suite (365 runs), with the Ruby in .ruby-version
 bin/ci                      # rubocop, bundler-audit, npm audit, brakeman, tests, seeds
 docker compose up --build   # smoke: setup page on localhost:3000, code in the logs
 ```

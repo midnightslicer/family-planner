@@ -46,6 +46,6 @@ class HouseholdScopingTest < ActionDispatch::IntegrationTest
     get root_path
     assert_select ".person-now", text: "Dishes"
     assert_select ".status-chip", text: "Text only"
-    assert_select ".status-chip", text: "Free"
+    assert_select ".status-chip", text: "Free to call"
   end
 end

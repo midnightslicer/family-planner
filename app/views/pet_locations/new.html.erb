@@ -1,48 +1,71 @@
 <% content_for :title, "Report where" %>
+<%= render "shared/live" %>
 <h1>Where are they?</h1>
-<p class="page-intro">Pick the pets, pick the place. They stay there on the board until someone reports them somewhere else.</p>
+<p class="page-intro">Drag a pet to where it is, or tap pets and then tap the place. It saves straight away.</p>
 
-<% if @pets.empty? %>
+<% if @pets.empty? && @hidden.empty? %>
   <p class="empty-hint"><%= icon(:paw) %><span>No pets yet. <%= link_to "Add a pet", new_pet_path %> first.</span></p>
 <% else %>
-  <%= render "shared/form_errors", object: @check_in %>
-  <%= form_with url: pet_locations_path, method: :post, class: "form-card form-card-wide",
-                data: { controller: "picker", picker_verb_value: "Report" } do |f| %>
-    <%= render "shared/pet_picker", pets: @pets, statuses: @statuses, chosen: @check_in.pet_ids, meta: :where %>
-    <%= render "shared/location_picker", locations: @locations, field_name: "check_in[location_id]",
-               new_name_field: "check_in[new_location_name]", new_name: @check_in.new_location_name,
-               selected: @check_in.location_id, legend: "Where are they?" %>
-    <%# Only for houses: shown once a house is picked (CSS, no JS). %>
-    <fieldset class="form-field spot-field">
-      <legend>Inside or outside? (optional)</legend>
-      <div class="kind-options" role="radiogroup">
-        <% [["inside", :house, "Inside"], ["outside", :trees, "Outside"]].each do |value, icon_name, label| %>
-          <label class="kind-option">
-            <input type="radio" name="check_in[spot]" value="<%= value %>" <%= "checked" if @check_in.spot == value %>>
-            <%= icon(icon_name) %><span><%= label %></span>
+  <%= render "shared/form_errors", object: @check_in if @check_in %>
+  <%# The board: every place is a drop zone (a house has three: inside,
+      outside, penned up), holding the pets there now. move_board_controller.js
+      moves a pet the moment it's dropped and posts the move; the page then
+      morphs to what was saved (shared/_live). %>
+  <div class="move-board" data-controller="move-board"
+       data-move-board-url-value="<%= pet_locations_path %>">
+    <% if @board.unplaced.any? %>
+      <section class="move-place move-unplaced" aria-label="Not reported yet">
+        <h2 class="move-place-name"><span class="place-photo"><%= icon(:help_circle) %></span>Not reported yet</h2>
+        <div class="move-zone move-zone-plain">
+          <%= render partial: "pet_locations/board_pet", collection: @board.unplaced, as: :pet, locals: { selected: @selected } %>
+        </div>
+      </section>
+    <% end %>
+
+    <% @board.places.each do |location, zones| %>
+      <section class="move-place<%= ' is-house' if location.house? %>" aria-label="<%= location.name %>">
+        <h2 class="move-place-name"><%= location_picture(location) %><span><%= location.name %></span></h2>
+        <div class="move-zones">
+          <% zones.each do |zone| %>
+            <div class="move-zone<%= " move-zone-#{zone.key}" %>" role="button" tabindex="0"
+                 aria-label="<%= [ location.name, zone.label ].compact.join(', ') %>"
+                 data-move-board-target="zone" data-action="click->move-board#tapZone keydown.enter->move-board#tapZone keydown.space->move-board#tapZone"
+                 data-location-id="<%= location.id %>" data-spot="<%= zone.spot %>" data-penned="<%= zone.penned ? 1 : 0 %>"
+                 data-label="<%= [ location.name, zone.label ].compact.join(' · ') %>">
+              <% if zone.label %><span class="move-zone-label"><%= icon(zone.icon) %><%= zone.label %></span><% end %>
+              <%= render partial: "pet_locations/board_pet", collection: zone.pets, as: :pet, locals: { selected: @selected } %>
+            </div>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+
+    <div class="move-note">
+      <%= label_tag "move_comment", "Note with the next move (optional)", class: "visually-hidden" %>
+      <%= text_field_tag "move_comment", nil, maxlength: LocationReport::COMMENT_MAX, autocomplete: "off",
+                         placeholder: "Note with the next move (optional), e.g. Gate's shut",
+                         data: { move_board_target: "comment" } %>
+    </div>
+    <p class="move-status" data-move-board-target="status" role="status" aria-live="polite"></p>
+  </div>
+
+  <%# Pets that never move (horses in their pasture) can leave this page. %>
+  <details class="move-manage">
+    <summary><%= icon(:eye_off) %>Pets on this page<%= " (#{@hidden.size} hidden)" if @hidden.any? %></summary>
+    <%= form_with url: pet_locations_visibility_path, method: :post, class: "move-manage-form" do %>
+      <input type="hidden" name="shown_ids[]" value="">
+      <p class="form-hint"><small>Untick pets that stay put, like horses in their pasture. They still show on the Pets page and the wall.</small></p>
+      <div class="move-manage-list">
+        <% (@pets + @hidden).sort_by(&:name).each do |pet| %>
+          <label class="inline-check">
+            <input type="checkbox" name="shown_ids[]" value="<%= pet.id %>" <%= "checked" if pet.on_where_page? %>>
+            <span><%= pet.name %></span>
           </label>
         <% end %>
       </div>
-    </fieldset>
-    <%# Only outside at a house: shown once "Outside" is picked (CSS, no JS). %>
-    <fieldset class="form-field pen-field">
-      <legend>Penned up? (optional)</legend>
-      <input type="hidden" name="check_in[penned]" value="0">
-      <div class="kind-options">
-        <label class="kind-option">
-          <input type="checkbox" name="check_in[penned]" value="1" <%= "checked" if @check_in.penned? %>>
-          <%= icon(:fence) %><span>Penned up</span>
-        </label>
+      <div class="form-actions">
+        <%= button_tag type: "submit", class: "btn btn-small" do %><%= icon_label(:save, "Save") %><% end %>
       </div>
-    </fieldset>
-    <div class="form-field">
-      <%= label_tag "check_in_comment", "Comment (optional)" %>
-      <%= text_field_tag "check_in[comment]", @check_in.comment, id: "check_in_comment", maxlength: LocationReport::COMMENT_MAX,
-                         placeholder: "e.g. Gate's shut, water bowl filled", autocomplete: "off" %>
-    </div>
-    <div class="form-actions sticky-actions">
-      <%= button_tag type: "submit", class: "btn btn-primary btn-wide", data: { picker_target: "submit" } do %><%= icon_label(:map_pin, "Report") %><% end %>
-      <%= link_to "Never mind", pets_path, class: "btn btn-quiet" %>
-    </div>
-  <% end %>
+    <% end %>
+  </details>
 <% end %>

@@ -24,15 +24,59 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     assert_select ".pet-card .status-chip", text: /Not fed yet today/
   end
 
-  test "the feed and where screens group pets by type" do
-    [ new_feeding_path, new_pet_location_path ].each do |path|
-      get path
-      assert_response :success
-      assert_select ".pick-group", 2
-      assert_select ".pick-group-title", text: "Cats"
-      assert_select ".pick-group-title", text: "Dogs"
-      assert_select ".picker-shortcuts", count: 0
-    end
+  test "the feed screen groups pets by type, in compact tiles" do
+    get new_feeding_path
+    assert_response :success
+    assert_select ".pick-group", 2
+    assert_select ".pick-group-title", text: "Cats"
+    assert_select ".pick-group-title", text: "Dogs"
+    assert_select ".pick-grid.pick-grid-pets", 2
+    assert_select ".picker-shortcuts", count: 0
+  end
+
+  test "the where board: a zone per place, three at a house, pets where they were last seen" do
+    LocationReport.create!(household: @smiths, subject: @rex, location: @house, spot: "outside", penned: true, reported_by: @admin)
+    get new_pet_location_path
+    assert_response :success
+    zone = ->(location, spot, penned) {
+      "[data-move-board-target=zone][data-location-id='#{location.id}'][data-spot='#{spot}'][data-penned='#{penned}']"
+    }
+    assert_select zone.(@house, "inside", 0), text: /Inside/
+    assert_select zone.(@house, "outside", 0), text: /Outside/
+    assert_select "#{zone.(@house, "outside", 1)} ##{dom_id(@rex, :move)}"
+    assert_select zone.(@yard, "", 0), 1
+    assert_select ".move-unplaced ##{dom_id(@tom, :move)}"
+    assert_select ".move-unplaced [data-move-board-target=zone]", count: 0 # you can't un-report a pet
+  end
+
+  test "a drop on the board posts the move and gets the flash back as a stream" do
+    post pet_locations_path, params: { check_in: { pet_ids: [ @rex.id, @tom.id ], location_id: @house.id, spot: "outside", penned: "1" } },
+                             as: :turbo_stream
+    assert_response :success
+    assert_equal Mime[:turbo_stream], response.media_type
+    assert_match "Rex and Tom are at House (outside, penned up).", response.body
+    assert @rex.status.report.penned?
+
+    post pet_locations_path, params: { check_in: { location_id: @yard.id } }, as: :turbo_stream
+    assert_response :unprocessable_content
+    assert_match "Pick at least one pet", response.body
+  end
+
+  test "pets that never move can leave the where board, and come back" do
+    post pet_locations_visibility_path, params: { shown_ids: [ "", @tom.id ] }
+    assert_redirected_to new_pet_location_path
+    assert_not @rex.reload.on_where_page?
+    assert @tom.reload.on_where_page?
+
+    get new_pet_location_path
+    assert_select ".move-pet", 1
+    assert_select ".move-manage summary", text: /1 hidden/
+    assert_select ".move-manage input[name='shown_ids[]'][value='#{@rex.id}']:not([checked])"
+    get pets_path
+    assert_select "##{dom_id(@rex, :pet_card)} a[href^='#{new_pet_location_path}']", count: 0
+
+    patch pet_path(@rex), params: { pet: { name: "Rex", meals_per_day: 2, on_where_page: "1" } }
+    assert @rex.reload.on_where_page?
   end
 
   test "the pet form picks where it sleeps from photo tiles" do
@@ -70,8 +114,8 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
 
   test "report several pets at once with a comment" do
     get new_pet_location_path(pet_ids: [ @rex.id ])
-    assert_select "input[name='check_in[pet_ids][]'][value='#{@rex.id}'][checked]"
-    assert_select "input[name='check_in[pet_ids][]'][value='#{@tom.id}']:not([checked])"
+    assert_select "##{dom_id(@rex, :move)}.is-selected[aria-pressed=true]"
+    assert_select "##{dom_id(@tom, :move)}:not(.is-selected)"
 
     post pet_locations_path, params: { check_in: { pet_ids: [ @rex.id, @tom.id ], location_id: @yard.id, comment: "Gate shut" } }
     assert_redirected_to pets_path
@@ -89,8 +133,7 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     post pet_locations_path, params: { check_in: { pet_ids: [ @rex.id ], location_id: "new", new_location_name: "" } }
     assert_response :unprocessable_content
     assert_select ".flash-alert", text: /New location can't be blank/
-    assert_select "input[name='check_in[pet_ids][]'][value='#{@rex.id}'][checked]"
-    assert_select "input[name='check_in[location_id]'][value='new'][checked]"
+    assert_select "##{dom_id(@rex, :move)}.is-selected"
   end
 
   test "feeding shows the notes and counts meals" do
@@ -125,10 +168,6 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
   end
 
   test "at a house you can say inside or outside, and it shows" do
-    get new_pet_location_path
-    assert_select ".spot-field input[name='check_in[spot]'][value='outside']"
-    assert_select ".pick-house input[value='#{@house.id}']"
-
     post pet_locations_path, params: { check_in: { pet_ids: [ @rex.id ], location_id: @house.id, spot: "outside" } }
     follow_redirect!
     assert_select ".flash-notice", text: "Rex is at House (outside)."
@@ -137,9 +176,6 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
   end
 
   test "outside at a house you can say a pet is penned up, and it shows" do
-    get new_pet_location_path
-    assert_select ".pen-field input[type=checkbox][name='check_in[penned]']"
-
     post pet_locations_path, params: { check_in: { pet_ids: [ @rex.id ], location_id: @house.id, spot: "outside", penned: "1" } }
     follow_redirect!
     assert_select ".flash-notice", text: "Rex is at House (outside, penned up)."
@@ -188,7 +224,7 @@ class PetsFlowTest < ActionDispatch::IntegrationTest
     get new_feeding_path
     assert_select "input[name='check_in[pet_ids][]'][value='#{@rex.id}']", count: 0
     get new_pet_location_path
-    assert_select "input[name='check_in[pet_ids][]'][value='#{@rex.id}']", count: 0
+    assert_select "##{dom_id(@rex, :move)}", count: 0
     get wall_path(@smiths.slug)
     assert_select ".wall-pet", text: /Rex/, count: 0
 

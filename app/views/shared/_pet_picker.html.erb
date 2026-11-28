@@ -10,7 +10,7 @@
       <% if groups.size > 1 %>
         <h3 class="pick-group-title"><%= kind.pluralize %></h3>
       <% end %>
-      <div class="pick-grid">
+      <div class="pick-grid pick-grid-pets">
         <% group.each do |pet| %>
           <% status = statuses.fetch(pet.id) %>
           <label class="pick-tile">

@@ -5,8 +5,9 @@
 class TasksController < ApplicationController
   include HouseholdScoped
 
-  before_action :set_task, only: [ :show, :edit, :update, :destroy, :start, :pause, :complete, :cancel, :accept, :decline ]
+  before_action :set_task, only: [ :show, :edit, :update, :destroy, :start, :pause, :complete, :cancel, :reopen, :accept, :decline ]
   before_action :require_editor, only: [ :edit, :update, :destroy ]
+  before_action :require_doer, only: [ :start, :pause, :complete, :cancel, :reopen ]
 
   # GET /tasks
   def index
@@ -52,8 +53,12 @@ class TasksController < ApplicationController
     end
     if saved
       @task.start! if params[:start_now]
-      # The quick add stays on the page it's on; the full form goes to the schedule.
-      if params[:stay]
+      # The quick add stays on the page it's on, updating its lists in place
+      # (a stream, so the box keeps focus and the keyboard stays up); the
+      # full form goes to the schedule.
+      if params[:stay] && request.format.turbo_stream? && (person = quick_add_person)
+        render_quick_add(person)
+      elsif params[:stay]
         redirect_back_or_to schedule_path_for(@task), notice: @assigner.summary, status: :see_other, allow_other_host: false
       else
         redirect_to schedule_path_for(@task), notice: @assigner.summary, status: :see_other
@@ -120,6 +125,11 @@ class TasksController < ApplicationController
     transition(@task.cancel!, "Skipped #{@task.title}.")
   end
 
+  # POST /tasks/:id/reopen: ticked off (or skipped) by mistake: back on the list.
+  def reopen
+    transition(@task.reopen!, "#{@task.title} is back on the list.")
+  end
+
   def destroy
     @task.destroy
     redirect_back_or_to schedule_path_for(@task), notice: "Deleted #{@task.title}.", status: :see_other, allow_other_host: false
@@ -127,15 +137,41 @@ class TasksController < ApplicationController
 
   private
 
+  # Whose day the quick add was on (`person`, a member of this household).
+  def quick_add_person
+    current_household.users.find_by(id: params[:person])
+  end
+
+  # The quick add's answer: that day's lists, re-rendered, and the flash.
+  def render_quick_add(person)
+    places = current_household.places
+    schedule = PersonSchedule.new(current_household, person, viewer: current_user, places: places)
+    where = LocationReport.latest_for(current_household, "User", [ person.id ])[person.id]
+    locals = { s: schedule, person: person, where: where }
+    render turbo_stream: [
+      turbo_stream.replace("schedule-top", partial: "tasks/schedule_top", locals: locals),
+      turbo_stream.replace("schedule-lists", partial: "tasks/schedule_lists", locals: locals),
+      turbo_stream.update("flash", helpers.flash_message(@assigner.summary, :notice))
+    ]
+  end
+
   def set_task
     @task = current_household.tasks.find_by(id: params[:id])
     not_found unless @task&.visible_to?(current_user)
   end
 
-  # Whoever added it, whoever it's for, or an admin. Anyone in the household
-  # can still start, finish or skip it.
+  # Whoever added it, whoever it's for, or an admin.
   def require_editor
     head :forbidden unless @task.editable_by?(current_user)
+  end
+
+  # Only whoever it's for starts, finishes, skips or brings it back
+  # (anyone, if it's for anyone): adding it for someone doesn't let you
+  # tick it off for them.
+  def require_doer
+    return if @task.doable_by?(current_user)
+
+    redirect_back_or_to schedule_path_for(@task), alert: "Only the person it's for can do that.", status: :see_other, allow_other_host: false
   end
 
   def respond_to_invite(status, notice, verb)
@@ -172,6 +208,6 @@ class TasksController < ApplicationController
 
   def task_params
     params.require(:task).permit(:title, :description, :on_date, :from_time, :until_time,
-                                 :place, :availability, :recurrence_interval, :private, :follow_up)
+                                 :place, :place_choice, :place_other, :availability, :recurrence_interval, :private, :follow_up)
   end
 end

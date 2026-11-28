@@ -16,12 +16,20 @@
   </div>
 </div>
 <p class="form-hint"><small>A day without a time puts it on your list that day. A time makes it an event: your card shows it while it's on (an hour, unless you say until when).</small></p>
-<div class="form-field">
-  <%= form.label :place, "Where (optional)" %>
-  <%= form.text_field :place, maxlength: 60, list: "schedule-places", placeholder: "e.g. Town, Grandma's house, Zoom", autocomplete: "off" %>
-  <datalist id="schedule-places">
-    <% current_household.locations.in_display_order.each do |location| %><option value="<%= location.name %>"><% end %>
-  </datalist>
+<%# A menu of the household's locations (picking one shows you there while
+    it's on), or "Other…" for a one-off place typed in the box it reveals
+    (CSS, no JS). A typed place never joins the locations list. %>
+<% places = current_household.locations.in_display_order.pluck(:name)
+   other = task.place.present? && places.none? { |name| name.casecmp?(task.place) }
+   chosen = other ? Task::OTHER_PLACE : places.find { |name| name.casecmp?(task.place.to_s) }.to_s %>
+<div class="form-field place-field">
+  <%= form.label :place_choice, "Where (optional)" %>
+  <%= form.select :place_choice, [ [ "Nowhere in particular", "" ], *places.map { |name| [ name, name ] }, [ "Other…", Task::OTHER_PLACE ] ],
+                  selected: chosen %>
+  <div class="place-other">
+    <%= form.label :place_other, "Where, then?", class: "visually-hidden" %>
+    <%= form.text_field :place_other, value: (task.place if other), maxlength: 60, placeholder: "e.g. Town, Grandma's house, Zoom", autocomplete: "off" %>
+  </div>
   <small>Pick one of your locations and, while it's on, you show as there.</small>
 </div>
 <div class="form-field">

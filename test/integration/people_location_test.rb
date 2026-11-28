@@ -74,6 +74,32 @@ class PeopleLocationTest < ActionDispatch::IntegrationTest
     assert_equal "Back by 6", report.comment
   end
 
+  test "a note under the I'm at chips, wherever you are, without moving you" do
+    get tasks_path
+    assert_select ".where-note", count: 0 # nowhere yet: tap a place first
+    assert_select ".where-more", count: 0 # the old "Somewhere else" picker is gone
+
+    post locate_me_path, params: { location_report: { off_property: "1" } }
+    get tasks_path
+    assert_select ".where-note input[name='location_report[off_property]'][value='1']"
+    post locate_me_path, params: { note: "1", location_report: { off_property: "1", comment: "At the store, back by 6" } },
+                         headers: { "Referer" => tasks_url }
+    follow_redirect!
+    assert_select ".flash-notice", text: "Note saved."
+    assert_select ".where-note input[name='location_report[comment]'][value='At the store, back by 6']"
+    assert @member.location_reports.last.off_property?
+
+    post locate_me_path, params: { location_report: { location_id: @yard.id } }
+    get tasks_path
+    assert_select ".where-note input[name='location_report[location_id]'][value='#{@yard.id}']"
+    assert_select ".where-note input[name='location_report[comment]']:not([value])" # a new place starts afresh
+    post locate_me_path, params: { note: "1", location_report: { location_id: @yard.id, comment: "Mowing" } }
+    assert_equal [ @yard, "Mowing" ], @member.location_reports.last.then { |r| [ r.location, r.comment ] }
+
+    get root_path
+    assert_select "#{card(@member)} .report-comment", text: /Mowing/
+  end
+
   test "birthdays save on the account page and ages show on your day" do
     patch account_profile_path, params: { user: { display_name: @member.display_name,
                                                   color: @member.color, custom_color: "", birthday: "1990-05-04" } }

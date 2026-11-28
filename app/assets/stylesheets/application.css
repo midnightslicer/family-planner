@@ -1709,11 +1709,150 @@ fieldset.picker-field { margin-top: 0; margin-bottom: 1.25rem; }
 .pick-place .place-photo { width: 100%; max-width: 6rem; }
 .pick-add { border-style: dashed; color: var(--text-muted); }
 
+/* The feed page's pet tiles: a row each (disc, then name and meals), so a
+   whole herd fits on a phone screen. */
+.pick-grid.pick-grid-pets { grid-template-columns: repeat(auto-fill, minmax(min(100%, 9.5rem), 1fr)); gap: 0.375rem; }
+.pick-grid-pets .pick-tile {
+  grid-template-columns: auto 1fr;
+  justify-items: start;
+  align-items: center;
+  gap: 0 0.5rem;
+  padding: 0.375rem 1.75rem 0.375rem 0.375rem;
+  text-align: left;
+}
+.pick-grid-pets .pick-tile .person-avatar { grid-row: span 2; width: 2.25rem; height: 2.25rem; }
+.pick-grid-pets .pick-name { font-size: 0.875rem; }
+.pick-grid-pets .pick-check { top: 50%; right: 0.375rem; margin-top: -0.6875rem; }
+
+/* The pets "Where" board (move_board_controller.js): a band per place, a
+   house split into inside / outside / penned up, every zone a drop target
+   holding small pet chips. Tight, so a farm fits on one phone screen. */
+.move-board { display: grid; gap: 0.5rem; }
+.move-place {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr;
+  align-items: stretch;
+  gap: 0.375rem;
+  padding: 0.375rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.move-place-name {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.move-place-name .place-photo { flex: none; width: 1.75rem; height: 1.75rem; border-radius: var(--radius-sm); }
+.move-place-name .place-photo .icon { width: 1rem; height: 1rem; }
+.move-zones { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 0.375rem; }
+.move-zone {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 0.25rem;
+  min-height: 2.75rem;
+  padding: 0.25rem;
+  background: var(--surface-sunken);
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color var(--fast) ease, background var(--fast) ease;
+}
+.move-zone:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.move-zone.is-over, .move-zone:hover { border-color: var(--accent); border-style: solid; background: var(--accent-soft); }
+.move-board:has(.move-pet.is-selected) [data-move-board-target~="zone"] { border-color: var(--accent); }
+.move-unplaced .move-zone { cursor: default; border-style: solid; border-color: var(--border); }
+.move-zone-label {
+  flex-basis: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+}
+.move-zone-label .icon { width: 0.8125rem; height: 0.8125rem; color: var(--accent); }
+.move-pet {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
+  max-width: 100%;
+  min-height: 2rem;
+  padding: 0.125rem 0.5rem 0.125rem 0.125rem;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-pill);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color var(--fast) ease, background var(--fast) ease, opacity var(--fast) ease;
+}
+.move-pet .person-avatar { width: 1.625rem; height: 1.625rem; font-size: 0.625rem; }
+.move-pet .person-avatar:has(img) { box-shadow: none; }
+.move-pet .person-avatar .icon { width: 0.875rem; height: 0.875rem; }
+.move-pet-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.move-pet.is-selected { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.move-pet.is-dragging { opacity: 0.35; }
+.move-pet.is-moved { animation: pop 320ms var(--ease-spring) backwards; }
+.move-pet:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.move-board.is-dragging, .move-board.is-dragging * { cursor: grabbing; }
+.move-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  pointer-events: none;
+  border-color: var(--accent);
+  box-shadow: var(--shadow-lg);
+  opacity: 0.95;
+}
+.move-ghost[data-count]::after {
+  content: attr(data-count);
+  position: absolute;
+  top: -0.375rem;
+  right: -0.375rem;
+  min-width: 1.125rem;
+  height: 1.125rem;
+  padding: 0 0.25rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.6875rem;
+  line-height: 1.125rem;
+  text-align: center;
+  color: var(--accent-fg);
+  background: var(--accent);
+}
+.move-note input { width: 100%; }
+.move-status { min-height: 1.25em; margin: 0; font-size: 0.8125rem; color: var(--text-muted); }
+.move-manage { margin-top: 1.25rem; }
+.move-manage > summary { display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.875rem; font-weight: 600; color: var(--text-muted); cursor: pointer; }
+.move-manage-list { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; margin: 0.5rem 0; }
+@media (max-width: 480px) {
+  .move-place { grid-template-columns: 1fr; }
+  .move-place-name .place-photo { width: 1.375rem; height: 1.375rem; }
+}
+
 /* "New place" in a picker or select reveals its name box, no JS needed. */
 .new-place-field { display: none; margin-top: 0.875rem; }
 .new-place-host:has(input[value="new"]:checked) .new-place-field,
 .new-place-host:has(option[value="new"]:checked) .new-place-field { display: block; animation: slide-down 320ms var(--ease-out); }
 .new-place-field > label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.375rem; }
+.place-other { display: none; margin-top: 0.5rem; }
+.place-field:has(option[value="other"]:checked) .place-other { display: block; animation: slide-down 320ms var(--ease-out); }
 .pick-add .place-photo { background: var(--surface-sunken); color: var(--text-muted); }
 .pick-add:hover .icon-plus { transform: rotate(90deg); }
 
@@ -1927,6 +2066,8 @@ ul.sched-list.panel { padding: 0.25rem clamp(1.125rem, 3vw, 1.5rem); }
 .sched-check:hover { color: var(--status-completed); border-color: var(--status-completed); transform: scale(1.1); }
 .sched-check:active { transform: scale(0.9); }
 .sched-check.is-checked { color: var(--status-completed); background: var(--status-completed-bg); border-color: var(--status-completed); cursor: default; }
+.sched-check.is-locked { border-style: dashed; cursor: not-allowed; opacity: 0.6; }
+.sched-check.is-locked:hover { color: transparent; border-color: var(--border-strong); transform: none; }
 .is-undone .sched-check.is-checked { color: var(--text-muted); background: var(--surface-sunken); border-color: var(--border-strong); }
 .sched-item form:has(.sched-check) { display: contents; }
 
@@ -2183,22 +2324,10 @@ form:has(.work-days) { max-width: 860px; }
 .status-bar .where-chip.avail-text.is-current { color: var(--status-in_progress); background: var(--status-in_progress-bg); border-color: var(--status-in_progress); }
 .status-bar .where-chip.avail-busy.is-current { color: var(--danger); background: var(--danger-bg); border-color: var(--danger); }
 .status-until { flex-basis: 100%; }
-.where-more { flex-basis: 100%; }
-/* A dashed chip, so it reads as one more thing to tap after the places. */
-.where-more > summary { list-style: none; width: fit-content; color: var(--accent); border-style: dashed; background: transparent; }
-.where-more > summary::-webkit-details-marker { display: none; }
-.where-more > summary .where-more-chevron { width: 0.875rem; height: 0.875rem; transition: transform var(--medium) var(--ease-spring); }
-.where-more[open] > summary { margin-bottom: 0.75rem; border-style: solid; background: var(--accent-soft); border-color: var(--accent); }
-.where-more[open] > summary .where-more-chevron { transform: rotate(180deg); }
-.where-more > form {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  padding: clamp(1rem, 3vw, 1.5rem);
-  max-width: 760px;
-  animation: slide-down 260ms var(--ease-out);
-}
+/* The note under the "I'm at" chips: one line, saved with a tap or Enter. */
+.where-note { flex-basis: 100%; display: flex; gap: 0.5rem; align-items: center; max-width: 560px; }
+.where-note input[type="text"] { flex: 1; min-width: 0; }
+.where-bar > .form-hint { flex-basis: 100%; margin: 0; }
 
 /* ---------- Icons & motion ----------
  * Icons come from IconsHelper as inline SVG stroked in currentColor, so they

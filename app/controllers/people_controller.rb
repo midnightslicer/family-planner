@@ -36,8 +36,8 @@ class PeopleController < ApplicationController
   end
 
   # POST /people/me/location: from the "I'm at" chips on your day (one tap,
-  # including "Off property", a report with no location)
-  # or the fuller form under them (a comment, or a new place).
+  # including "Off property", a report with no location) or the note box
+  # under them (`note`: the place you're shown at, with the note).
   def locate
     attrs = params.fetch(:location_report, {}).permit(:location_id, :new_location_name, :comment, :off_property)
     off_property = attrs[:off_property] == "1"
@@ -45,7 +45,8 @@ class PeopleController < ApplicationController
     report = LocationReport.new(household: current_household, subject: current_user, reported_by: current_user,
                                 location: location, comment: attrs[:comment], off_property: off_property)
     message =
-      if report.save then { notice: report.off_property? ? "You're off property." : "You're at #{report.location.name}." }
+      if report.save && params[:note] then { notice: report.comment ? "Note saved." : "Note cleared." }
+      elsif report.persisted? then { notice: report.off_property? ? "You're off property." : "You're at #{report.location.name}." }
       else { alert: report.errors.full_messages.to_sentence.presence || "Pick where you are." }
       end
     redirect_back_or_to tasks_path, **message, status: :see_other, allow_other_host: false

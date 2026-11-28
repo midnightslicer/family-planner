@@ -1,7 +1,6 @@
 <%# The top of a person's day: who, how old, where they are. On your own
-    day, "I'm at" chips report your location in one tap; "Somewhere else"
-    opens the full picker (a comment, or a new place) without leaving the
-    page. "I'm" chips set how reachable you are, over work and events, for
+    day, "I'm at" chips report your location in one tap, and a note box
+    under them says more ("Back by 6") wherever you are. "I'm" chips set how reachable you are, over work and events, for
     12 hours (StatusUpdate::LASTS).
     Locals: person, where (their latest LocationReport), locations and
     status_set (your StatusUpdate in force, if any; only for yourself). %>
@@ -19,7 +18,7 @@
         <span class="day-where"><%= location_icon(where.location) %><%= where.location&.name || PetsHelper::OFF_PROPERTY %> · <%= time_tag_ago(where.created_at) %></span>
       <% end %>
     </p>
-    <% if where&.comment && !local_assigns[:at] %><p class="report-comment"><%= icon(:message) %><span><%= where.comment %></span></p><% end %>
+    <% if where&.comment && !local_assigns[:at] && !me %><p class="report-comment"><%= icon(:message) %><span><%= where.comment %></span></p><% end %>
   </div>
   <% if me %>
     <div class="header-actions">
@@ -62,20 +61,26 @@
       <%= button_to locate_me_path, params: { "location_report[off_property]" => "1" }, method: :post,
                     class: "where-chip#{' is-current' if off}", "aria-pressed": off do %><%= icon(:external) %><span><%= PetsHelper::OFF_PROPERTY %></span><% end %>
     </div>
-    <details class="where-more">
-      <summary class="where-chip where-more-toggle"><%= icon(:plus) %><span><%= locations.any? ? "Somewhere else or add a note" : "Say where you are" %></span><%= icon(:chevron_down, class: "where-more-chevron") %></summary>
-      <%= form_with model: LocationReport.new, url: locate_me_path, method: :post do |f| %>
-        <%= render "shared/location_picker", locations: locations, field_name: "location_report[location_id]",
-                   new_name_field: "location_report[new_location_name]", selected: where&.location_id, legend: "Where are you?" %>
-        <div class="form-field">
-          <%= f.label :comment, "Note (optional)" %>
-          <%= f.text_field :comment, maxlength: LocationReport::COMMENT_MAX, placeholder: "e.g. Back by 6", autocomplete: "off" %>
-        </div>
-        <div class="form-actions">
-          <%= f.button type: "submit", class: "btn btn-primary" do %><%= icon_label(:map_pin, "Update where I am") %><% end %>
-        </div>
+    <%# A note for whoever looks ("Back by 6"), wherever you are: it's a
+        report at the place you're shown at now, so it doesn't move you.
+        Tapping a place above starts afresh, without it. %>
+    <% if local_assigns[:at] || where %>
+      <% place_params = if local_assigns[:at] then { location_id: at.id }
+                        elsif where.off_property? then { off_property: "1" }
+                        else { location_id: where.location_id }
+                        end %>
+      <%= form_with url: locate_me_path, method: :post, class: "where-note" do |f| %>
+        <% place_params.each do |key, value| %><%= hidden_field_tag "location_report[#{key}]", value, id: nil %><% end %>
+        <%= hidden_field_tag :note, 1, id: nil %>
+        <%= label_tag "where_note", "Note", class: "visually-hidden" %>
+        <%= text_field_tag "location_report[comment]", (where&.comment unless local_assigns[:at]), id: "where_note",
+                           maxlength: LocationReport::COMMENT_MAX, placeholder: "Add a note, e.g. At the store, back by 6",
+                           autocomplete: "off", enterkeyhint: "done" %>
+        <%= f.button type: "submit", class: "btn btn-small" do %><%= icon_label(:message, "Save note") %><% end %>
       <% end %>
-    </details>
+    <% else %>
+      <p class="form-hint"><small>Tap where you are, then you can leave a note for everyone.</small></p>
+    <% end %>
   </div>
 
   <%# How reachable you are, in one tap. Nothing's lit until you set one;

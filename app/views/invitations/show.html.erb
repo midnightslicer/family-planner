@@ -21,9 +21,10 @@
       <%= f.label :email, "Email" %>
       <% if @invitation.email.present? %>
         <%= f.email_field :email, value: @invitation.email, readonly: true, autocomplete: "email" %>
+        <small>The address your invitation went to. Rather use another? You can change it on your account page once you're in.</small>
       <% else %>
         <%= f.email_field :email, required: true, autocomplete: "email" %>
-        <small>Used to sign in and to reset your password.</small>
+        <small>Used to sign in and to reset your password. You can change it later on your account page.</small>
       <% end %>
     </div>
 

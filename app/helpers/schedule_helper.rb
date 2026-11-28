@@ -3,7 +3,7 @@ module ScheduleHelper
   # [label, icon, css] for each availability: how reachable someone is.
   # These three are the only statuses a person ever shows.
   AVAILABILITY = {
-    "free" => [ "Free", :sun, "avail-free" ],
+    "free" => [ "Free to call", :phone, "avail-free" ],
     "text" => [ "Text only", :message, "avail-text" ],
     "busy" => [ "Do not disturb", :bell_off, "avail-busy" ]
   }.freeze

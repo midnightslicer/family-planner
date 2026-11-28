@@ -37,7 +37,7 @@ class HouseholdTimeZoneTest < ActionDispatch::IntegrationTest
       sign_in @admin
       cookies[:tz] = "America/Los_Angeles"
       get root_path
-      assert_select "#{card(@member)} .avail-free", text: "Free" # not at work yet
+      assert_select "#{card(@member)} .avail-free", text: "Free to call" # not at work yet
       assert_select "#{card(@member)} .person-next", text: "Next: Work · 9 AM"
 
       @smiths.update!(time_zone: "Central Time (US & Canada)")

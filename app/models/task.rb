@@ -21,6 +21,9 @@ class Task < ApplicationRecord
   # Set from `place` when it names one of the household's locations: while
   # the event is on, that's where the person is (see #whereabouts).
   belongs_to :location, optional: true
+  # A recurring item's next planned copy, made when this one was finished
+  # or skipped (#reopen! takes it away again).
+  belongs_to :next_task, class_name: "Task", optional: true
 
   enum :status, { planned: 0, in_progress: 1, undone: 2, completed: 3 }
   enum :availability, { free: "free", text: "text", busy: "busy" }, prefix: :availability
@@ -47,12 +50,29 @@ class Task < ApplicationRecord
   # it. Without a time it's a to-do (for that day, if one was given). Set
   # `schedule_fields` to apply them; other callers set the columns directly.
   attr_accessor :on_date, :from_time, :until_time, :schedule_fields
+
+  # The form's "Where" menu: a location's name, blank, or OTHER_PLACE with
+  # the place typed into `place_other`. Either way it ends up in `place`.
+  OTHER_PLACE = "other".freeze
+  attr_reader :place_choice, :place_other
+
+  def place_choice=(choice)
+    @place_choice = choice
+    self.place = choice == OTHER_PLACE ? place_other : choice
+  end
+
+  def place_other=(text)
+    @place_other = text
+    self.place = text if place_choice == OTHER_PLACE
+  end
   before_validation :apply_schedule_fields, if: :schedule_fields
 
   normalizes :place, with: ->(place) { place.squish.presence }
   before_validation :link_location
 
   STATUS_VERBS = { "in_progress" => "started", "planned" => "paused", "completed" => "finished", "undone" => "skipped" }.freeze
+  # Back on the list after being finished or skipped (#reopen!).
+  REOPENED_VERB = "brought back".freeze
 
   scope :for_household, ->(household) { where(household_id: household.id) }
   # Items on `user`'s schedule (or, with status "pending", waiting for their OK).
@@ -111,6 +131,15 @@ class Task < ApplicationRecord
     return false if user.nil?
 
     created_by_id == user.id || assignment_for(user)&.then { |a| !a.declined? } || user.admin?
+  end
+
+  # Whoever it's for does it: starts, pauses, finishes, skips or brings it
+  # back. Someone who added it for another person can edit or delete it, but
+  # not tick it off for them. An item for anyone is anyone's to do.
+  def doable_by?(user)
+    return false if user.nil?
+
+    active_assignments.empty? || assignment_for(user)&.accepted? || false
   end
 
   def title_for(user)
@@ -207,6 +236,26 @@ class Task < ApplicationRecord
     undone? && !recurs?
   end
 
+  # A to-do ticked off (or skipped) by mistake goes back on the list. A
+  # repeating one takes back the copy it spawned, as long as nobody has
+  # touched that copy yet (older items don't know their copy: those stay).
+  def reopenable?
+    return false unless (completed? || undone?) && !timed?
+
+    !recurs? || (next_task.present? && next_task.planned? && next_task.started_at.nil?)
+  end
+
+  def reopen!
+    return false unless reopenable?
+
+    transaction do
+      copy = next_task if recurs?
+      update!(status: :planned, started_at: nil, finished_at: nil, finished_by: nil, next_task: nil)
+      copy&.destroy!
+    end
+    true
+  end
+
   private
 
   # On finishing/skipping a recurring item, create its next planned copy,
@@ -231,7 +280,7 @@ class Task < ApplicationRecord
     copy = Task.new(attributes)
     people.each { |person| copy.assignments.build(user: person, status: "accepted") }
     copy.save!
-    update_column(:next_occurrence, nil)
+    update_columns(next_occurrence: nil, next_task_id: copy.id)
     copy
   end
 
@@ -305,7 +354,7 @@ class Task < ApplicationRecord
 
     recipients = people
     recipients += [ created_by ] if follow_up? && created_by
-    verb = STATUS_VERBS.fetch(status, "updated")
+    verb = planned? && status_before_last_save.in?(%w[completed undone]) ? REOPENED_VERB : STATUS_VERBS.fetch(status, "updated")
     recipients.compact.uniq.reject { |person| person == actor }.each do |person|
       Notifier.notify(person, category: "task_updates", title: "#{actor.display_name} #{verb} #{title_for(person)}",
                               path: Rails.application.routes.url_helpers.task_path(self), household: household, tag: "task-#{id}")

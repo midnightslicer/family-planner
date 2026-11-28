@@ -84,7 +84,7 @@ class PetsController < ApplicationController
   end
 
   def pet_params
-    params.require(:pet).permit(:name, :species, :birthday, :meals_per_day, :feeding_notes, :photo, :remove_photo, :visitor, :on_wall)
+    params.require(:pet).permit(:name, :species, :birthday, :meals_per_day, :feeding_notes, :photo, :remove_photo, :visitor, :on_wall, :on_where_page)
   end
 
   # The type menu's "New type…" takes the name typed beside it.

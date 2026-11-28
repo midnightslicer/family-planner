@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_27_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_28_000100) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -186,6 +186,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_000000) do
     t.datetime "archived_at"
     t.boolean "visitor", default: false, null: false
     t.boolean "on_wall", default: true, null: false
+    t.boolean "on_where_page", default: true, null: false
     t.index ["created_by_id"], name: "index_pets_on_created_by_id"
     t.index ["home_id"], name: "index_pets_on_home_id"
     t.index ["household_id"], name: "index_pets_on_household_id"
@@ -281,12 +282,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_000000) do
     t.boolean "follow_up", default: false, null: false
     t.datetime "finished_at"
     t.integer "finished_by_id"
+    t.integer "next_task_id"
     t.index ["created_by_id"], name: "index_tasks_on_created_by_id"
     t.index ["finished_by_id"], name: "index_tasks_on_finished_by_id"
     t.index ["household_id", "finished_at"], name: "index_tasks_on_household_id_and_finished_at"
     t.index ["household_id", "status", "due_on"], name: "index_tasks_on_household_id_and_status_and_due_on"
     t.index ["household_id", "status", "starts_at"], name: "index_tasks_on_household_id_and_status_and_starts_at"
     t.index ["location_id"], name: "index_tasks_on_location_id"
+    t.index ["next_task_id"], name: "index_tasks_on_next_task_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -382,6 +385,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_000000) do
   add_foreign_key "task_assignments", "users"
   add_foreign_key "tasks", "households"
   add_foreign_key "tasks", "locations"
+  add_foreign_key "tasks", "tasks", column: "next_task_id", on_delete: :nullify
   add_foreign_key "tasks", "users", column: "created_by_id"
   add_foreign_key "tasks", "users", column: "finished_by_id"
   add_foreign_key "work_schedule_versions", "users"

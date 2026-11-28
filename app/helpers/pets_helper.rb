@@ -59,7 +59,7 @@ module PetsHelper
     birthday.strftime("%b %-d, %Y")
   end
 
-  # "just now", "5 min ago", "3 h ago", "yesterday 18:05", "Mar 4".
+  # "just now", "5 min ago", "3 h ago", "yesterday 6:05 PM", "Mar 4".
   def when_ago(time)
     return "" unless time
 
@@ -67,13 +67,13 @@ module PetsHelper
     if seconds < 60 then "just now"
     elsif seconds < 1.hour then "#{(seconds / 60).floor} min ago"
     elsif time.to_date == Date.current then "#{(seconds / 3600).floor} h ago"
-    elsif time.to_date == Date.yesterday then "yesterday #{time.strftime('%H:%M')}"
+    elsif time.to_date == Date.yesterday then "yesterday #{time.strftime('%-l:%M %p')}"
     else time.strftime("%b %-d")
     end
   end
 
   def time_tag_ago(time)
-    tag.time(when_ago(time), datetime: time.iso8601, title: time.strftime("%b %-d, %H:%M"))
+    tag.time(when_ago(time), datetime: time.iso8601, title: time.strftime("%b %-d, %-l:%M %p"))
   end
 
   FED_CHIPS = { fed: [ "status-completed", :check ], partly: [ "status-planned", :utensils ], hungry: [ "status-in_progress", nil ] }.freeze

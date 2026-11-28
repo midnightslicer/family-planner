@@ -210,6 +210,23 @@ class User < ApplicationRecord
     set_reset_password_token
   end
 
+  # Changes the sign-in email. With a password, it's asked for first (the
+  # email is half of signing in); a passkey-only account is already proven
+  # by its session. The old address hears about it, if email is set up.
+  def change_email(new_email, current_password: nil)
+    old_email = email
+    self.email = new_email
+    if password_set? && !valid_password?(current_password.to_s)
+      errors.add(:current_password, current_password.blank? ? "can't be blank" : "is incorrect")
+      self.email = old_email
+      return false
+    end
+    return false unless save
+
+    send_devise_notification(:email_changed, to: old_email) if saved_change_to_email? && AppSettings.smtp_configured?
+    true
+  end
+
   protected
 
   # Devise mail goes through the job queue: a slow or unconfigured SMTP

@@ -1,11 +1,17 @@
 <%# The fast way in: type, Enter, type, Enter. The "For" chips say whose
     list it goes on (whoever's day this is, by default); "Add a time or
-    day" opens the event fields. quick_add_controller.js clears and
-    refocuses the box after each add. Locals: task (new), person (whose day
+    day" opens the event fields. The answer is a turbo stream that replaces
+    the lists around it (TasksController#render_quick_add), so the box keeps
+    focus; quick_add_controller.js clears it as soon as it's sent.
+    Permanent, so the page's refreshes (every minute, and live updates)
+    never close it or wipe what's being typed. Locals: task (new), person (whose day
     this is), selected (assignee ids), members (optional, if already loaded). %>
 <% mine = person == current_user %>
-<%= form_with model: task, url: tasks_path, class: "quick-add", data: { controller: "quick-add", action: "turbo:submit-end->quick-add#added" } do |f| %>
+<%= form_with model: task, url: tasks_path, class: "quick-add", id: "quick-add-#{person.id}",
+              data: { controller: "quick-add", turbo_permanent: true,
+                      action: "turbo:submit-start->quick-add#sent turbo:submit-end->quick-add#added" } do |f| %>
   <%= hidden_field_tag :stay, 1, id: nil %>
+  <%= hidden_field_tag :person, person.id, id: nil %>
   <div class="quick-add-row">
     <%= f.label :title, mine ? "Add to your list" : "Add to #{person.display_name}'s list", class: "visually-hidden" %>
     <%= f.text_field :title, required: true, maxlength: 120, autocomplete: "off", enterkeyhint: "done",

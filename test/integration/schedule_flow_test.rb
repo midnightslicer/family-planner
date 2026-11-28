@@ -72,7 +72,7 @@ class ScheduleFlowTest < ActionDispatch::IntegrationTest
                    starts_at: Time.zone.local(2026, 11, 22, 10, 0), ends_at: Time.zone.local(2026, 11, 22, 11, 0))
       get root_path
       card = card(@member)
-      assert_select "#{card} .avail-free", text: "Free"
+      assert_select "#{card} .avail-free", text: "Free to call"
       assert_select "#{card} .person-next", text: "Next: Church · 10 AM"
     end
   end
@@ -111,5 +111,43 @@ class ScheduleFlowTest < ActionDispatch::IntegrationTest
     task = Task.create!(household: @smiths, title: "From admin", assigned_to: @member, created_by: @admin)
     patch task_path(task), params: { task: { title: "Mine to change" } }
     assert_equal "Mine to change", task.reload.title
+  end
+
+  test "the quick add answers with a stream: just the lists and the flash, the box stays put" do
+    post tasks_path, params: { stay: 1, person: @member.id, task: { title: "Buy milk", assignee_ids: [ @member.id ] } },
+                     as: :turbo_stream
+    assert_response :success
+    assert_equal Mime[:turbo_stream], response.media_type
+    assert_select "turbo-stream[action=replace][target=schedule-lists] .sched-title", text: "Buy milk"
+    assert_select "turbo-stream[action=replace][target=schedule-top]"
+    assert_select "turbo-stream[action=update][target=flash]", text: /Buy milk/
+    assert_select "form.quick-add", count: 0
+  end
+
+  test "the quick add survives the page's refreshes" do
+    get tasks_path
+    assert_select "form.quick-add#quick-add-#{@member.id}[data-turbo-permanent]"
+  end
+
+  test "where: one of your locations from the menu, or Other for a place that isn't saved" do
+    pool = @smiths.locations.create!(name: "Pool", kind: "pool")
+    get tasks_path
+    assert_select "select[name='task[place_choice]'] option[value='Pool']"
+    assert_select "select[name='task[place_choice]'] option[value='other']", text: "Other…"
+    assert_select "input[name='task[place]']", count: 0
+
+    post tasks_path, params: { task: { title: "Swim", place_choice: "Pool", place_other: "", from_time: "15:00", assignee_ids: [ @member.id ] } }
+    assert_equal [ "Pool", pool ], Task.find_by!(title: "Swim").then { |t| [ t.place, t.location ] }
+
+    assert_no_difference -> { @smiths.locations.count } do
+      post tasks_path, params: { task: { title: "Dentist", place_choice: "other", place_other: "Dr. Lee", from_time: "16:00", assignee_ids: [ @member.id ] } }
+    end
+    dentist = Task.find_by!(title: "Dentist")
+    assert_equal "Dr. Lee", dentist.place
+    assert_nil dentist.location
+
+    get edit_task_path(dentist)
+    assert_select "select[name='task[place_choice]'] option[selected][value='other']"
+    assert_select "input[name='task[place_other]'][value='Dr. Lee']"
   end
 end

@@ -33,15 +33,18 @@
 <% else %>
 <% mine = task.assignment_for(current_user)
    invited = mine&.pending?
-   creator = task.created_by_id == current_user.id || current_user.admin?
+   doer = task.doable_by?(current_user)
    others = task.active_assignments.reject { |a| a.user_id == local_assigns[:schedule_person]&.id || (local_assigns[:schedule_person].nil? && a.user_id == current_user.id) } %>
 <li class="sched-item <%= task.timed? ? 'sched-event' : 'sched-todo' %> is-<%= task.status %><%= ' is-past' if past && task.open? %><%= ' is-now' if task.happening_at? %>"
     id="<%= dom_id(task) %>">
   <% if task.timed? %>
     <span class="sched-time"><%= time_range(task, with_day: local_assigns[:show_day] ? :unless_today : :never) %></span>
-  <% elsif task.open? %>
+  <% elsif task.open? && doer %>
     <%= button_to complete_task_path(task), method: :post, class: "sched-check", title: "Mark done", "aria-label": "Mark #{task.title} done",
                   data: { controller: "celebrate", action: "click->celebrate#burst" } do %><%= icon(:check) %><% end %>
+  <% elsif task.open? %>
+    <%# Someone else's to tick off. %>
+    <span class="sched-check is-locked" title="Only <%= task.active_assignments.map { |a| a.user.display_name }.to_sentence(two_words_connector: ' or ', last_word_connector: ' or ') %> can tick this off"></span>
   <% else %>
     <span class="sched-check is-checked" aria-hidden="true"><%= icon(task.completed? ? :check : :skip) %></span>
   <% end %>
@@ -77,15 +80,18 @@
     </div>
   <% else %>
   <div class="sched-actions">
-    <% if task.open? && !task.timed? %>
+    <% if doer && task.open? && !task.timed? %>
       <% if task.in_progress? %>
         <%= button_to pause_task_path(task), method: :post, class: "btn btn-quiet btn-icon", title: "Pause", "aria-label": "Pause" do %><%= icon(:pause) %><% end %>
       <% else %>
         <%= button_to start_task_path(task), method: :post, class: "btn btn-quiet btn-icon", title: "I'm doing this now", "aria-label": "Start #{task.title}" do %><%= icon(:play) %><% end %>
       <% end %>
-    <% elsif task.open? && task.timed? %>
+    <% elsif doer && task.open? && task.timed? %>
       <%= button_to complete_task_path(task), method: :post, class: "btn btn-quiet btn-icon", title: "Mark done", "aria-label": "Mark #{task.title} done" do %><%= icon(:check) %><% end %>
-    <% elsif task.restartable? %>
+    <% elsif doer && task.reopenable? %>
+      <%# Ticked off by mistake: back on the list. %>
+      <%= button_to reopen_task_path(task), method: :post, class: "btn btn-quiet btn-icon", title: "Not done after all", "aria-label": "Bring back #{task.title}" do %><%= icon(:undo) %><% end %>
+    <% elsif doer && task.restartable? %>
       <%= button_to start_task_path(task), method: :post, class: "btn btn-quiet btn-icon", title: "Do it after all", "aria-label": "Restart #{task.title}" do %><%= icon(:undo) %><% end %>
     <% end %>
     <% if editable %>
@@ -94,11 +100,12 @@
     <% if task.open? && mine && task.created_by_id != current_user.id %>
       <%# Someone else put it on your list: you can say no (it stays on theirs). %>
       <%= button_to decline_task_path(task), method: :post, class: "btn btn-quiet btn-icon btn-icon-danger", title: "Decline", "aria-label": "Decline #{task.title}" do %><%= icon(:x) %><% end %>
-    <% elsif task.open? && (creator || mine || task.active_assignments.empty?) %>
+    <% elsif task.open? && doer %>
       <%= button_to cancel_task_path(task), method: :post, class: "btn btn-quiet btn-icon btn-icon-danger", title: "Skip", "aria-label": "Skip #{task.title}" do %><%= icon(:x) %><% end %>
     <% elsif editable %>
+      <%# You added it for someone else (or it's over): take it back. %>
       <%= button_to task_path(task), method: :delete, class: "btn btn-quiet btn-icon btn-icon-danger", title: "Delete", "aria-label": "Delete #{task.title}",
-                    form: { data: { turbo_confirm: "Delete this for good?" } } do %><%= icon(:trash) %><% end %>
+                    form: { data: { turbo_confirm: task.open? ? "Take this back? It comes off their list." : "Delete this for good?" } } do %><%= icon(:trash) %><% end %>
     <% end %>
   </div>
   <% end %>

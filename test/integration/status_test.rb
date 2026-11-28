@@ -12,8 +12,8 @@ class StatusTest < ActionDispatch::IntegrationTest
     get tasks_path
     assert_select ".status-bar .where-chip", 3
     assert_select ".status-bar .where-chip.is-current", count: 0
-    assert_select ".status-bar", text: /Free/
-    assert_no_match(/free to call/i, response.body)
+    assert_select ".status-bar .where-chip.avail-free", text: "Free to call"
+    assert_select ".status-bar .where-chip.avail-free .icon-phone"
 
     post status_me_path, params: { availability: "busy" }, headers: { "Referer" => tasks_url }
     assert_redirected_to tasks_url
@@ -68,7 +68,7 @@ class StatusTest < ActionDispatch::IntegrationTest
       assert_select "#{card(@member)} .avail-busy", count: 0
       assert_select "#{card(@member)} .person-now", text: /Work/
       get tasks_path
-      assert_select ".status-bar .where-chip.is-current", text: "Free"
+      assert_select ".status-bar .where-chip.is-current", text: "Free to call"
       assert_select ".status-bar form:has(.is-current) input[name=availability][value=clear]"
 
       post status_me_path, params: { availability: "clear" }, headers: { "Referer" => tasks_url }
@@ -82,13 +82,13 @@ class StatusTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "every status chip is one of three, Free always with the sun" do
+  test "every status chip is one of three, Free to call always with the phone" do
     Task.create!(household: @smiths, title: "Mowing", assigned_to: @member, availability: "free",
                  starts_at: 10.minutes.ago, ends_at: 50.minutes.from_now)
     get root_path
     labels = css_select(".person-card .status-chip").map { |chip| chip.text.strip }.uniq
-    assert_empty labels - [ "Free", "Text only", "Do not disturb" ]
-    css_select(".person-card .avail-free").each { |chip| assert_select chip, ".icon-sun" }
+    assert_empty labels - [ "Free to call", "Text only", "Do not disturb" ]
+    css_select(".person-card .avail-free").each { |chip| assert_select chip, ".icon-phone" }
   end
 
   test "only ever your own status, and only real ones" do

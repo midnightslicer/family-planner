@@ -46,6 +46,7 @@ Rails.application.routes.draw do
       post :pause
       post :complete
       post :cancel
+      post :reopen
       post :accept
       post :decline
     end
@@ -55,6 +56,7 @@ Rails.application.routes.draw do
   # before `resources :pets` so "where" and "feed" aren't read as pet ids.
   get  "pets/where", to: "pet_locations#new",    as: :new_pet_location
   post "pets/where", to: "pet_locations#create", as: :pet_locations
+  post "pets/where/visibility", to: "pet_locations#visibility", as: :pet_locations_visibility
   get  "pets/feed",  to: "feedings#new",         as: :new_feeding
   post "pets/feed",  to: "feedings#create",      as: :feedings
   resources :feedings, only: :destroy
@@ -98,6 +100,7 @@ Rails.application.routes.draw do
     root to: "profiles#show"
     resource :profile, only: :update
     resource :password, only: :update
+    resource :email, only: :update
     resources :passkeys, only: [ :create, :update, :destroy ] do
       post :options, on: :collection
     end

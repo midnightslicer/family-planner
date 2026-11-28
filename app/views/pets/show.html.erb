@@ -57,7 +57,7 @@
       <p class="empty-hint">Nobody has said where <%= @pet.name %> is yet.</p>
     <% end %>
     <div class="form-actions">
-      <%= link_to new_pet_location_path(pet_ids: [@pet.id]), class: "btn btn-primary" do %><%= icon_label(:map_pin, "Report where #{@pet.name} is") %><% end %>
+      <%= link_to new_pet_location_path(pet_ids: [@pet.id]), class: "btn btn-primary" do %><%= icon_label(:map_pin, "Report where #{@pet.name} is") %><% end if @pet.on_where_page? %>
     </div>
   </section>
 

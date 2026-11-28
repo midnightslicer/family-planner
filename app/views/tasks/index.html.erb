@@ -52,73 +52,12 @@
     <ul class="sched-list"><%= render partial: "tasks/item", collection: @anyone, as: :task %></ul>
   <% end %>
 <% else %>
-  <% me = @person == current_user
-     s = @schedule %>
+  <% s = @schedule %>
   <%= render "tasks/person_header", person: @person, where: @where, at: @at, now_task: @schedule.now, locations: @locations, schedule: @schedule, status_set: @status_set %>
 
-  <% if s.now %>
-    <div class="now-banner <%= "is-#{s.now.availability}" %>">
-      <span class="banner-icon"><%= icon(s.now.timed? ? :clock : :zap) %></span>
-      <div>
-        <strong><%= me ? "You're on" : "Now" %>: <%= s.now.title_for(current_user) %></strong>
-        <small><% if s.now.timed? %>until <%= clock(s.now.finishes_at) %><% else %>started <%= time_tag_ago(s.now.started_at || s.now.updated_at) %><% end %><%= " · #{s.now.place_name}" if s.now.place_name && s.now.visible_to?(current_user) && !@where&.newer_than?(s.now) %></small>
-      </div>
-      <%= availability_chip(s.now) %>
-    </div>
-  <% end %>
-
-  <% if s.waiting.any? %>
-    <section class="panel waiting-panel">
-      <h2><%= icon(:bell) %><%= me ? "Needs your OK" : "Waiting for #{@person.display_name.split.first}'s OK" %> <span class="count"><%= s.waiting.size %></span></h2>
-      <ul class="sched-list"><%= render partial: "tasks/item", collection: s.waiting, as: :task, locals: { show_day: true, schedule_person: @person } %></ul>
-    </section>
-  <% end %>
+  <%= render "tasks/schedule_top", s: s, person: @person, where: @where %>
 
   <%= render "tasks/quick_add", task: @task, person: @person, selected: @assignee_ids, members: @members %>
 
-  <div class="schedule-columns" data-controller="auto-refresh" data-auto-refresh-interval-value="60">
-    <section class="panel">
-      <h2><%= icon(:list) %><%= me ? "To do" : "On their list" %> <span class="count"><%= s.todos.size %></span></h2>
-      <% if s.todos.any? %>
-        <ul class="sched-list"><%= render partial: "tasks/item", collection: s.todos, as: :task, locals: { schedule_person: @person } %></ul>
-      <% else %>
-        <p class="empty-hint"><%= icon(:sparkles) %><%= me ? "Nothing on your list. Add anything above, as it comes to you." : "Their list is clear." %></p>
-      <% end %>
-    </section>
-
-    <section class="panel">
-      <h2><%= icon(:calendar) %>Today</h2>
-      <% if s.today.any? %>
-        <ul class="sched-list"><%= render partial: "tasks/item", collection: s.today, as: :task, locals: { schedule_person: @person } %></ul>
-      <% else %>
-        <p class="empty-hint">Nothing at a set time today.</p>
-      <% end %>
-    </section>
-  </div>
-
-  <% if s.later.any? || s.days_off.any? %>
-    <h2 class="section-title"><%= icon(:calendar) %>Coming up</h2>
-    <ul class="sched-list panel">
-      <% s.days_off.each do |off| %>
-        <li class="sched-item sched-day-off">
-          <span class="sched-time"><%= off.single_day? ? day_name(off.starts_on) : "#{day_name(off.starts_on)} – #{day_name(off.ends_on)}" %></span>
-          <div class="sched-body"><span class="sched-title"><%= icon(:sun) %>Day off<%= " · #{off.note}" if off.note %></span></div>
-        </li>
-      <% end %>
-      <%= render partial: "tasks/item", collection: s.later, as: :task, locals: { show_day: true, schedule_person: @person } %>
-    </ul>
-  <% end %>
-
-  <% if s.following.any? %>
-    <h2 class="section-title"><%= icon(:bell) %>Following up</h2>
-    <ul class="sched-list panel"><%= render partial: "tasks/item", collection: s.following, as: :task, locals: { show_day: true } %></ul>
-  <% end %>
-
-  <% done = s.done.reject { |task| s.today.include?(task) } %>
-  <% if done.any? %>
-    <details class="done-today">
-      <summary><%= icon(:check_circle) %>Done today (<%= done.size %>)</summary>
-      <ul class="sched-list"><%= render partial: "tasks/item", collection: done, as: :task, locals: { schedule_person: @person } %></ul>
-    </details>
-  <% end %>
+  <%= render "tasks/schedule_lists", s: s, person: @person, where: @where %>
 <% end %>
