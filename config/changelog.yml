@@ -1,0 +1,23 @@
+# What's new, newest first: what people read in the "What's new" popup and
+# from the version number on the account page (AppVersion). Plain words,
+# one change per line, the way the family would say it. date is optional.
+- version: "1.1"
+  date: 2026-11-28
+  changes:
+    - "\"Free\" is now \"Free to call\", with a phone instead of a sun."
+    - "The \"I'm\" chips on your schedule always show your status now, even when it comes from your work hours or an event."
+    - "Leave a note for everyone under \"I'm at\", wherever you are."
+    - "Adding to-dos is quicker: press Enter and keep typing. The box no longer closes or clears by itself."
+    - "Only the person a to-do is for can tick it off. Whoever made it can still change it or take it back."
+    - "Ticked something off by mistake? Bring it back with the undo button."
+    - "A to-do's place is a menu now, with \"Other…\" for a one-off place that isn't saved."
+    - "The pets' Where page is a board: drag a pet to where it is, or tap pets and then the place. Houses have inside, outside and penned up."
+    - "Pets that never move, like horses in their pasture, can be left off the Where page."
+    - "Smaller pet tiles when feeding, so everything fits on a phone."
+    - "Change your email on your account page."
+    - "Times read 2:30 PM, not 14:30."
+    - "Tap anywhere on a person, pet or place card to open it."
+    - "Admins can restore a backup from Admin > Backup."
+- version: "1.0"
+  changes:
+    - "The first version: schedules, where everyone is, pets and the wall."

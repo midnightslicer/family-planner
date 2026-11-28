@@ -102,6 +102,13 @@ server; see `Backup` below).
   A new encrypted column needs handling in `clear_unreadable_secrets`.
   `bin/rails backup:create[path]` / `backup:restore[path]` in
   `lib/tasks/backup.rake`),
+  `AppVersion` (the version, `CURRENT`, and `config/changelog.yml`,
+  newest first; `users.last_seen_version` says who's seen this version's
+  "What's new" (`layouts/_changelog`, a dialog that opens itself once after
+  an update; closing it posts `Account::ChangelogsController#seen`; anything
+  with `data-changelog-open`, like the version at the foot of the account
+  page, opens it again). New accounts start on the current version. A
+  release: bump `CURRENT` and add its entry at the top of the changelog),
   `GettingStarted` (the dashboard checklist), and the pets feature:
   `Location` (a place: house/yard/pasture/pool/other, with a photo),
   `Pet` (species, birthday, `meals_per_day`, `feeding_notes`, `home` =
@@ -239,7 +246,9 @@ server; see `Backup` below).
     the `--qr-*` tokens), `secret-key`, `recovery-codes`; backups:
     `restore-card` (the setup page's restore `details`), `backup-notes`,
     `restore-over` (Admin > Backup's restore-over-everything section, a
-    `danger-zone` with a `flash-alert` warning).
+    `danger-zone` with a `flash-alert` warning); what's new:
+    `changelog-dialog` > `changelog-body` > `changelog-release`, and
+    `app-version` (the account page's version button).
   - notifications: `toast-stack` (the `#notifications` container,
     `data-turbo-permanent` so morph refreshes keep it, in the fixed
     bottom-corner `overlay-stack`) > `flash toast` > `toast-body` (household in `small`,
@@ -581,7 +590,7 @@ server; see `Backup` below).
 ## Testing
 
 ```sh
-bin/rails test              # the whole suite (368 runs), with the Ruby in .ruby-version
+bin/rails test              # the whole suite (373 runs), with the Ruby in .ruby-version
 bin/ci                      # rubocop, bundler-audit, npm audit, brakeman, tests, seeds
 docker compose up --build   # smoke: setup page on localhost:3000, code in the logs
 ```

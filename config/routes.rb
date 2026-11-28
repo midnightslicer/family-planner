@@ -101,6 +101,10 @@ Rails.application.routes.draw do
     resource :profile, only: :update
     resource :password, only: :update
     resource :email, only: :update
+    # "What's new" closed: don't show it again until the next version.
+    resource :changelog, only: [] do
+      post :seen
+    end
     resources :passkeys, only: [ :create, :update, :destroy ] do
       post :options, on: :collection
     end

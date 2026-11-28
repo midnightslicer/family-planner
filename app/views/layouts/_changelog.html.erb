@@ -1,0 +1,25 @@
+<%# "What's new": every version's changes (config/changelog.yml, AppVersion).
+    Opens by itself once after an update, until it's closed (any way: the
+    button, Escape, a tap outside), which posts that it's been seen. Anything
+    with data-changelog-open (the version on the account page) opens it
+    again. changelog_controller.js keeps it open through live refreshes. %>
+<dialog id="changelog" class="changelog-dialog" aria-labelledby="changelog_title"
+        data-controller="changelog"
+        data-changelog-auto-value="<%= AppVersion.unseen_by?(current_user) %>"
+        data-changelog-url-value="<%= seen_account_changelog_path %>"
+        data-action="close->changelog#closed click->changelog#backdrop click@window->changelog#openFrom">
+  <h2 id="changelog_title"><%= icon(:sparkles) %>What's new</h2>
+  <div class="changelog-body">
+    <% AppVersion.changelog.each do |release| %>
+      <section class="changelog-release">
+        <h3>Version <%= release[:version] %><% if release[:date] %> <small><%= release[:date].strftime("%b %-d, %Y") %></small><% end %></h3>
+        <ul>
+          <% release[:changes].each do |change| %><li><%= change %></li><% end %>
+        </ul>
+      </section>
+    <% end %>
+  </div>
+  <form method="dialog" class="form-actions">
+    <button type="submit" class="btn btn-primary" autofocus><%= icon_label(:check, "Got it") %></button>
+  </form>
+</dialog>

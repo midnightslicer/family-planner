@@ -65,3 +65,6 @@ application.register("wall-drift", WallDriftController)
 
 import TabBarController from "./tab_bar_controller"
 application.register("tab-bar", TabBarController)
+
+import ChangelogController from "./changelog_controller"
+application.register("changelog", ChangelogController)

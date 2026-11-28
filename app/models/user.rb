@@ -62,6 +62,8 @@ class User < ApplicationRecord
   attr_accessor :custom_color
 
   before_validation :apply_custom_color
+  # New accounts aren't told what changed before they joined (AppVersion).
+  before_create { self.last_seen_version ||= AppVersion::CURRENT }
   before_validation :normalize_color
   # A new password also stops every "remember me" cookie (Devise's
   # remember_token outlives it otherwise); sessions end with the salt.

@@ -63,6 +63,7 @@
     <% if user_signed_in? %>
       <%= turbo_stream_from current_user, :notifications %>
       <div hidden data-controller="push-sync" data-push-sync-url-value="<%= push_subscriptions_path %>"></div>
+      <%= render "layouts/changelog" %>
     <% end %>
 
     <main class="container">

@@ -153,3 +153,10 @@
     <%= render "dashboards/checklist", checklist: @checklist, dismissible: false %>
   </div>
 <% end %>
+
+<%# The version; tapping it shows what's new again (layouts/_changelog). %>
+<p class="app-version">
+  <button type="button" class="btn btn-quiet btn-small" data-changelog-open aria-haspopup="dialog">
+    <%= icon_label(:sparkles, "Version #{AppVersion::CURRENT} · What's new") %>
+  </button>
+</p>
