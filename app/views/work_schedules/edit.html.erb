@@ -19,10 +19,10 @@
             <span><%= Date::DAYNAMES[weekday] %></span>
           </label>
           <label class="visually-hidden" for="work_<%= weekday %>_from"><%= Date::DAYNAMES[weekday] %> from</label>
-          <input type="time" id="work_<%= weekday %>_from" name="<%= name %>[from_time]" value="<%= shift&.from_time || "09:00" %>" step="900" data-work-week-target="from">
+          <input type="time" id="work_<%= weekday %>_from" name="<%= name %>[from_time]" value="<%= shift&.from_time || "09:00" %>" data-work-week-target="from">
           <span class="work-day-to" aria-hidden="true">to</span>
           <label class="visually-hidden" for="work_<%= weekday %>_until"><%= Date::DAYNAMES[weekday] %> until</label>
-          <input type="time" id="work_<%= weekday %>_until" name="<%= name %>[until_time]" value="<%= shift&.until_time || "17:00" %>" step="900" data-work-week-target="until">
+          <input type="time" id="work_<%= weekday %>_until" name="<%= name %>[until_time]" value="<%= shift&.until_time || "17:00" %>" data-work-week-target="until">
           <%# A short list (Office, Remote, your houses) plus "Other…" for
               anything else. None of these become locations: it's only a label. %>
           <% choices = WorkShift::PLACES + @locations.select(&:house?).map(&:name)

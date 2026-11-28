@@ -16,6 +16,7 @@
     - "Smaller pet tiles when feeding, so everything fits on a phone."
     - "Change your email on your account page."
     - "Times read 2:30 PM, not 14:30."
+    - "Work hours and events take any time, like 6:40, not just every 15 minutes."
     - "Tap anywhere on a person, pet or place card to open it."
     - "Admins can restore a backup from Admin > Backup."
 - version: "1.0"

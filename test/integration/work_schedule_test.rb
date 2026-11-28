@@ -40,6 +40,16 @@ class WorkScheduleTest < ActionDispatch::IntegrationTest
     assert_equal({ "weekday" => 1, "from_time" => "09:00", "until_time" => "17:00", "place" => "Little house" }, versions.last.shifts.first)
   end
 
+  test "any minute will do: 6:40 AM to 9:55 PM" do
+    sign_in @member
+    get edit_work_schedule_path
+    assert_select "input[type=time][step]", count: 0 # no 15-minute steps for the browser to enforce
+    patch work_schedule_path, params: { work_schedule: { availability: "busy", days: { "2" => { on: "1", from_time: "06:40", until_time: "21:55", place: "Remote" } } } }
+    assert_redirected_to edit_work_schedule_path
+    shift = @member.work_shifts.reload.sole
+    assert_equal [ "06:40", "21:55" ], [ shift.from_time, shift.until_time ]
+  end
+
   test "work place is picked from Office, Remote and your houses, or typed under Other" do
     sign_in @member
     get edit_work_schedule_path

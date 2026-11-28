@@ -8,11 +8,11 @@
   </div>
   <div class="form-field">
     <%= form.label :from_time, "From" %>
-    <%= form.time_field :from_time, value: task.from_time, step: 300 %>
+    <%= form.time_field :from_time, value: task.from_time %>
   </div>
   <div class="form-field">
     <%= form.label :until_time, "Until" %>
-    <%= form.time_field :until_time, value: task.until_time, step: 300 %>
+    <%= form.time_field :until_time, value: task.until_time %>
   </div>
 </div>
 <p class="form-hint"><small>A day without a time puts it on your list that day. A time makes it an event: your card shows it while it's on (an hour, unless you say until when).</small></p>

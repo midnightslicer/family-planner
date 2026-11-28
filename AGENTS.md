@@ -590,7 +590,7 @@ server; see `Backup` below).
 ## Testing
 
 ```sh
-bin/rails test              # the whole suite (373 runs), with the Ruby in .ruby-version
+bin/rails test              # the whole suite (374 runs), with the Ruby in .ruby-version
 bin/ci                      # rubocop, bundler-audit, npm audit, brakeman, tests, seeds
 docker compose up --build   # smoke: setup page on localhost:3000, code in the logs
 ```
