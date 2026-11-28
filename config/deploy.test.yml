@@ -3,7 +3,8 @@
 # this over config/deploy.yml, so only what's different is here: its own
 # containers, address and storage volume (database, secret key, photos), so
 # nothing it does touches production. Every alias takes -d test too
-# (`bin/kamal setup-code -d test`). `bin/kamal remove -d test` takes it down;
+# (`bin/kamal setup-code -d test`). `bin/kamal app remove -d test` takes it
+# down (not plain `kamal remove`, which goes after the shared proxy);
 # the volume stays until it's deleted on the server.
 
 service: whereabouts-test

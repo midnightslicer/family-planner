@@ -154,7 +154,7 @@ own containers and its own storage volume (database, secret key, photos):
 ```sh
 bin/kamal deploy -d test          # point test.<your domain> at the server first
 bin/kamal setup-code -d test      # it starts empty, with its own setup code
-bin/kamal remove -d test          # take it down (the volume stays)
+bin/kamal app remove -d test      # take it down (the volume stays)
 ```
 
 Plain `bin/kamal deploy` still goes to production. To try a branch with real
